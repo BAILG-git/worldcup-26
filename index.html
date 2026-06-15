@@ -1356,7 +1356,7 @@ function loadScores(){
       // matchStatus / matchClock 不在这里恢复，由 ESPN 实时驱动
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
-      if (!data._predVer || data._predVer < 10) {
+      if (!data._predVer || data._predVer < 9) {
         // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
         const locked = {};
         for (const [k, v] of Object.entries(predictions)) {
@@ -1370,7 +1370,7 @@ function loadScores(){
 function saveScores() {
   try {
     // 只持久化比分和预测，状态和时钟由 ESPN 实时驱动，不写入 localStorage
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 10}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 9}));
   } catch(e) {}
 }
 loadScores();
@@ -1977,8 +1977,8 @@ function predictMatch(m, oddsData){
 
   // ========== 1. 身价指数（对数压缩差距） ==========
   const vi=Math.log2(hv+0.5)-Math.log2(av+0.5);
-  // ========== 2. 排名指数（增强权重：排名悬殊是强信号） ==========
-  const ri=(ar-hr)*0.022;
+  // ========== 2. 排名指数 ==========
+  const ri=(ar-hr)*0.015;
   // ========== 3. 打法风格 ==========
   const hs=STYLE_DATA[m.home]||{style:"整体压迫",attack:5.5,defense:5.5,tempo:"中",desc:"均衡型"};
   const as=STYLE_DATA[m.away]||{style:"整体压迫",attack:5.5,defense:5.5,tempo:"中",desc:"均衡型"};
@@ -2008,7 +2008,7 @@ function predictMatch(m, oddsData){
   const hAbsent=hInj.length*0.08+hSus*0.12, aAbsent=aInj.length*0.08+aSus*0.12;
 
   // ========== 核心七维优势 ==========
-  let adv=vi*0.20+ri*0.14+styleBonus*0.08+(motivation-1)*0.6*0.08-(aAbsent-hAbsent)*0.50;
+  let adv=vi*0.18+ri*0.10+styleBonus*0.08+(motivation-1)*0.6*0.08-(aAbsent-hAbsent)*0.50;
   let goalBase=2.5+(totalAtk-totalDef)*0.8;
 
   // ========== ESPN 赔率驱动（最高优先级） ==========
@@ -2087,42 +2087,30 @@ function predictMatch(m, oddsData){
 
   // ========== 强弱判断 & 激进/保守策略 ==========
   const absAdv = Math.abs(adv);
-  // 碾压级：absAdv > 1.0（如西班牙vs佛得角、法国vs巴拿马等）
-  const isCrushing = absAdv > 1.0;
-  // 明显强弱：absAdv > 0.6
-  const isBlowout = absAdv > 0.6;
-  const isEven = absAdv <= 0.35;  // 势均力敌
+  // 体力悬殊阈值：absAdv > 0.8 为明显强弱差距
+  const isBlowout = absAdv > 0.8;
+  const isEven = absAdv <= 0.4;  // 势均力敌
 
   // ========== 进球期望（赔率驱动 + 强弱自适应）==========
   const base = goalBase / 2;
-  let strongExp, weakExp;
-  if (isCrushing) {
-    // 碾压级：强队进球期望大幅提升，弱队几乎为0
-    strongExp = base * (1 + Math.min(absAdv, 3.0) * 1.6);
-    weakExp = Math.max(0.08, base * (1 - Math.min(absAdv, 2.5) * 0.92));
-  } else if (isBlowout) {
-    // 明显强弱：强队进球期望较高
-    strongExp = base * (1 + Math.min(absAdv, 2.5) * 1.2);
-    weakExp = Math.max(0.15, base * (1 - Math.min(absAdv, 2.0) * 0.8));
-  } else {
-    strongExp = base * (1 + Math.min(absAdv, 1.0) * 0.5);
-    weakExp = Math.max(0.4, base * (1 - Math.min(absAdv, 1.0) * 0.4));
-  }
+  // 强队进球期望
+  const strongExp = base * (1 + Math.min(absAdv, 2.5) * 1.2);
+  // 弱队进球期望
+  const weakExp = Math.max(0.15, base * (1 - Math.min(absAdv, 2.0) * 0.8));
 
   const hExp = adv >= 0 ? strongExp : weakExp;
   const aExp = adv >= 0 ? weakExp : strongExp;
 
   // 噪声控制：
-  // 碾压级 → 噪声极小（强队碾压可预测），强队进球更激进
-  // 强弱悬殊 → 噪声小（结果可预测）
+  // 强弱悬殊 → 噪声小（结果可预测），但强队进球可激进
   // 势均力敌 → 噪声大（不确定性高），比分保守
   let noiseScale;
-  if (isCrushing) {
-    noiseScale = 1.0 / (1 + absAdv * 2.0);
-  } else if (isBlowout) {
+  if (isBlowout) {
+    // 强队打弱队：激进，但分差稳定（弱队难进球）
     noiseScale = 1.2 / (1 + absAdv * 1.5);
   } else if (isEven) {
-    noiseScale = 1.0;
+    // 势均力敌：保守，小比分为主
+    noiseScale = 1.0;  // 不额外抑制，但期望值已经很低
   } else {
     noiseScale = 1.5 / (1 + absAdv * 1.0);
   }
@@ -2139,11 +2127,7 @@ function predictMatch(m, oddsData){
     let hg = Math.round(hExp + (r1 - 0.5) * hNoise + (r2 - 0.5) * hNoise * 0.5);
     let ag = Math.round(aExp + (r2 - 0.5) * aNoise + (r1 - 0.5) * aNoise * 0.5);
     // 强队打弱队激进：强队保底2球，弱队上限1球
-    // 碾压级更激进：强队保底3球，弱队上限0球
-    if (isCrushing) {
-      if (isStronger) { hg = Math.max(3, hg); ag = Math.min(0, ag); }
-      else { ag = Math.max(3, ag); hg = Math.min(0, hg); }
-    } else if (isBlowout) {
+    if (isBlowout) {
       if (isStronger) { hg = Math.max(2, hg); ag = Math.min(1, ag); }
       else { ag = Math.max(2, ag); hg = Math.min(1, hg); }
     }
@@ -2266,9 +2250,7 @@ function predictMatch(m, oddsData){
   }
 
   // 强弱策略说明
-  if (isCrushing) {
-    reasons.push(`【策略】${strongName}对${weakName}实力碾压，预测比分激进（大比分）`);
-  } else if (isBlowout) {
+  if (isBlowout) {
     reasons.push(`【策略】${strongName}对${weakName}实力悬殊，预测比分偏激进`);
   } else if (isEven) {
     reasons.push(`【策略】双方实力接近，预测比分偏保守（小比分为主）`);
