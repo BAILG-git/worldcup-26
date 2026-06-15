@@ -824,13 +824,22 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-  // 轮询窗口：今天往前3天 + 往后3天
-  // 10秒轮询只刷附近比赛，远期待比赛不会漏（到日期附近自然进入窗口）
-  const now = new Date();
-  const dates = [];
-  for (let offset = -3; offset <= 3; offset++) {
-    const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-    dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+  // 轮询窗口：正常 ±3 天，首次加载拉全部赛程日期（6/8-7/20）
+  let dates = [];
+  if (!window._initialFetchDone) {
+    // 首次加载：拉取整个世界杯期间所有日期
+    const s = new Date('2026-06-08'), e = new Date('2026-07-20');
+    for (let d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1)) {
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    }
+    window._initialFetchDone = true;
+  } else {
+    // 轮询：只刷附近 ±3 天
+    const now = new Date();
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    }
   }
   const urls = dates.map(d => `${ESPN_API}?dates=${d}`);
   const results = await Promise.allSettled(urls.map(u => corsFetch(u).then(r => { if(!r.ok) console.warn('ESPN HTTP',r.status,u); return r.ok ? r.json() : null; }).catch(e => { console.warn('ESPN fetch error',u,e); return null; })));
@@ -1292,7 +1301,12 @@ function loadScores(){
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
       if (!data._predVer || data._predVer < 8) {
-        predictions = {};
+        // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
+        const locked = {};
+        for (const [k, v] of Object.entries(predictions)) {
+          if (v.locked) locked[k] = v;
+        }
+        predictions = locked;
       }
     }
   } catch(e) { scores = {}; halftimeScores = {}; predictions = {}; }
