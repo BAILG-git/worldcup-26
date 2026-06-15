@@ -1236,6 +1236,17 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
       }
     }
   if (ns) saveScores();
+  // 自动补填：ESPN 返回已结束比赛但缺预测 → 立即生成（解决公网新环境无 localStorage 问题）
+  try {
+    for (const ms of Object.values(GROUP_MATCHES)) {
+      for (const m of ms) {
+        if (predictions[m.id]) continue;
+        if (matchStatus[m.id] === 'FINISHED' || (scores[m.id] && scores[m.id][0] !== null && matchClock[m.id] === '90′')) {
+          predictions[m.id] = generateDailyPrediction(m);
+        }
+      }
+    }
+  } catch(e) { console.warn('[预测] 自动补填出错:', e); }
   // 同时检查是否命中淘汰赛对阵（赛后自动传播胜者）
   let koUpdated = false;
   for (const [sid, slot] of Object.entries(koSlot)) {
