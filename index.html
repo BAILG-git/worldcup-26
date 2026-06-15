@@ -1334,7 +1334,12 @@ function loadScores(){
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
       if (!data._predVer || data._predVer < 9) {
-        predictions = {};
+        // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
+        const locked = {};
+        for (const [k, v] of Object.entries(predictions)) {
+          if (v.locked) locked[k] = v;
+        }
+        predictions = locked;
       }
     }
   } catch(e) { scores = {}; halftimeScores = {}; predictions = {}; }
