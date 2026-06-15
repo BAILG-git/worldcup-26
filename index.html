@@ -706,14 +706,29 @@ const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.
 const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
 
 // ========== CORS 代理（公网部署必须） ==========
-// 本地开发直接请求，部署到 Netlify 等平台时自动走代理
+// 本地开发直接请求，部署到公网时自动走代理
+const CORS_PROXIES = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?' + encodeURIComponent(u),
+];
+let proxyIdx = 0;
 function corsProxy(url) {
   const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
   if (isLocal) return url;
-  return 'https://corsproxy.io/?' + encodeURIComponent(url);
+  return CORS_PROXIES[proxyIdx % CORS_PROXIES.length](url);
 }
 async function corsFetch(url, opts) {
-  return fetch(corsProxy(url), opts);
+  // 先尝试当前代理
+  let lastError = null;
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const pIdx = (proxyIdx + i) % CORS_PROXIES.length;
+    try {
+      const proxiedUrl = CORS_PROXIES[pIdx](url);
+      const resp = await fetch(proxiedUrl, { ...opts, signal: AbortSignal.timeout(8000) });
+      if (resp.ok) { proxyIdx = pIdx; return resp; }
+    } catch(e) { lastError = e; }
+  }
+  throw lastError || new Error('CORS proxy failed');
 }
 
 // ========== API-Football 伤病/停赛实时数据 ==========
