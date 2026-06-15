@@ -724,7 +724,7 @@ async function corsFetch(url, opts) {
     const pIdx = (proxyIdx + i) % CORS_PROXIES.length;
     try {
       const proxiedUrl = CORS_PROXIES[pIdx](url);
-      const resp = await fetch(proxiedUrl, { ...opts, signal: AbortSignal.timeout(8000) });
+      const resp = await fetch(proxiedUrl, { ...opts });
       if (resp.ok) { proxyIdx = pIdx; return resp; }
     } catch(e) { lastError = e; }
   }
@@ -2353,6 +2353,13 @@ try {
   console.error('INIT error:', e);
   document.body.innerHTML += '<div style="color:red;padding:20px">初始化错误: '+e.message+'<br>请按F12查看控制台</div>';
 }
+// CORS代理在公网可能失败，保证即使ESPN连不上页面也有数据
+window.addEventListener('error', function(e) {
+  console.warn('全局JS错误:', e.message);
+});
+window.addEventListener('unhandledrejection', function(e) {
+  console.warn('未处理的Promise拒绝:', e.reason);
+});
 </script>
 </body>
 </html>
