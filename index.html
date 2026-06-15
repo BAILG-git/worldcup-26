@@ -824,6 +824,7 @@ function connectAll() { updateStatus('connecting'); fetchAllSources(); }
 async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
+  try {
   // 轮询窗口：今天往前3天 + 往后3天
   // 10秒轮询只刷附近比赛，远期待比赛不会漏（到日期附近自然进入窗口）
   const now = new Date();
@@ -852,6 +853,13 @@ async function fetchAllSources() {
     updateStatus('error', 'ESPN连接失败，使用本地时间判断');
     fallbackLiveStatus();
     startPolling();
+  }
+  } catch(e) {
+    console.warn('fetchAllSources异常:', e);
+    // ESPN完全不可用时也要保证页面能显示
+    updateStatus('error', 'ESPN不可用');
+    renderMatches();
+    fillBracket();
   }
 }
 
