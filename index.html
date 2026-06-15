@@ -706,15 +706,16 @@ const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.
 const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
 
 // ========== CORS 代理（公网部署必须） ==========
-// 本地开发直接请求，部署到公网时自动走代理
+// 本地开发直接请求 localhost 代理，部署到公网时走 Cloudflare Worker
+// 本地走 localhost 代理，公网走 Cloudflare Worker
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '' || location.protocol === 'file:';
+const PROXY_BASE = isLocal ? 'http://localhost:8899/proxy' : 'https://esp-proxy.blg8282.workers.dev';
 const CORS_PROXIES = [
+  u => PROXY_BASE + '?url=' + encodeURIComponent(u),
   u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
-  u => 'https://corsproxy.io/?' + encodeURIComponent(u),
 ];
 let proxyIdx = 0;
 function corsProxy(url) {
-  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '';
-  if (isLocal) return url;
   return CORS_PROXIES[proxyIdx % CORS_PROXIES.length](url);
 }
 async function corsFetch(url, opts) {
