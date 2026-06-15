@@ -824,13 +824,22 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-  // 轮询窗口：今天往前7天 + 往后7天（覆盖全部小组赛赛程）
-  // 10秒轮询只刷附近比赛，远期待比赛不会漏（到日期附近自然进入窗口）
+  // 固定日期范围：覆盖全部赛事（小组赛6/11~6/28，淘汰赛到7/19，决赛7/19）
+  // 首次加载全量拉取历史比赛，后续轮询只拉 ±3 天（减少请求量）
   const now = new Date();
+  const isFirstLoad = !window._espnLoaded;
   const dates = [];
-  for (let offset = -7; offset <= 7; offset++) {
-    const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-    dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+  if (isFirstLoad) {
+    const DATES_RANGE_START = new Date('2026-06-08');
+    const DATES_RANGE_END   = new Date('2026-07-20');
+    for (let d = new Date(DATES_RANGE_START); d <= DATES_RANGE_END; d.setUTCDate(d.getUTCDate()+1)) {
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    }
+  } else {
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    }
   }
   const urls = dates.map(d => `${ESPN_API}?dates=${d}`);
   const results = await Promise.allSettled(urls.map(u => corsFetch(u).then(r => { if(!r.ok) console.warn('ESPN HTTP',r.status,u); return r.ok ? r.json() : null; }).catch(e => { console.warn('ESPN fetch error',u,e); return null; })));
@@ -839,6 +848,7 @@ async function fetchAllSources() {
     if (res.status === 'fulfilled' && res.value) { processESPN(res.value); espnOk = true; espnEventsCount += (res.value.events||[]).length; }
   }
   console.log(`[fetchAllSources] ESPN OK=${espnOk}, total events=${espnEventsCount}`);
+  window._espnLoaded = true; // 标记首次全量拉取完成，后续轮询只用±3天
   // 同时拉取伤病停赛数据（异步，不阻塞主流程）
   fetchInjuriesIfNeeded();
   // 无论ESPN是否成功，都强制刷新UI（保证页面有数据展示）
