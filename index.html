@@ -2030,7 +2030,7 @@ function predictMatch(m, oddsData){
   const deltaS=hardScoreH+recentScore+h2hScore+injuryImpact+motImpact+homeScore+siteImpact;
 
   // ===== 第二层：泊松λ计算（v15 修正版） =====
-  const AvgHG=1.45,AvgAG=1.15;
+  const AvgHG=1.65,AvgAG=1.35;
   // 攻防强度：OI=主队进攻指数 DI=主队防守指数 OJ=客队进攻指数 DJ=客队防守指数
   const OI=(hs.attack/10)*(AvgHG/1.1);
   const DI=(hs.defense/10)*(AvgAG/1.1);
@@ -2038,7 +2038,7 @@ function predictMatch(m, oddsData){
   const DJ=(as.defense/10)*(AvgHG/1.1);
 
   // K1：综合实力修正（主客共用）
-  const K1=deltaS>0?(1+deltaS/500):(1+deltaS/800);
+  const K1=deltaS>0?(1+deltaS/250):(1+deltaS/400);
 
   // K2：主客场/东道主修正
   // 东道主小组赛1.2，淘汰赛统一1.0（中立场地），其余1.0
