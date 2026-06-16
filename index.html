@@ -1758,26 +1758,26 @@ function generateDailyPrediction(m) {
 
 function checkAndPredict() {
   try {
-    console.log('[预测] 全量预测检查');
+    console.log('[预测] 全量预测检查 - 全部走SCF');
     let updated = false;
     let candidateCount = 0, backfillCount = 0;
     for (const ms of Object.values(GROUP_MATCHES)) {
       for (const m of ms) {
-        // 已锁定的预测不再变更（已完赛/已锁定）
-        if (predictions[m.id]?.locked) continue;
-        // 回填：已结束且有比分但缺预测 → 补生成并锁定
+        // 已完赛且有真实比分 → 用本地模型回填锁定（不再调SCF）
         if (matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null) {
-          predictions[m.id] = generateDailyPrediction(m);
-          console.log('[预测] 回填已结束:', m.id, predictions[m.id].score);
-          backfillCount++;
-          updated = true;
+          if (!predictions[m.id]?.locked || !predictions[m.id]?.score) {
+            predictions[m.id] = predictMatch(m, null);
+            predictions[m.id].locked = true;
+            backfillCount++;
+            updated = true;
+          }
           continue;
         }
-        // 全量：所有未开始、未锁定的比赛都生成预测
-        candidateCount++;
+        // 未完赛的比赛 → 强制走 SCF 预测（不管之前是否 locked）
         if (matchStatus[m.id] === 'FINISHED') continue;
-        predictions[m.id] = generateDailyPrediction(m);
-        console.log('[预测] 已生成:', m.id, predictions[m.id].score, predictions[m.id].wdl);
+        candidateCount++;
+        fetchScfPrediction(m);  // 直接调 SCF，不走本地模型
+        console.log('[预测] 触发SCF:', m.id, m.home + ' vs ' + m.away);
         updated = true;
       }
     }
