@@ -1994,7 +1994,8 @@ function predictMatch(m, oddsData){
   const isDefendingAway=(m.away===DEFENDING_CHAMP&&gRound>=1&&gRound<=2);
   if(isDefendingHome)hardBonus-=5;
   if(isDefendingAway)hardBonus+=5;
-  const hardScoreH=((eloDiff>0?55:45)+(rSH-rSA)*0.25+(hs.attack-as.attack)*1.5+(hs.defense-as.defense)*1.2+hardBonus)*0.40;
+  // 排名差权重拉大（0.25→0.8） 攻防差翻倍（1.5→3.5 / 1.2→2.5）
+  const hardScoreH=((eloDiff>0?58:42)+(rSH-rSA)*0.8+(hs.attack-as.attack)*3.5+(hs.defense-as.defense)*2.5+hardBonus)*0.40;
 
   // 近期状态25%（攻防比值 + 身价排名匹配度）
   const formH=(hs.attack/Math.max(hs.defense,1))*10,formA=(as.attack/Math.max(as.defense,1))*10;
@@ -2038,7 +2039,9 @@ function predictMatch(m, oddsData){
   const DJ=(as.defense/10)*(AvgHG/1.1);
 
   // K1：综合实力修正（主客共用）
-  const K1=deltaS>0?(1+deltaS/250):(1+deltaS/400);
+  // K1：非线性实力修正（强队指数放大 弱队压缩）
+  // deltaS>0 时用 1+deltaS/180（更激进） deltaS<0 用 1+deltaS/300
+  const K1=deltaS>0?Math.pow(1.06, Math.min(deltaS/15, 3)):Math.max(0.82, 1+deltaS/350);
 
   // K2：主客场/东道主修正
   // 东道主小组赛1.2，淘汰赛统一1.0（中立场地），其余1.0
