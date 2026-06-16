@@ -323,15 +323,17 @@ def predict_match(home, away, match_id='', injuries=None, suspended=None):
                 pb['p'] *= 1.02
 
     s1 = probs[0] if probs else {'hg':1,'ag':1,'p':0.01}
-    s1_wdl = 'H' if s1['hg'] > s1['ag'] else ('A' if s1['hg'] < s1['ag'] else 'D')
-    s2 = None
+    # scoreB：概率第二高的比分（不限wdl，更激进）
+    s2 = probs[1] if len(probs) > 1 else {'hg':s1['hg']+1,'ag':s1['ag'],'p':0.01}
+    # scoreC：加一个大球备选（probs里总进球最高的）
+    scoreC = None
     for p in probs:
-        pw = 'H' if p['hg'] > p['ag'] else ('A' if p['hg'] < p['ag'] else 'D')
-        if pw != s1_wdl:
-            s2 = p
-            break
-    if not s2:
-        s2 = probs[1] if len(probs) > 1 else {'hg':s1['hg'],'ag':s1['ag']+1,'p':0.01}
+        if (p['hg'] + p['ag']) > (s1['hg'] + s1['ag']) and p['p'] >= 0.03:
+            if not scoreC or (p['hg']+p['ag']) > (scoreC['hg']+scoreC['ag']):
+                scoreC = p
+    if not scoreC:
+        # 没有大球备选，用进球数+1的版本
+        scoreC = {'hg': s1['hg']+1, 'ag': s1['ag'], 'p': 0.01}
 
     scoreA = f"{s1['hg']}-{s1['ag']}"
     scoreB = f"{s2['hg']}-{s2['ag']}"
@@ -381,11 +383,13 @@ def predict_match(home, away, match_id='', injuries=None, suspended=None):
         reasons.append(f"【主场】{home}东道主（K2={K2}）")
     reasons.append(f"【概率】胜{round(probH*100)}% 平{round(probD*100)}% 负{round(probA*100)}%")
     reasons.append(f"【预期】λH={lambdaH:.2f} λA={lambdaA:.2f} | 总进{exp_total:.1f}球（{goals_range}）")
-    reasons.append(f"【比分】①{scoreA}（{wdl_label}，{conf}） ②{scoreB}（备选）")
+    scoreC_str = f"{scoreC['hg']}-{scoreC['ag']}" if scoreC else ''
+    reasons.append(f"【比分】①{scoreA}（{wdl_label}，{conf}） ②{scoreB}（备选） ③{scoreC_str}（大球）")
 
     return {
         'score': scoreA,
         'scoreB': scoreB,
+        'scoreC': scoreC_str,
         'wdl': wdl,
         'wdlLabel': wdl_label,
         'goals': top_goals_str + f'（{goals_range}）',
