@@ -1286,6 +1286,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
     'G_1': { score:'3-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'瑞典·胜',   goalsNum:3, locked:true },
   };
   for (const [mid, pred] of Object.entries(LEGACY_PREDICTIONS)) {
+    // 只写入：本地没有，或本地有但未锁定
     if (!predictions[mid] || !predictions[mid].locked) {
       predictions[mid] = pred;
     }
@@ -1357,11 +1358,17 @@ function loadScores(){
       // matchStatus / matchClock 不在这里恢复，由 ESPN 实时驱动
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
-      if (!data._predVer || data._predVer < 11) {
+      const cleanScore = s => (s && s.split('-').length > 3) ? s.split('-').slice(-2).join('-') : s;
+      // 清洗脏数据：score字段含半场比分（如 '1-2-2'）的统一修正
+      for (const [k, v] of Object.entries(predictions)) {
+        if (v && v.score) v.score = cleanScore(v.score);
+        if (v && v.scoreB) v.scoreB = cleanScore(v.scoreB);
+      }
+      if (!data._predVer || data._predVer < 12) {
         // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
         const locked = {};
         for (const [k, v] of Object.entries(predictions)) {
-          if (v.locked) locked[k] = v;
+          if (v && v.locked) locked[k] = v;
         }
         predictions = locked;
       }
@@ -1371,7 +1378,7 @@ function loadScores(){
 function saveScores() {
   try {
     // 只持久化比分和预测，状态和时钟由 ESPN 实时驱动，不写入 localStorage
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 11}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 12}));
   } catch(e) {}
 }
 loadScores();
