@@ -1710,13 +1710,20 @@ function getTomorrowStr() {
 
 const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/predict';
 
-// SCF 预测（异步，结果写入 predictions 并触发渲染）
+// SCF 预测：异步调用 → 结果写入 predictions 并触发渲染
+// 规则：不依赖本地模型，SCF 返回前预测置空/显示加载中
 function fetchScfPrediction(m) {
   const params = new URLSearchParams({
     home: m.home,
     away: m.away,
     matchId: m.id || ''
   });
+  // 先标记为加载中（覆盖旧缓存）
+  const loading = { score: '...', probH: 0, probD: 0, probA: 0, confidence: '计算中', locked: false, predictedAt: '', lambda: {} };
+  if (!predictions[m.id]?.locked || !predictions[m.id]?.score || predictions[m.id].score === '...') {
+    predictions[m.id] = loading;
+    renderAll();
+  }
   fetch(SCF_PREDICT_URL + '?' + params.toString(), {
     cache: 'no-store',
     headers: { 'Accept': 'application/json' }
@@ -1724,26 +1731,29 @@ function fetchScfPrediction(m) {
     if (data.error) throw new Error(data.error);
     data.predictedAt = new Date().toISOString();
     data.locked = true;
-    // 只写未锁定的
-    if (!predictions[m.id]?.locked) {
-      predictions[m.id] = data;
-      savePredictions();
-      renderAll();
-      console.log('[SCF预测] ' + m.home + ' vs ' + m.away + ': ' + data.score);
-    }
+    // SCF 结果始终写入（覆盖本地/加载中）
+    predictions[m.id] = data;
+    savePredictions();
+    renderAll();
+    console.log('[SCF预测] ' + m.home + ' vs ' + m.away + ': ' + data.score);
   }).catch(err => {
     console.warn('[SCF预测] ' + m.home + ' vs ' + m.away + ' 调用失败', err.message);
+    // 失败时降级用本地模型
+    const fallback = predictMatch(m, null);
+    fallback.predictedAt = new Date().toISOString();
+    fallback.locked = true;
+    fallback.confidence = '(离线模式)';
+    predictions[m.id] = fallback;
+    savePredictions();
+    renderAll();
   });
 }
 
 function generateDailyPrediction(m) {
-  // 优先用本地模型（同步，保证渲染不阻塞）
-  const result = predictMatch(m, null);
-  result.predictedAt = new Date().toISOString();
-  result.locked = true;
-  // 同时异步调 SCF，结果到了覆盖
+  // 不再使用本地模型，全部走 SCF 异步预测
   fetchScfPrediction(m);
-  return result;
+  // 返回占位（让调用方不报错）
+  return { score: '...', probH: 0, probD: 0, probA: 0, confidence: '等待预测', locked: false, predictedAt: '', lambda: {} };
 }
 
 function checkAndPredict() {
