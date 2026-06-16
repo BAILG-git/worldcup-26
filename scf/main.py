@@ -323,17 +323,40 @@ def predict_match(home, away, match_id='', injuries=None, suspended=None):
                 pb['p'] *= 1.02
 
     s1 = probs[0] if probs else {'hg':1,'ag':1,'p':0.01}
-    # scoreB：概率第二高的比分（不限wdl，更激进）
-    s2 = probs[1] if len(probs) > 1 else {'hg':s1['hg']+1,'ag':s1['ag'],'p':0.01}
-    # scoreC：加一个大球备选（probs里总进球最高的）
+
+    # scoreB：概率第二高，且主客队进球差≤1（不出现悬殊比分）
+    s2 = None
+    for p in probs[1:]:
+        diff = abs(p['hg'] - p['ag'])
+        if diff <= 1 and p['p'] >= 0.02:
+            s2 = p
+            break
+    if not s2:
+        # 降级：允许 diff<=2
+        for p in probs[1:]:
+            if abs(p['hg']-p['ag']) <= 2 and p['p'] >= 0.02:
+                s2 = p
+                break
+    if not s2:
+        s2 = probs[1] if len(probs) > 1 else {'hg':s1['hg']+1,'ag':s1['ag'],'p':0.01}
+
+    # scoreC：大球备选，主客队进球差≤1
     scoreC = None
     for p in probs:
-        if (p['hg'] + p['ag']) > (s1['hg'] + s1['ag']) and p['p'] >= 0.03:
-            if not scoreC or (p['hg']+p['ag']) > (scoreC['hg']+scoreC['ag']):
+        total = p['hg'] + p['ag']
+        diff = abs(p['hg'] - p['ag'])
+        if total >= (s1['hg']+s1['ag']) and diff <= 1 and p['p'] >= 0.02:
+            if not scoreC or total > (scoreC['hg']+scoreC['ag']):
                 scoreC = p
     if not scoreC:
-        # 没有大球备选，用进球数+1的版本
-        scoreC = {'hg': s1['hg']+1, 'ag': s1['ag'], 'p': 0.01}
+        # 降级：diff<=2
+        for p in probs:
+            total = p['hg'] + p['ag']
+            if total >= (s1['hg']+s1['ag']) and abs(p['hg']-p['ag']) <= 2 and p['p'] >= 0.02:
+                if not scoreC or total > (scoreC['hg']+scoreC['ag']):
+                    scoreC = p
+    if not scoreC:
+        scoreC = s2
 
     scoreA = f"{s1['hg']}-{s1['ag']}"
     scoreB = f"{s2['hg']}-{s2['ag']}"
