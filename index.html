@@ -2030,13 +2030,12 @@ function predictMatch(m, oddsData){
   const siteImpact=siteBonus*0.20;
   const deltaS=hardScoreH+recentScore+h2hScore+injuryImpact+motImpact+homeScore+siteImpact;
 
-  // ===== 第二层：泊松λ计算（v15 修正版） =====
+  // ===== 第二层：泊松λ计算（v15.3 修正防守项） =====
   const AvgHG=1.65,AvgAG=1.35;
-  // 攻防强度：OI=主队进攻指数 DI=主队防守指数 OJ=客队进攻指数 DJ=客队防守指数
-  const OI=(hs.attack/10)*(AvgHG/1.1);
-  const DI=(hs.defense/10)*(AvgAG/1.1);
-  const OJ=(as.attack/10)*(AvgAG/1.1);
-  const DJ=(as.defense/10)*(AvgHG/1.1);
+  // 攻防强度（标准化：攻击/5.5=进攻强度，5.5/防守=防守弱点）
+  // 逻辑：主队进攻强→λH高；客队防守差→λH高（防守弱点在分子）
+  const homeAtkNorm=hs.attack/5.5, awayDefWeak=5.5/as.defense;
+  const awayAtkNorm=as.attack/5.5, homeDefWeak=5.5/hs.defense;
 
   // K1：综合实力修正（主客共用）
   // K1：非线性实力修正（强队指数放大 弱队压缩）
@@ -2082,11 +2081,11 @@ function predictMatch(m, oddsData){
   if((hs.style.includes('高压')||hs.style.includes('传控')||hs.style.includes('控球'))&&(as.style.includes('防守')||as.style.includes('反击')||as.style.includes('稳守')))K4=0.95;
   if((as.style.includes('高压')||as.style.includes('传控')||as.style.includes('控球'))&&(hs.style.includes('防守')||hs.style.includes('反击')||hs.style.includes('稳守')))K4=0.95;
 
-  // ===== λ最终计算（v15 核心：修正客队公式） =====
-  // 主队：λ₁ = OI × DJ × AvgHG × K1 × K2 × KH3 × K4
-  // 客队：λ₂ = OJ × DI × AvgAG × K1 × K3 × K4  （无K2，客队不享受主场加成）
-  let lambdaH=Math.max(0.3,Math.min(OI*DJ*AvgHG*K1*K2*KH3*K4,4.0));
-  let lambdaA=Math.max(0.2,Math.min(OJ*DI*AvgAG*K1*KA3*K4,3.5));
+  // ===== λ最终计算（v15.3 防守项改除法→正确逻辑） =====
+  // 主队：λ₁ = AvgHG × 主队进攻强度 × 客队防守弱点 × K1×K2×KH3×K4
+  // 客队：λ₂ = AvgAG × 客队进攻强度 × 主队防守弱点 × K1×KA3×K4
+  let lambdaH=Math.max(0.3,Math.min(AvgHG*homeAtkNorm*awayDefWeak*K1*K2*KH3*K4,4.5));
+  let lambdaA=Math.max(0.2,Math.min(AvgAG*awayAtkNorm*homeDefWeak*K1*KA3*K4,4.0));
 
   // ===== WC专属修正 =====
   let wcNote='';
