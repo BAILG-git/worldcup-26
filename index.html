@@ -1466,22 +1466,22 @@ function computeQualifiers() {
 // 1A↔3C, 1B↔3D, 1C↔3A, 1D↔3B, 1E↔3F, 1F↔3E, 1G↔3H, 1H↔3G
 // 唯一约束: 小组第一不碰自己组的第三（getThirdForWinner内处理）
 const Q_ZONES = {
-  Q1: ['A','B','C'], Q2: ['D','I','K'],
-  Q3: ['E','F','G'], Q4: ['H','J','L'],
+  'Q1': ['A','B','C'], 'Q2': ['D','I','K'],
+  'Q3': ['E','F','G'], 'Q4': ['H','J','L'],
 };
 const THIRD_MATRIX = {
-  A:{dflt:'C',fbs:['D','E','F','G','H','I','J','K','L','B']},
-  B:{dflt:'D',fbs:['E','F','G','H','I','J','K','L','A','C']},
-  C:{dflt:'A',fbs:['B','D','E','F','G','H','I','J','K','L']},
-  D:{dflt:'B',fbs:['A','C','E','F','G','H','I','J','K','L']},
-  E:{dflt:'F',fbs:['G','H','A','B','C','D','I','J','K','L']},
-  F:{dflt:'E',fbs:['G','H','A','B','C','D','I','J','K','L']},
-  G:{dflt:'H',fbs:['I','A','B','C','D','E','F','J','K','L']},
-  H:{dflt:'G',fbs:['I','A','B','C','D','E','F','J','K','L']},
-  I:{dflt:'J',fbs:['K','L','A','B','C','D','E','F','G','H']},
-  J:{dflt:'I',fbs:['K','L','A','B','C','D','E','F','G','H']},
-  K:{dflt:'L',fbs:['I','J','A','B','C','D','E','F','G','H']},
-  L:{dflt:'K',fbs:['I','J','A','B','C','D','E','F','G','H']},
+  'A':{'dflt':'C','fbs':['D','E','F','G','H','I','J','K','L','B']},
+  'B':{'dflt':'D','fbs':['E','F','G','H','I','J','K','L','A','C']},
+  'C':{'dflt':'A','fbs':['B','D','E','F','G','H','I','J','K','L']},
+  'D':{'dflt':'B','fbs':['A','C','E','F','G','H','I','J','K','L']},
+  'E':{'dflt':'F','fbs':['G','H','A','B','C','D','I','J','K','L']},
+  'F':{'dflt':'E','fbs':['G','H','A','B','C','D','I','J','K','L']},
+  'G':{'dflt':'H','fbs':['I','A','B','C','D','E','F','J','K','L']},
+  'H':{'dflt':'G','fbs':['I','A','B','C','D','E','F','J','K','L']},
+  'I':{'dflt':'J','fbs':['K','L','A','B','C','D','E','F','G','H']},
+  'J':{'dflt':'I','fbs':['K','L','A','B','C','D','E','F','G','H']},
+  'K':{'dflt':'L','fbs':['I','J','A','B','C','D','E','F','G','H']},
+  'L':{'dflt':'K','fbs':['I','J','A','B','C','D','E','F','G','H']},
 };
 // 获取某小组第一应对的第三名小组字母
 // 约束1: 不能碰自己小组的第三（1A不碰3A）
