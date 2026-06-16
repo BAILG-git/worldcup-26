@@ -1364,7 +1364,7 @@ function loadScores(){
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreB) v.scoreB = cleanScore(v.scoreB);
       }
-      if (!data._predVer || data._predVer < 12) {
+      if (!data._predVer || data._predVer < 13) {
         // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
         const locked = {};
         for (const [k, v] of Object.entries(predictions)) {
@@ -1378,7 +1378,7 @@ function loadScores(){
 function saveScores() {
   try {
     // 只持久化比分和预测，状态和时钟由 ESPN 实时驱动，不写入 localStorage
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 12}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 13}));
   } catch(e) {}
 }
 loadScores();
@@ -1718,8 +1718,7 @@ function generateDailyPrediction(m) {
 
 function checkAndPredict() {
   try {
-    const tomorrowStr = getTomorrowStr();
-    console.log('[预测] 检查明天比赛:', tomorrowStr);
+    console.log('[预测] 全量预测检查');
     let updated = false;
     let candidateCount = 0, backfillCount = 0;
     for (const ms of Object.values(GROUP_MATCHES)) {
@@ -1734,8 +1733,7 @@ function checkAndPredict() {
           updated = true;
           continue;
         }
-        // 常规：明天比赛预测
-        if (m.date !== tomorrowStr) continue;
+        // 全量：所有未开始、未锁定的比赛都生成预测
         candidateCount++;
         if (matchStatus[m.id] === 'FINISHED') continue;
         predictions[m.id] = generateDailyPrediction(m);
