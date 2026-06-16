@@ -1268,21 +1268,22 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   if (ns) saveScores();
   // ========== 旧预测数据回滚（v10：已完赛比赛锁定旧值） ==========
   const LEGACY_PREDICTIONS = {
-    'A_1': { score:'0-2-0', scoreB:'2-0', wdl:'客胜', wdlLabel:'墨西哥·胜', goalsNum:2, locked:true, isUpset:true },
-    'A_2': { score:'1-2-2', scoreB:'2-1', wdl:'客胜', wdlLabel:'韩国·胜', goalsNum:4, locked:true },
-    'A_3': { score:'0-1-1',   scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:3, locked:true },
-    'A_4': { score:'2-1-1',   scoreB:'1-1', wdl:'主胜', wdlLabel:'美国·胜', goalsNum:4, locked:true },
-    'B_1': { score:'0-2-0',   scoreB:'2-0', wdl:'客胜', wdlLabel:'加拿大·胜',goalsNum:2, locked:true, isUpset:true },
-    'B_2': { score:'1-2-1',   scoreB:'2-1', wdl:'客胜', wdlLabel:'智利·胜',   goalsNum:4, locked:true },
-    'C_1': { score:'0-1',     scoreB:'1-1', wdl:'客胜', wdlLabel:'英格兰·胜', goalsNum:1, locked:true },
-    'C_2': { score:'1-1',     scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
-    'C_3': { score:'1-3-1',   scoreB:'1-1', wdl:'主胜', wdlLabel:'加纳·胜',   goalsNum:5, locked:true, isUpset:true },
-    'D_1': { score:'0-1',     scoreB:'1-1', wdl:'客胜', wdlLabel:'巴西·胜',   goalsNum:1, locked:true },
-    'D_2': { score:'3-1-2-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'哥伦比亚·胜',goalsNum:6, locked:true },
-    'E_1': { score:'4-0-4-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'德国·胜',   goalsNum:8, locked:true },
-    'E_2': { score:'2-0-1-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'荷兰·胜',   goalsNum:2, locked:true },
-    'F_1': { score:'1-1-2-2', scoreB:'2-2', wdl:'平局', wdlLabel:'平局',       goalsNum:5, locked:true },
-    'G_1': { score:'3-0-2-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'瑞典·胜',   goalsNum:5, locked:true },
+    // score = 全场比分（不含半场），scoreB = 备选全场比分
+    'A_1': { score:'0-2', scoreB:'2-0', wdl:'客胜', wdlLabel:'墨西哥·胜', goalsNum:2, locked:true, isUpset:true },
+    'A_2': { score:'1-2', scoreB:'2-1', wdl:'客胜', wdlLabel:'韩国·胜', goalsNum:3, locked:true },
+    'A_3': { score:'0-1', scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:1, locked:true },
+    'A_4': { score:'2-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'美国·胜', goalsNum:3, locked:true },
+    'B_1': { score:'0-2', scoreB:'2-0', wdl:'客胜', wdlLabel:'加拿大·胜',goalsNum:2, locked:true, isUpset:true },
+    'B_2': { score:'1-2', scoreB:'2-1', wdl:'客胜', wdlLabel:'智利·胜',   goalsNum:3, locked:true },
+    'C_1': { score:'0-1', scoreB:'1-1', wdl:'客胜', wdlLabel:'英格兰·胜', goalsNum:1, locked:true },
+    'C_2': { score:'1-1', scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
+    'C_3': { score:'1-3', scoreB:'1-1', wdl:'主胜', wdlLabel:'加纳·胜',   goalsNum:4, locked:true, isUpset:true },
+    'D_1': { score:'0-1', scoreB:'1-1', wdl:'客胜', wdlLabel:'巴西·胜',   goalsNum:1, locked:true },
+    'D_2': { score:'3-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'哥伦比亚·胜',goalsNum:4, locked:true },
+    'E_1': { score:'4-0', scoreB:'1-1', wdl:'主胜', wdlLabel:'德国·胜',   goalsNum:4, locked:true },
+    'E_2': { score:'2-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'荷兰·胜',   goalsNum:2, locked:true },
+    'F_1': { score:'1-1', scoreB:'2-2', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
+    'G_1': { score:'3-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'瑞典·胜',   goalsNum:3, locked:true },
   };
   for (const [mid, pred] of Object.entries(LEGACY_PREDICTIONS)) {
     if (!predictions[mid] || !predictions[mid].locked) {
@@ -1813,7 +1814,7 @@ function renderMatches(){
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
         </div>
-        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score} ${p.scoreB}</b></span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备选${p.scoreB}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
   }
