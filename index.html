@@ -1708,11 +1708,41 @@ function getTomorrowStr() {
   return `${t.getMonth() + 1}月${t.getDate()}日`;
 }
 
+const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/predict';
+
+// SCF 预测（异步，结果写入 predictions 并触发渲染）
+function fetchScfPrediction(m) {
+  const params = new URLSearchParams({
+    home: m.home,
+    away: m.away,
+    matchId: m.id || ''
+  });
+  fetch(SCF_PREDICT_URL + '?' + params.toString(), {
+    cache: 'no-store',
+    headers: { 'Accept': 'application/json' }
+  }).then(r => r.json()).then(data => {
+    if (data.error) throw new Error(data.error);
+    data.predictedAt = new Date().toISOString();
+    data.locked = true;
+    // 只写未锁定的
+    if (!predictions[m.id]?.locked) {
+      predictions[m.id] = data;
+      savePredictions();
+      renderAll();
+      console.log('[SCF预测] ' + m.home + ' vs ' + m.away + ': ' + data.score);
+    }
+  }).catch(err => {
+    console.warn('[SCF预测] ' + m.home + ' vs ' + m.away + ' 调用失败', err.message);
+  });
+}
+
 function generateDailyPrediction(m) {
-  // 复用 predictMatch 模型（不传赔率，纯粹基于球队数据）
+  // 优先用本地模型（同步，保证渲染不阻塞）
   const result = predictMatch(m, null);
   result.predictedAt = new Date().toISOString();
   result.locked = true;
+  // 同时异步调 SCF，结果到了覆盖
+  fetchScfPrediction(m);
   return result;
 }
 
