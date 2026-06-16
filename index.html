@@ -1356,7 +1356,7 @@ function loadScores(){
       // matchStatus / matchClock 不在这里恢复，由 ESPN 实时驱动
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
-      if (!data._predVer || data._predVer < 10) {
+      if (!data._predVer || data._predVer < 11) {
         // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
         const locked = {};
         for (const [k, v] of Object.entries(predictions)) {
@@ -1370,7 +1370,7 @@ function loadScores(){
 function saveScores() {
   try {
     // 只持久化比分和预测，状态和时钟由 ESPN 实时驱动，不写入 localStorage
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 10}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 11}));
   } catch(e) {}
 }
 loadScores();
@@ -1908,7 +1908,7 @@ async function showMatchDetail(m){
     <div class="prediction-box">
       <div class="pred-row">
         <div class="pred-item"><div class="pred-label">实力碾压</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
-        <div class="pred-item"><div class="pred-label">意外胶着</div><div class="pred-val" style="font-size:24px;color:var(--accent)">${pred.scoreB}</div></div>
+        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--accent)">${pred.scoreB}</div></div>
         <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
         <div class="pred-item"><div class="pred-label">总进球数</div><div class="pred-val">${pred.goals}</div></div>
       </div>
@@ -1959,7 +1959,7 @@ function closeModal(){
   document.getElementById('matchModal').style.display='none';
 }
 
-// ========== PREDICTION ENGINE v2 — 赔率驱动 + 强弱自适应 ==========
+// ========== PREDICTION ENGINE v11 — 赔率驱动 + Poisson 分布 ==========
 function predictMatch(m, oddsData){
   const td=TEAM_DATA;
   const h=td[m.home]||{value:"1亿欧",rank:50,players:[],suspended:[],missing:[]};
@@ -2081,125 +2081,43 @@ function predictMatch(m, oddsData){
   // 战意微调大小球
   if (motivation > 1.15) goalBase = goalBase * 0.95 + (motivation - 1) * 1.2;
 
-  // ========== 种子随机 ==========
-  const seed = hashCode(m.id);
-  const rng = (s) => { let x = Math.sin(s * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-
-  // ========== 强弱判断 & 激进/保守策略 ==========
+  // ========== Poisson 比分预测 ==========
   const absAdv = Math.abs(adv);
-  // 碾压级：absAdv > 1.0（如西班牙vs佛得角、法国vs巴拿马等）
-  const isCrushing = absAdv > 1.0;
-  // 明显强弱：absAdv > 0.6
-  const isBlowout = absAdv > 0.6;
-  const isEven = absAdv <= 0.35;  // 势均力敌
-
-  // ========== 进球期望（赔率驱动 + 强弱自适应）==========
   const base = goalBase / 2;
-  let strongExp, weakExp;
-  if (isCrushing) {
-    // 碾压级：强队进球期望大幅提升，弱队几乎为0
-    strongExp = base * (1 + Math.min(absAdv, 3.0) * 1.6);
-    weakExp = Math.max(0.08, base * (1 - Math.min(absAdv, 2.5) * 0.92));
-  } else if (isBlowout) {
-    // 明显强弱：强队进球期望较高
-    strongExp = base * (1 + Math.min(absAdv, 2.5) * 1.2);
-    weakExp = Math.max(0.15, base * (1 - Math.min(absAdv, 2.0) * 0.8));
-  } else {
-    strongExp = base * (1 + Math.min(absAdv, 1.0) * 0.5);
-    weakExp = Math.max(0.4, base * (1 - Math.min(absAdv, 1.0) * 0.4));
-  }
-
+  // 平滑的进球期望：实力差距越大，强弱方分化越明显
+  const strongExp = base * (1 + Math.min(absAdv, 2.0) * 0.8);
+  const weakExp = Math.max(0.2, base * (1 - Math.min(absAdv, 1.5) * 0.6));
   const hExp = adv >= 0 ? strongExp : weakExp;
   const aExp = adv >= 0 ? weakExp : strongExp;
 
-  // 噪声控制：
-  // 碾压级 → 噪声极小（强队碾压可预测），强队进球更激进
-  // 强弱悬殊 → 噪声小（结果可预测）
-  // 势均力敌 → 噪声大（不确定性高），比分保守
-  let noiseScale;
-  if (isCrushing) {
-    noiseScale = 1.0 / (1 + absAdv * 2.0);
-  } else if (isBlowout) {
-    noiseScale = 1.2 / (1 + absAdv * 1.5);
-  } else if (isEven) {
-    noiseScale = 1.0;
-  } else {
-    noiseScale = 1.5 / (1 + absAdv * 1.0);
+  function poissonP(k, lam) {
+    let f = 1;
+    for (let i = 2; i <= k; i++) f *= i;
+    return Math.exp(-lam) * Math.pow(lam, k) / f;
   }
 
-  // ========== 场景一：实力碾压（赔率驱动主力比分）==========
-  function genBlowout(seedOff) {
-    const r1 = rng(seed + seedOff), r2 = rng(seed + seedOff + 17);
-    const isStronger = adv >= 0;
-    // 强队方噪声小，弱队方额外限制
-    const sNoise = noiseScale;
-    const wNoise = Math.max(0.2, noiseScale * 0.4); // 弱队进球波动极小
-    const hNoise = isStronger ? sNoise : wNoise;
-    const aNoise = isStronger ? wNoise : sNoise;
-    let hg = Math.round(hExp + (r1 - 0.5) * hNoise + (r2 - 0.5) * hNoise * 0.5);
-    let ag = Math.round(aExp + (r2 - 0.5) * aNoise + (r1 - 0.5) * aNoise * 0.5);
-    // 强队打弱队激进：强队保底2球，弱队上限1球
-    // 碾压级更激进：强队保底3球，弱队上限0球
-    if (isCrushing) {
-      if (isStronger) { hg = Math.max(3, hg); ag = Math.min(0, ag); }
-      else { ag = Math.max(3, ag); hg = Math.min(0, hg); }
-    } else if (isBlowout) {
-      if (isStronger) { hg = Math.max(2, hg); ag = Math.min(1, ag); }
-      else { ag = Math.max(2, ag); hg = Math.min(1, hg); }
+  // 构建比分概率矩阵 0~5
+  const probs = [];
+  for (let hg = 0; hg <= 5; hg++) {
+    for (let ag = 0; ag <= 5; ag++) {
+      probs.push({ hg, ag, p: poissonP(hg, hExp) * poissonP(ag, aExp) });
     }
-    hg = Math.max(0, Math.min(hg, 9));
-    ag = Math.max(0, Math.min(ag, 9));
-    return { hg, ag };
   }
+  probs.sort((a, b) => b.p - a.p);
 
-  // ========== 场景二：意外胶着（弱队超水平，强队失常）==========
-  function genTight(seedOff) {
-    const r1 = rng(seed + seedOff), r2 = rng(seed + seedOff + 23);
-    const isStronger = adv >= 0;
-    // 势均力敌时两个场景都保守
-    if (isEven) {
-      // 胶着场景：1-1, 0-1, 1-0, 0-0 类型
-      const tExp = base * 0.9;
-      let hg = Math.round(tExp + (r1 - 0.5) * 0.8);
-      let ag = Math.round(tExp + (r2 - 0.5) * 0.8);
-      hg = Math.max(0, Math.min(hg, 2));
-      ag = Math.max(0, Math.min(ag, 2));
-      return { hg, ag };
-    }
-    const boostWeak = Math.max(0.4, weakExp * (1 + absAdv * 1.2));
-    const dampStrong = strongExp * (1 - absAdv * 0.2);
-    const tHExp = isStronger ? dampStrong : boostWeak;
-    const tAExp = isStronger ? boostWeak : dampStrong;
-    const tNoise = noiseScale * 1.3;
-    const tWeakMin = Math.min(tHExp, tAExp);
-    const tWeakNoise = tWeakMin < 0.5 ? tNoise * 0.3 : tNoise;
-    const hNoise = isStronger ? tNoise : tWeakNoise;
-    const aNoise = isStronger ? tWeakNoise : tNoise;
-    let hg = Math.round(tHExp + (r1 - 0.5) * hNoise + (r2 - 0.5) * hNoise * 0.5);
-    let ag = Math.round(tAExp + (r2 - 0.5) * aNoise + (r1 - 0.5) * aNoise * 0.5);
-    hg = Math.max(0, Math.min(hg, 5));
-    ag = Math.max(0, Math.min(ag, 5));
-    return { hg, ag };
+  // 主预测：概率最高
+  const s1 = probs[0];
+  // 备选：找结果不同（胜/平/负不同）的最高概率比分
+  const s1W = s1.hg > s1.ag ? 'H' : s1.hg < s1.ag ? 'A' : 'D';
+  let s2 = null;
+  for (const p of probs) {
+    const pw = p.hg > p.ag ? 'H' : p.hg < p.ag ? 'A' : 'D';
+    if (pw !== s1W) { s2 = p; break; }
   }
+  if (!s2) s2 = probs.find(p => p.hg !== s1.hg || p.ag !== s1.ag) || { hg: s1.hg, ag: (s1.ag || 1) + 1 };
 
-  const s1 = genBlowout(0);
-  const s2 = genTight(300);
   let scoreA = `${s1.hg}-${s1.ag}`;
   let scoreB = `${s2.hg}-${s2.ag}`;
-  if (scoreA === scoreB) {
-    if (s2.ag > 0) s2.ag--; else s2.ag++;
-    scoreB = `${s2.hg}-${s2.ag}`;
-  }
-
-  // ========== 爆冷/胶着判断 ==========
-  const upsetProb = 0.08 + Math.exp(-absAdv * 3.2) * 0.30;
-  const upsetPct = Math.round(upsetProb * 100);
-  const s1Winner = s1.hg > s1.ag ? 'H' : s1.hg < s1.ag ? 'A' : 'D';
-  const s2Winner = s2.hg > s2.ag ? 'H' : s2.hg < s2.ag ? 'A' : 'D';
-  const strongerIsHome = adv >= 0;
-  const isUpset =
-    (strongerIsHome && (s2Winner === 'A' || (s1Winner === 'H' && s2Winner === 'D'))) ||
-    (!strongerIsHome && (s2Winner === 'H' || (s1Winner === 'A' && s2Winner === 'D')));
 
   // ========== 赛果 ==========
   const hg = s1.hg, ag = s1.ag;
@@ -2208,23 +2126,10 @@ function predictMatch(m, oddsData){
   else if (hg < ag) { wdl = '客胜'; wdlLabel = `${m.away}·胜`; }
   else { wdl = '平局'; wdlLabel = '平局'; }
 
-  // 胶着场景说明
-  let tightNote = '';
-  if (isUpset) {
-    const upWinnerLabel = s2.hg > s2.ag ? tname(m.home) : s2.hg < s2.ag ? tname(m.away) : '';
-    if (s2.hg === s2.ag) tightNote = '强队若失常可能出平局';
-    else tightNote = `若${upWinnerLabel}超水平发挥可能爆冷`;
-  } else if (absAdv > 1.0) {
-    const gap = Math.round(s1.hg + s1.ag - s2.hg - s2.ag);
-    tightNote = `弱队若死守，分差可能缩小至${gap}球`;
-  } else {
-    tightNote = '若弱队战术执行到位，可能咬住比分';
-  }
-
   const totalG = hg + ag;
   let gDesc = totalG <= 1 ? '极低进球' : totalG <= 3 ? '中等进球' : totalG <= 5 ? '高进球' : '进球大战';
 
-  // ========== 结构化分析（七维因素 + 赔率） ==========
+  // ========== 分析 ==========
   let reasons = [];
   const strongName = adv >= 0 ? tname(m.home) : tname(m.away);
   const weakName = adv >= 0 ? tname(m.away) : tname(m.home);
@@ -2233,9 +2138,9 @@ function predictMatch(m, oddsData){
   const strongRank = adv >= 0 ? hr : ar;
   const weakRank = adv >= 0 ? ar : hr;
 
-  if (absAdv > 1.2) {
-    reasons.push(`【实力】${strongName}全面占优（身价${strongVal} vs ${weakVal}，FIFA#${strongRank} vs #${weakRank}）`);
-  } else if (absAdv > 0.5) {
+  if (absAdv > 0.8) {
+    reasons.push(`【实力】${strongName}明显占优（身价${strongVal} vs ${weakVal}，FIFA#${strongRank} vs #${weakRank}）`);
+  } else if (absAdv > 0.3) {
     reasons.push(`【实力】${strongName}略占上风（身价${strongVal} vs ${weakVal}，排名#${strongRank} vs #${weakRank}）`);
   } else {
     reasons.push(`【实力】双方接近（身价${h.value} vs ${a.value}，排名#${Math.min(hr, ar)} vs #${Math.max(hr, ar)}）`);
@@ -2259,28 +2164,14 @@ function predictMatch(m, oddsData){
     reasons.push(`【伤停】双方阵容完整，无明显伤停影响`);
   }
 
-  // 赔率信息
   if (oddsInfo) {
     reasons.push(`【盘口】${oddsInfo.asian.replace('亚盘 ', '')} | ${oddsInfo.ou.replace('大小球 ', '')} | 市场${oddsInfo.implied}`);
     if (oddsInfo.ml) reasons.push(`【赔率】${oddsInfo.ml}`);
   }
 
-  // 强弱策略说明
-  if (isCrushing) {
-    reasons.push(`【策略】${strongName}对${weakName}实力碾压，预测比分激进（大比分）`);
-  } else if (isBlowout) {
-    reasons.push(`【策略】${strongName}对${weakName}实力悬殊，预测比分偏激进`);
-  } else if (isEven) {
-    reasons.push(`【策略】双方实力接近，预测比分偏保守（小比分为主）`);
-  }
-
-  // 进球预期 & 场景
-  const predTotal = Math.round((hExp + aExp) * 1.05);
-  reasons.push(`【预期】进球约${predTotal}球（市场${goalBase}），${gDesc}节奏`);
-  reasons.push(`【比分】①主力预测 ${scoreA}；②胶着备选 ${scoreB}（${tightNote}）`);
-
-  if (upsetPct >= 25) reasons.push(`【冷门】概率${upsetPct}%，建议谨慎对待`);
-  else if (upsetPct >= 15) reasons.push(`【冷门】存在${upsetPct}%可能，不排除意外`);
+  const predTotal = Math.round(hExp + aExp);
+  reasons.push(`【预期】进球约${predTotal}球（${gDesc}）`);
+  reasons.push(`【比分】①${scoreA}（${wdlLabel}）②${scoreB}（备选）`);
 
   return {
     score: scoreA,
@@ -2289,7 +2180,7 @@ function predictMatch(m, oddsData){
     goals: totalG + `球 (${gDesc})`,
     goalsNum: totalG,
     reason: reasons.join('；'),
-    isUpset,
+    isUpset: false,
     oddsInfo
   };
 }
