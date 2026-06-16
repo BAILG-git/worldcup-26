@@ -1965,89 +1965,199 @@ function closeModal(){
   document.getElementById('matchModal').style.display='none';
 }
 
-// ========== PREDICTION ENGINE v11 — 赔率驱动 + Poisson 分布 ==========
+// ========== PREDICTION ENGINE v14 — 四维度打分 + 泊松λ多层修正 + 世界杯专属规则 ==========
 function predictMatch(m, oddsData){
   const td=TEAM_DATA;
   const h=td[m.home]||{value:"1亿欧",rank:50,players:[],suspended:[],missing:[]};
   const a=td[m.away]||{value:"1亿欧",rank:50,players:[],suspended:[],missing:[]};
-
-  // 解析身价数值（兼容"15.3亿欧"/"4580万欧"等格式）
-  const parseVal=v=>{
-    if(typeof v!=='string')return 1;
-    if(v.includes('亿'))return parseFloat(v)*100;
-    if(v.includes('万'))return parseFloat(v)/100;
-    return parseFloat(v)||1;
-  };
-  const hv=parseVal(h.value), av=parseVal(a.value);
-  const hr=h.rank||50, ar=a.rank||50;
-
-  // ========== 1. 身价指数（对数压缩差距） ==========
-  const vi=Math.log2(hv+0.5)-Math.log2(av+0.5);
-  // ========== 2. 排名指数（增强权重：排名悬殊是强信号） ==========
-  const ri=(ar-hr)*0.022;
-  // ========== 3. 打法风格 ==========
+  const parseVal=v=>{if(typeof v!=='string')return 1;if(v.includes('亿'))return parseFloat(v)*100;if(v.includes('万'))return parseFloat(v)/100;return parseFloat(v)||1;};
+  const hv=parseVal(h.value),av=parseVal(a.value);const hr=h.rank||50,ar=a.rank||50;
   const hs=STYLE_DATA[m.home]||{style:"整体压迫",attack:5.5,defense:5.5,tempo:"中",desc:"均衡型"};
   const as=STYLE_DATA[m.away]||{style:"整体压迫",attack:5.5,defense:5.5,tempo:"中",desc:"均衡型"};
-  const styleBonus=styleMatchup(hs.style, as.style);
-  const totalAtk=(hs.attack+as.attack)/20;
-  const totalDef=(hs.defense+as.defense)/20;
-  // ========== 4. 战意 ==========
-  function getMotivation(mid){
-    const parts=mid.split(/[_-]/);
-    if(/^[A-L]$/.test(parts[0])){
-      const round=parseInt(parts[1])||0;
-      if(round>=4) return 1.20;
-      if(round>=2) return 1.08;
-      return 1.00;
+  const hInj=getTeamInjuries(m.home),aInj=getTeamInjuries(m.away);
+  const hSus=(h.suspended||[]).length,aSus=(a.suspended||[]).length;
+
+  // ===== 第一层：四维度打分 =====
+  // 硬实力40%（Elo积分差 + 排名差 + 攻防属性差 + 修正）
+  const eloH=Math.log10(Math.max(hv,0.01))*30+1300,eloA=Math.log10(Math.max(av,0.01))*30+1300;
+  const eloDiff=eloH-eloA,rSH=Math.max(0,100-hr),rSA=Math.max(0,100-ar);
+  // 修正规则：东道主额外+8分；卫冕冠军(阿根廷)前2场-5分
+  const isHost=(m.hostTeam===m.home);
+  const DEFENDING_CHAMP='阿根廷'; // 2022世界杯卫冕冠军
+  const gpInfo=m.id.split(/[_-]/),gRound=/^[A-L]$/.test(gpInfo[0])?parseInt(gpInfo[1])||1:0;
+  const isDefendingHome=(m.home===DEFENDING_CHAMP&&gRound>=1&&gRound<=2);
+  const isDefendingAway=(m.away===DEFENDING_CHAMP&&gRound>=1&&gRound<=2);
+  let hardBonus=0;
+  if(isHost)hardBonus+=8; // 东道主+8分
+  if(isDefendingHome)hardBonus-=5; // 卫冕冠军主场前2场-5分
+  if(isDefendingAway)hardBonus+=5; // 对阵卫冕冠军时对方减5分等效己方+5
+  const hardScoreH=((eloDiff>0?55:45)+(rSH-rSA)*0.25+(hs.attack-as.attack)*1.5+(hs.defense-as.defense)*1.2+hardBonus)*0.40;
+  // 近期状态25%（攻防比值 + 身价排名匹配度）
+  const formH=(hs.attack/Math.max(hs.defense,1))*10,formA=(as.attack/Math.max(as.defense,1))*10;
+  const cH=hv>0?rSH/(hv*0.5+10):0.5,cA=av>0?rSA/(av*0.5+10):0.5;
+  // 修正规则：连续3场零封防守+15；连续哑火进攻-12
+  let formBonusH=0,formBonusA=0;
+  if(hs.defense>=7.5&&hs.attack<=4.0)formBonusA-=12; // 主队哑火→客队受益
+  if(as.defense>=7.5&&as.attack<=4.0)formBonusH-=12; // 客队哑火→主队受益
+  if(hs.defense>=8.0)formBonusH+=15; // 主队零封能力强
+  if(as.defense>=8.0)formBonusA+=15; // 客队零封能力强
+  const recentScore=((formH-formA+formBonusH-formBonusA)+(cH-cA)*5)*0.25;
+  // 交锋克制15%（风格克制 + 洲际加成 + H2H修正）
+  const styleBonus=styleMatchup(hs.style,as.style);
+  const contMap={西班牙:'EU',德国:'EU',法国:'EU',英格兰:'EU',葡萄牙:'EU',荷兰:'EU',意大利:'EU',比利时:'EU',克罗地亚:'EU',瑞士:'EU',波兰:'EU',奥地利:'EU',乌克兰:'EU',捷克:'EU',匈牙利:'EU',罗马尼亚:'EU',塞尔维亚:'EU',斯洛伐克:'EU',斯洛文尼亚:'EU',巴西:'SA',阿根廷:'SA',乌拉圭:'SA',厄瓜多尔:'SA',巴拉圭:'SA',哥伦比亚:'SA',智利:'SA',秘鲁:'SA',美国:'NA',墨西哥:'NA',加拿大:'NA',哥斯达黎加:'NA',日本:'AS',韩国:'AS',澳大利亚:'AS',伊朗:'AS',沙特:'AS',卡塔尔:'AS',加纳:'AF',摩洛哥:'AF',喀麦隆:'AF',塞内加尔:'AF',突尼斯:'AF',埃及:'AF',南非:'AF',科特迪瓦:'AF',新西兰:'OC'};
+  const isSameContinent=(contMap[m.home]||'??']===(contMap[m.away]||'??');
+  // 修正规则：近2次交手弱队不败(实力强方近期未胜对手)，实力分强调下调10%
+  // 通过风格克制+实力差距综合判断：若风格被克制且实力差距<8则视为潜在"弱队不败"
+  let h2hPenalty=0;
+  if(styleBonus<-0.15&&Math.abs(eloDiff)<150)h2hPenalty=-0.10; // 弱队战术克制+实力接近
+  if(m.h2h&&m.h2h.weakWins>=2)h2hPenalty=-0.10; // 有H2H数据时直接使用
+  const h2hScore=(styleBonus+(isSameContinent?0.05:0)+h2hPenalty)*0.15;
+  // 临场修正20%（伤停 + 战意 + 主客场 + 赛程修正）
+  const hKeyInjury=hInj.filter(i=>/(前锋|后卫|核心|队长|主力|攻击手|组织|后腰|中卫|门将|边锋|影锋|中锋|边卫|边后卫|中后卫|前腰|中场)/i.test(i.position||i.role||'')).length;
+  const aKeyInjury=aInj.filter(i=>/(前锋|后卫|核心|队长|主力|攻击手|组织|后腰|中卫|门将|边锋|影锋|中锋|边卫|边后卫|中后卫|前腰|中场)/i.test(i.position||i.role||'')).length;
+  const injuryImpact=(-hKeyInjury*0.08+aKeyInjury*0.08-hSus*0.06+aSus*0.06)*0.20;
+  function getMotivationObj(mid){const p=mid.split(/[_-]/);if(/^[A-L]$/.test(p[0])){const r=parseInt(p[1])||0;if(r>=3)return{val:1.30,label:'生死战'};if(r===2)return{val:1.12,label:'关键战'};return{val:1.00,label:'首轮'};}if(/r32/.test(mid))return{val:1.25,label:'淘汰赛'};if(/r16/.test(mid))return{val:1.30,label:'16强'};if(/qf/.test(mid))return{val:1.35,label:'8强'};if(/sf/.test(mid))return{val:1.40,label:'4强'};if(/final/.test(mid))return{val:1.45,label:'决赛'};return{val:1.10,label:'常规'};}
+  const motivationObj=getMotivationObj(m.id);const motivation=motivationObj.val;
+  const motImpact=(motivation-1)*8*0.20;
+  // 修正规则：小组赛出线生死战意+10；轮换多名主力直接进攻-20
+  let siteBonus=0;
+  if(gRound>=3)siteBonus+=10; // 小组第3轮生死战
+  if(m.rotation&&m.rotation.count>=3)siteBonus-=20; // 轮换3名以上主力
+  // isHost 已在硬实力层定义，此处复用
+  const homeScore=(isHost?6:2)*0.20;
+  const siteImpact=siteBonus*0.20;
+  const deltaS=hardScoreH+recentScore+h2hScore+injuryImpact+motImpact+homeScore+siteImpact;
+
+  // ===== 第二层：泊松λ计算 =====
+  const AvgHG=1.45,AvgAG=1.15;
+  // 攻防强度
+  const OI=(hs.attack/10)*(AvgHG/1.1),DI=(hs.defense/10)*(AvgAG/1.1);
+  const OJ=(as.attack/10)*(AvgAG/1.1),DJ=(as.defense/10)*(AvgHG/1.1);
+  // K修正系数
+  const K1=deltaS>0?(1+deltaS/500):(1+deltaS/800);
+  // K2: 东道主1.2; 中立场地(含淘汰赛)1.0; 客场0.85
+  const isKnockout=/r32|r16|qf|sf|final/.test(m.id);
+  const K2=isHost&&!isKnockout?1.2:(m.home?1.0:0.85);
+  let KH3=1.0,KA3=1.0;if(hKeyInjury>=2)KH3-=0.5;else if(hKeyInjury===1)KH3-=0.25;
+  if(aKeyInjury>=2)KA3-=0.5;else if(aKeyInjury===1)KA3-=0.25;
+  if(motivation>=1.28){KH3+=0.15;KA3+=0.15;}
+  let K4=1.0;
+  if((hs.style.includes('高压')||hs.style.includes('传控')||hs.style.includes('攻势'))&&(as.style.includes('防守')||as.style.includes('反击')||as.style.includes('稳健')))K4=0.95;
+  // λ计算
+  let lambdaH=Math.max(0.3,Math.min(OI*DJ*AvgHG*K1*K2*KH3*K4,4.0));
+  let lambdaA=Math.max(0.2,Math.min(OJ*DI*AvgAG*(2-K1)*KA3*K4,3.5));
+  // WC专属修正（赛会制独有，降低模型误差）
+  const gp=m.id.split(/[_-]/),gL=/^[A-L]$/.test(gp[0])?gp[0]:null,gR=gL?parseInt(gp[1])||1:0;let wcNote='';
+  // 小组赛阶段修正
+  if(gR===1||gR===2){
+    // 前两轮战意低：出线无忧球队(强队)进攻λ下调0.2
+    if(Math.abs(deltaS)>15){lambdaH=Math.max(0.3,lambdaH-0.2);lambdaA=Math.max(0.2,lambdaA-0.2);wcNote='出线无忧保守';}
+  }
+  if(gR>=3){
+    // 第三轮生死战：抢分队伍进攻λ上调0.3，防守强度下降
+    lambdaH=Math.min(4.0,lambdaH+0.3);lambdaA=Math.min(3.5,lambdaA+0.3);wcNote='第三轮生死战';
+  }
+  // 同大洲球队交锋：风格克制放大（已在h2hScore中+5%体现）
+  if(isSameContinent&&!wcNote)wcNote='同大洲交锋';
+  // 淘汰赛阶段修正
+  if(/r32|r16|qf|sf|final/.test(m.id)){
+    wcNote=wcNote?'淘汰赛·'+wcNote:'淘汰赛';
+    // 淘汰赛无客场优势，K2统一为1（已在上面K2定义处理）
+  }
+  // 赔率校准
+  let oddsInfo=null,marketImposed=null;
+  let espnOdds=espnOddsCache[m.home+'_'+m.away]||espnOddsCache[m.away+'_'+m.home]||null;
+  function mlToDec(ml){ml=String(ml);if(ml.startsWith('+'))return 1+parseFloat(ml.slice(1))/100;if(ml.startsWith('-'))return 1+100/Math.abs(parseFloat(ml));return parseFloat(ml)>=1?parseFloat(ml):0;}
+  function mlToProbFn(ml){const d=mlToDec(ml);return d>0?1/d:0;}
+  let spread=0,ouGoalBase=lambdaH+lambdaA;
+  if(espnOdds&&espnOdds.mlHome&&espnOdds.mlAway){
+    const hd=mlToDec(espnOdds.mlHome),ad=mlToDec(espnOdds.mlAway),dd=espnOdds.mlDraw?mlToDec(espnOdds.mlDraw):0;
+    const hp=mlToProbFn(espnOdds.mlHome),ap=mlToProbFn(espnOdds.mlAway),dp=dd>0?1/dd:0,tp=hp+ap+dp;
+    marketImposed=tp>0?{h:hp/tp,d:dp/tp,a:ap/tp}:null;spread=parseFloat(espnOdds.spread)||0;
+    if(espnOdds.ou>0)ouGoalBase=espnOdds.ou;
+    // 赔率市场二次校准（过滤模型偏差）
+    if(marketImposed){
+      const th=poissonWin(lambdaH,lambdaA,'home');
+      const dev=Math.abs(marketImposed.h-th);
+      if(dev>0.08){
+        // 模型主胜概率比机构隐含概率高8%以上→主胜高置信
+        const aj=dev*0.3;
+        lambdaH=Math.max(0.3,Math.min(lambdaH*(1+aj),4));
+        lambdaA=Math.max(0.2,Math.min(lambdaA*(1-aj),3.5));
+        wcNote=(wcNote?wcNote+'·':'')+'高置信';
+      }
+      if(dev>0.12){
+        // 若理论与市场严重背离(差值>12%)，触发临场变量二次修正标记
+        wcNote=(wcNote?wcNote+'·':'')+'市场严重背离';
+      }
     }
-    if(/r32/.test(mid)) return 1.25;
-    if(/r16/.test(mid)) return 1.30;
-    if(/qf/.test(mid)) return 1.35;
-    if(/sf/.test(mid)) return 1.40;
-    if(/final/.test(mid)) return 1.45;
-    return 1.10;
+    oddsInfo={euro:`欧盘 ${hd.toFixed(2)}/${dd.toFixed(2)}/${ad.toFixed(2)}`,asian:`亚盘 ${spread>0?'+':''}${spread}`,ou:`大小球 ${ouGoalBase.toFixed(1)}`,implied:`${Math.round(marketImposed.h*100)}%/${Math.round(marketImposed.d*100)}%/${Math.round(marketImposed.a*100)}%`,ml:`美赔 H=${espnOdds.mlHome} D=${espnOdds.mlDraw||'--'} A=${espnOdds.mlAway}`};
+  }else if(oddsData&&oddsData.euro){
+    const o=oddsData.euro,hp=1/o.Home,dp=1/o.Draw,ap=1/o.Away,tot=hp+dp+ap;
+    marketImposed={h:hp/tot,d:dp/tot,a:ap/tot};const aline=oddsData.asian?oddsData.asian.line:0;spread=aline;
+    if(oddsData.overUnder)ouGoalBase=oddsData.overUnder;
+    oddsInfo={euro:`欧盘 ${o.Home}/${o.Draw}/${o.Away}`,asian:oddsData.asian?`亚盘 ${aline>0?'+':''}${aline}`:'--',ou:oddsData.overUnder?`大小球 ${ouGoalBase}`:'--',implied:`${Math.round(marketImposed.h*100)}%/${Math.round(marketImposed.d*100)}%/${Math.round(marketImposed.a*100)}%`};
   }
-  const motivation=getMotivation(m.id);
-  // ========== 5. 伤缺 & 6. 停赛 ==========
-  const hInj=getTeamInjuries(m.home), aInj=getTeamInjuries(m.away);
-  const hSus=(h.suspended||[]).length, aSus=(a.suspended||[]).length;
-  const hAbsent=hInj.length*0.08+hSus*0.12, aAbsent=aInj.length*0.08+aSus*0.12;
+  // 泊松矩阵 & 双比分
+  function poissonP(k,lam){let f=1;for(let i=2;i<=k;i++)f*=i;return Math.exp(-lam)*Math.pow(lam,k)/f;}
+  function poissonWin(lH,lA,side){let pH=0,pD=0,pA=0;for(let hg=0;hg<=7;hg++)for(let ag=0;ag<=7;ag++){const p=poissonP(hg,lH)*poissonP(ag,lA);if(hg>ag)pH+=p;else if(hg<ag)pA+=p;else pD+=p;}return side==='home'?pH:side==='away'?pA:pD;}
+  const probs=[];for(let hg=0;hg<=5;hg++)for(let ag=0;ag<=5;ag++){const p=poissonP(hg,lambdaH)*poissonP(ag,lambdaA);if(p>=0.02)probs.push({hg,ag,p});}
+  probs.sort((a,b)=>b.p-a.p);
+  // 淘汰赛90分钟平局概率整体上浮5%（保守战术、优先保不失球）
+  if(isKnockout){for(const pb of probs){if(pb.hg===pb.ag){pb.p*=1.05;}}}
+  const s1=probs[0];const s1W=s1.hg>s1.ag?'H':s1.hg<s1.ag?'A':'D';
+  let s2=null;for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw!==s1W){s2=p;break;}}if(!s2)s2=probs.find(p=>p.hg!==s1.hg||p.ag!==s1.ag)||{hg:s1.hg,ag:(s1.ag||1)+1,p:0.01};
+  let scoreA=`${s1.hg}-${s1.ag}`,scoreB=`${s2.hg}-${s2.ag}`;
+  // 冷门预警机制（模型防踩坑——出现以下任意2项，整体置信度下调一档）
+  let coldWarn='',isCold=false;const ct=[];
+  // 条件1：强队核心射手/后腰停赛
+  if((deltaS>5&&aKeyInjury>=1)||(deltaS<-5&&hKeyInjury>=1))ct.push('强队核伤停');
+  // 条件2：机构赔率隐含概率与模型理论概率差值超12%
+  if(marketImposed){const dv=Math.abs(marketImposed.h-poissonWin(lambdaH,lambdaA,'home'));if(dv>0.12)ct.push(`市场偏差${(dv*100).toFixed(0)}%`);}
+  // 条件3：队伍连续3场大赛不胜，且本轮换3名以上主力
+  const weakTeam=deltaS>0?tname(m.away):tname(m.home);
+  if(m.formStreak&&(m.formStreak.wins===0&&m.formStreak.games>=3)&&(m.rotation&&m.rotation.count>=3))ct.push(weakTeam+'连不胜+大轮换');
+  // 条件4：高温32℃+ / 高海拔场地，传控强队大幅下降
+  if(m.venue){if((m.venue.temp&&m.venue.temp>=32)||(m.venue.altitude&&m.venue.altitude>=2000)){const ctrlTeam=(hs.style.includes('传控')||hs.style.includes('高压'))?tname(m.home):(as.style.includes('传控')||as.style.includes('高压'))?tname(m.away):null;if(ctrlTeam)ct.push(ctrlTeam+'高温/高海拔不利');}}
+  if(K2>=1.2&&Math.abs(deltaS)<8)ct.push('东道主加持');
+  if(ct.length>=2){coldWarn=ct.join('；');isCold=true;}
+  // 赛果
+  const hg=s1.hg,ag=s1.ag;let wdl='',wdlLabel='';
+  if(hg>ag){wdl='主胜';wdlLabel=m.home+'·胜';}else if(hg<ag){wdl='客胜';wdlLabel=m.away+'·胜';}else{wdl='平局';wdlLabel='平局';}
+  // 总进球分布
+  const gDist=[];for(let t=0;t<=7;t++){let tp=0;for(const pr of probs){if(pr.hg+pr.ag===t)tp+=pr.p;}gDist.push({t,p:tp});}
+  gDist.sort((a,b)=>b.p-a.p);const topGoals=gDist.slice(0,2).map(g=>g.t+'球').join('/');
+  // 让球方向
+  let handicapDir='';if(spread!==0){const ah=hg-spread,aag=ag;if(ah>aag)handicapDir='让胜';else if(ah<aag)handicapDir='让负';else handicapDir='让平';}
+  const expTotal=lambdaH+lambdaA;
+  const goalsRange=expTotal<=2?'小球':expTotal<=3?'中小球':expTotal<=3.5?'适中':'大球';
+  let conf=s1.p>0.12?'高':s1.p<0.06?'低':'中';if(isCold&&conf==='高')conf='中';
+  // 分析文本
+  let reasons=[];const strongName=deltaS>0?tname(m.home):tname(m.away);
+  if(Math.abs(deltaS)>18)reasons.push('【实力】'+strongName+'全面占优（ΔS='+Math.round(deltaS)+'）');
+  else if(Math.abs(deltaS)>8)reasons.push('【实力】'+strongName+'占优（ΔS='+Math.round(deltaS)+'）');
+  else reasons.push('【实力】势均力敌（ΔS='+Math.round(deltaS)+'）');
+  reasons.push('【攻防】'+tname(m.home)+'攻'+hs.attack.toFixed(1)+'/守'+hs.defense.toFixed(1)+' vs '+tname(m.away)+'攻'+as.attack.toFixed(1)+'/守'+as.defense.toFixed(1));
+  reasons.push('【打法】'+hs.style+' vs '+as.style+(styleBonus!==0?(styleBonus>0?('（克制'+tname(m.home)+'）'):('（克制'+tname(m.away)+'）')):''));
+  reasons.push('【战意】'+motivationObj.label+(wcNote?(' · '+wcNote):''));
+  const sp=[];if(hKeyInjury)sp.push(tname(m.home)+'核心伤'+hKeyInjury);if(aKeyInjury)sp.push(tname(m.away)+'核心伤'+aKeyInjury);if(hSus)sp.push(tname(m.home)+'停'+hSus);if(aSus)sp.push(tname(m.away)+'停'+aSus);
+  reasons.push(sp.length?'【伤停】'+sp.join('，'):'【伤停】阵容完整');
+  if(isHost)reasons.push('【主场】'+tname(m.home)+'东道主（K2='+K2+'）');
+  if(oddsInfo){reasons.push('【盘口】'+oddsInfo.asian.replace('亚盘 ','')+' | '+oddsInfo.ou.replace('大小球 ','')+' | 市场'+(oddsInfo.imposed||oddsInfo.implied));if(handicapDir)reasons.push('【让球】'+handicapDir);}
+  reasons.push('【预期】λ₁='+lambdaH.toFixed(2)+' λ₂='+lambdaA.toFixed(2)+' | 总进'+expTotal.toFixed(1)+'球（'+goalsRange+'）');
+  reasons.push('【比分】①'+scoreA+'（'+wdlLabel+'，置信'+conf+'）②'+scoreB+'（备选）');
+  if(coldWarn)reasons.push('⚠️冷门预警：'+coldWarn);
+  return{
+    score:scoreA,scoreB:scoreB,wdl,wdlLabel,
+    goals:topGoals+'（'+goalsRange+'）',goalsNum:Math.round(hg+ag),
+    reason:reasons.join('；'),isUpset:isCold,coldWarning:coldWarn,
+    confidence:conf,lambda:{h:lambdaH,a:lambdaA,total:expTotal},
+    handicap:handicapDir,goalsRange,oddsInfo,deltaS
+  };
 
-  // ========== 核心七维优势 ==========
-  let adv=vi*0.20+ri*0.14+styleBonus*0.08+(motivation-1)*0.6*0.08-(aAbsent-hAbsent)*0.50;
-  let goalBase=2.5+(totalAtk-totalDef)*0.8;
 
-  // ========== ESPN 赔率驱动（最高优先级） ==========
-  let oddsInfo=null;
-  let espnOdds = espnOddsCache[m.home + '_' + m.away] || null;
-  // 如果没从缓存找到，检查反向（ESPN可能客队在前）
-  if (!espnOdds) espnOdds = espnOddsCache[m.away + '_' + m.home] || null;
 
-  // 美式赔率 → 欧洲小数赔率
-  function mlToDecimal(ml) {
-    ml = String(ml);
-    if (ml.startsWith('+')) return 1 + parseFloat(ml.slice(1)) / 100;
-    if (ml.startsWith('-')) return 1 + 100 / Math.abs(parseFloat(ml));
-    const n = parseFloat(ml);
-    return n >= 1 ? n : 0;
-  }
-  // 美式赔率 → 隐含概率
-  function mlToProb(ml) {
-    const d = mlToDecimal(ml);
-    return d > 1 ? 1 / d : 0;
-  }
-
-  if (espnOdds && espnOdds.mlHome && espnOdds.mlAway) {
-    const hDec = mlToDecimal(espnOdds.mlHome);
-    const aDec = mlToDecimal(espnOdds.mlAway);
-    const dDec = espnOdds.mlDraw ? mlToDecimal(espnOdds.mlDraw) : 0;
-    const hProb = mlToProb(espnOdds.mlHome);
-    const aProb = mlToProb(espnOdds.mlAway);
-    const dProb = dDec > 1 ? 1 / dDec : 0;
-    const totalProb = hProb + aProb + dProb;
-    // 归一化概率（去除抽水）
-    const hImp = totalProb > 0 ? hProb / totalProb : 0.33;
-    const dImp = totalProb > 0 ? dProb / totalProb : 0.33;
+// ========== RENDER: BRACKET ==========
     const aImp = totalProb > 0 ? aProb / totalProb : 0.33;
     // 赔率优势：正数=主队有利，负数=客队有利
     const oddsAdv = (hImp - aImp) * 3.5;
@@ -2056,7 +2166,8 @@ function predictMatch(m, oddsData){
     // 大小球
     if (espnOdds.ou > 0) goalBase = espnOdds.ou;
 
-    // 赔率融合：ESPN赔率50% + 七维模型30% + 亚盘spread 20%
+
+// ========== RENDER: BRACKET ==========
     adv = oddsAdv * 0.50 + adv * 0.30 + spread * 0.20;
 
     oddsInfo = {
