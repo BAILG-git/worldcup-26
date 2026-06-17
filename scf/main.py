@@ -323,37 +323,46 @@ def predict_match(home, away, match_id='', injuries=None, suspended=None):
                 pb['p'] *= 1.02
 
     s1 = probs[0] if probs else {'hg':1,'ag':1,'p':0.01}
+    s1_wdl = 'H' if s1['hg'] > s1['ag'] else ('A' if s1['hg'] < s1['ag'] else 'D')
 
-    # scoreB：概率第二高，且主客队进球差≤1（不出现悬殊比分）
+    # λ 差值（客观参考：进球差 ≈ round(|λH - λA|)）
+    lambda_diff = round(abs(lambdaH - lambdaA))
+    # 允许的最大进球差：λ差值 + 1（给冷门留空间）
+    max_diff = max(lambda_diff + 1, 2)
+
+    # scoreB：概率第二高的不同结果类型（体现冷门可能性）
     s2 = None
     for p in probs[1:]:
+        p_wdl = 'H' if p['hg'] > p['ag'] else ('A' if p['hg'] < p['ag'] else 'D')
         diff = abs(p['hg'] - p['ag'])
-        if diff <= 1 and p['p'] >= 0.02:
+        # 选不同结果类型，且进球差不超过合理范围
+        if p_wdl != s1_wdl and diff <= max_diff and p['p'] >= 0.015:
             s2 = p
             break
+    # 降级：同结果类型但不同比分（大比分偏差）
     if not s2:
-        # 降级：允许 diff<=2
         for p in probs[1:]:
-            if abs(p['hg']-p['ag']) <= 2 and p['p'] >= 0.02:
+            diff = abs(p['hg'] - p['ag'])
+            if diff <= max_diff + 1 and p['p'] >= 0.01:
                 s2 = p
                 break
     if not s2:
         s2 = probs[1] if len(probs) > 1 else {'hg':s1['hg']+1,'ag':s1['ag'],'p':0.01}
 
-    # scoreC：大球备选，主客队进球差≤1
+    # scoreC：大球备选（总进球最高且概率合理，不受进球差限制）
     scoreC = None
+    best_total = s1['hg'] + s1['ag']
     for p in probs:
         total = p['hg'] + p['ag']
-        diff = abs(p['hg'] - p['ag'])
-        if total >= (s1['hg']+s1['ag']) and diff <= 1 and p['p'] >= 0.02:
+        if total > best_total and p['p'] >= 0.02:
             if not scoreC or total > (scoreC['hg']+scoreC['ag']):
                 scoreC = p
+    # 降级：找总进球 >= best_total 的任意高概率比分
     if not scoreC:
-        # 降级：diff<=2
         for p in probs:
             total = p['hg'] + p['ag']
-            if total >= (s1['hg']+s1['ag']) and abs(p['hg']-p['ag']) <= 2 and p['p'] >= 0.02:
-                if not scoreC or total > (scoreC['hg']+scoreC['ag']):
+            if total >= best_total and p['p'] >= 0.02:
+                if not scoreC or p['p'] > scoreC['p']:
                     scoreC = p
     if not scoreC:
         scoreC = s2
