@@ -827,48 +827,93 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-  // 固定日期范围：覆盖全部赛事（小组赛6/11~6/28，淘汰赛到7/19，决赛7/19）
-  // 首次加载全量拉取历史比赛，后续轮询只拉 ±3 天（减少请求量）
-  const now = new Date();
-  const isFirstLoad = !window._espnLoaded;
-  const dates = [];
-  if (isFirstLoad) {
-    const DATES_RANGE_START = new Date('2026-06-08');
-    const DATES_RANGE_END   = new Date('2026-07-20');
-    for (let d = new Date(DATES_RANGE_START); d <= DATES_RANGE_END; d.setUTCDate(d.getUTCDate()+1)) {
-      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    // 固定日期范围：覆盖全部赛事（小组赛6/11~6/28，淘汰赛到7/19，决赛7/19）
+    // 首次加载全量拉取历史比赛，后续轮询只拉 ±3 天（减少请求量）
+    const now = new Date();
+    const isFirstLoad = !window._espnLoaded;
+    const dates = [];
+    if (isFirstLoad) {
+      const DATES_RANGE_START = new Date('2026-06-08');
+      const DATES_RANGE_END   = new Date('2026-07-20');
+      for (let d = new Date(DATES_RANGE_START); d <= DATES_RANGE_END; d.setUTCDate(d.getUTCDate()+1)) {
+        dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+      }
+    } else {
+      for (let offset = -3; offset <= 3; offset++) {
+        const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+        dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+      }
     }
-  } else {
-    for (let offset = -3; offset <= 3; offset++) {
-      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+
+    // ===== 缓存逻辑 =====
+    const CACHE_KEY = 'wc2026_espn_cache';
+    const CACHE_TTL = 5 * 60 * 1000; // 5分钟过期
+    const nowTs = Date.now();
+    let cache = {};
+    try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e) {}
+
+    // 分离：有缓存且未过期直接用，否则请求
+    const toFetch = [];
+    let espnEventsCount = 0;
+    for (const d of dates) {
+      const key = `espn_${d}`;
+      const cached = cache[key];
+      if (cached && cached.data && (nowTs - (cached._ts||0)) < CACHE_TTL) {
+        // 缓存命中，直接使用
+        processESPN(cached.data);
+        espnOk = true;
+        espnEventsCount += (cached.data.events||[]).length;
+        console.log(`[fetchAllSources] 缓存命中: ${d}`);
+      } else {
+        toFetch.push(d);
+      }
     }
-  }
-  const urls = dates.map(d => `${ESPN_API}?dates=${d}`);
-  const results = await Promise.allSettled(urls.map(u => corsFetch(u).then(r => { if(!r.ok) console.warn('ESPN HTTP',r.status,u); return r.ok ? r.json() : null; }).catch(e => { console.warn('ESPN fetch error',u,e); return null; })));
-  let espnEventsCount = 0;
-  for (const res of results) {
-    if (res.status === 'fulfilled' && res.value) { processESPN(res.value); espnOk = true; espnEventsCount += (res.value.events||[]).length; }
-  }
-  console.log(`[fetchAllSources] ESPN OK=${espnOk}, total events=${espnEventsCount}`);
-  window._espnLoaded = true; // 标记首次全量拉取完成，后续轮询只用±3天
-  // 同时拉取伤病停赛数据（异步，不阻塞主流程）
-  fetchInjuriesIfNeeded();
-  // 无论ESPN是否成功，都强制刷新UI（保证页面有数据展示）
-  renderMatches();
-  fillBracket();
-  if (espnOk) {
-    updateStatus('live');
-    startPolling();
-  } else {
-    // ESPN全部失败：用本地时间判断作为兜底展示直播状态
-    updateStatus('error', 'ESPN连接失败，使用本地时间判断');
-    fallbackLiveStatus();
-    startPolling();
-  }
+
+    console.log(`[fetchAllSources] 缓存命中=${dates.length - toFetch.length}天，需请求=${toFetch.length}天`);
+
+    // 请求未缓存的日期
+    if (toFetch.length > 0) {
+      const urls = toFetch.map(d => `${ESPN_API}?dates=${d}`);
+      const freshResults = await Promise.allSettled(
+        urls.map((u,i) => corsFetch(u).then(r => {
+          if (!r.ok) { console.warn('ESPN HTTP', r.status, u); return null; }
+          const d = toFetch[i];
+          // 写入缓存
+          try {
+            r.clone().json().then(data => {
+              if (data) {
+                cache[`espn_${d}`] = { data, _ts: Date.now() };
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+              }
+            });
+          } catch(e) {}
+          return r.json();
+        }).catch(e => { console.warn('ESPN fetch error', u, e); return null; }))
+      );
+      for (const res of freshResults) {
+        if (res.status === 'fulfilled' && res.value) {
+          processESPN(res.value);
+          espnOk = true;
+          espnEventsCount += (res.value.events||[]).length;
+        }
+      }
+    }
+
+    console.log(`[fetchAllSources] ESPN OK=${espnOk}, total events=${espnEventsCount}`);
+    window._espnLoaded = true;
+    fetchInjuriesIfNeeded();
+    renderMatches();
+    fillBracket();
+    if (espnOk) {
+      updateStatus('live');
+      startPolling();
+    } else {
+      updateStatus('error', 'ESPN连接失败，使用本地时间判断');
+      fallbackLiveStatus();
+      startPolling();
+    }
   } catch(e) {
     console.warn('fetchAllSources异常:', e);
-    // ESPN完全不可用时也要保证页面能显示
     updateStatus('error', 'ESPN不可用');
     renderMatches();
     fillBracket();
