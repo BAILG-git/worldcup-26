@@ -1397,20 +1397,16 @@ function loadScores(){
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
-      if (!data._predVer || data._predVer < 13) {
-        // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
-        const locked = {};
-        for (const [k, v] of Object.entries(predictions)) {
-          if (v && v.locked) locked[k] = v;
-        }
-        predictions = locked;
+      if (!data._predVer || data._predVer < 15) {
+        // 升级引擎版本：清空旧预测，由远程 JSON 重新填充
+        predictions = {};
       }
     }
   } catch(e) { scores = {}; halftimeScores = {}; predictions = {}; }
 }
 function saveScores() {
   try {
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 14}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 15}));
   } catch(e) {}
 }
 loadScores();
@@ -1837,8 +1833,6 @@ function checkAndPredict() {
             goals: remote.goals || '',
             goalsNum: remote.goalsNum || 0,
             reason: remote.reason || '',
-            isUpset: remote.isUpset || false,
-            coldWarning: remote.coldWarning || '',
             confidence: remote.confidence || '中',
             lambda: remote.lambda || {},
             probH: remote.probH || 0,
