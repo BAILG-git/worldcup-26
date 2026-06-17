@@ -1949,7 +1949,7 @@ function renderMatches(){
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
         </div>
-        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（大${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
   }
@@ -2043,8 +2043,8 @@ async function showMatchDetail(m){
     <h4>📊 AI 比赛预测 ${!matchFinished?`<span style="font-size:10px;color:var(--gold);background:rgba(240,192,64,.12);padding:1px 6px;border-radius:3px;margin-left:6px">已锁定</span>`:`<span style="font-size:10px;color:var(--green);background:rgba(46,160,67,.12);padding:1px 6px;border-radius:3px;margin-left:6px">赛后验证</span>`}</h4>
     <div class="prediction-box">
       <div class="pred-row">
-        <div class="pred-item"><div class="pred-label">实力碾压</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
-        <div class="pred-item"><div class="pred-label">大球备选</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
+        <div class="pred-item"><div class="pred-label">比分预测</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
+        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
         <div class="pred-item"><div class="pred-label">总进球数</div><div class="pred-val">${pred.goals}</div></div>
       </div>
@@ -2330,7 +2330,7 @@ function predictMatch(m, oddsData){
   reasons.push('【概率】胜平负 '+Math.round(probH*100)+'%/'+Math.round(probD*100)+'%/'+Math.round(probA*100)+'%');
   if(oddsInfo){reasons.push('【盘口】'+oddsInfo.asian.replace('亚盘 ','')+' | '+oddsInfo.ou.replace('大小球 ','')+' | 市场'+oddsInfo.implied);if(handicapDir)reasons.push('【让球】'+handicapDir);}
   reasons.push('【预期】λ₁='+lambdaH.toFixed(2)+' λ₂='+lambdaA.toFixed(2)+' | 总进'+expTotal.toFixed(1)+'球（'+goalsRange+'）');
-  reasons.push('【比分】①'+scoreA+'（'+wdlLabel+'，置信'+conf+'）②'+scoreCStr+'（大球）');
+  reasons.push('【比分】①'+scoreA+'（'+wdlLabel+'，置信'+conf+'）②'+scoreCStr+'（备选）');
   if(coldWarn)reasons.push('⚠️冷门预警：'+coldWarn);
   return{
     score:scoreA,scoreC:scoreCStr,wdl,wdlLabel,

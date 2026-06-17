@@ -447,7 +447,7 @@ class MonteCarloSimulator:
 
         reasons.append(f"【概率】胜平负 {int(prob_h*100)}%/{int(prob_d*100)}%/{int(prob_a*100)}%")
         reasons.append(f"【预期】λ₁={lambda_h:.2f} λ₂={lambda_a:.2f} | 总进{avg_goals:.1f}球（{goals_label}）")
-        reasons.append(f"【比分】①{score_a_str}（{wdl_label}，置信{confidence}）②{score_c_str}（大球）")
+        reasons.append(f"【比分】①{score_a_str}（{wdl_label}，置信{confidence}）②{score_c_str}（备选）")
 
         return {
             "score": score_a_str,
