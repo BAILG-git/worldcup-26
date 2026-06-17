@@ -1,0 +1,34 @@
+name: World Cup 2026 Predictions
+
+on:
+  schedule:
+    # 每4小时运行一次（UTC 0,4,8,12,16,20）
+    - cron: '0 0,4,8,12,16,20 * * *'
+  workflow_dispatch: # 支持手动触发
+
+permissions:
+  contents: write
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run predictions
+        run: |
+          cd predictor
+          python fetch_and_predict.py
+
+      - name: Commit predictions
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add predictor/data/predictions.json
+          git diff --cached --quiet || git commit -m "update predictions $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push
