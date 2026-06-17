@@ -1788,70 +1788,109 @@ function generateDailyPrediction(m) {
   return { score: '...', probH: 0, probD: 0, probA: 0, confidence: '等待预测', locked: false, predictedAt: '', lambda: {} };
 }
 
-function checkAndPredict() {
+// ========== 预测数据加载（Elo+MonteCarlo 远程JSON） ==========
+const PREDICTIONS_JSON_URL = 'https://bailg-git.github.io/worldcup-26/data/predictions.json';
+let predJsonCache = null;
+let predJsonTime = 0;
+const PRED_JSON_TTL = 300000; // 5分钟缓存
+
+async function loadPredictionsFromJSON() {
+  const now = Date.now();
+  if (predJsonCache && now - predJsonTime < PRED_JSON_TTL) return predJsonCache;
   try {
-    // 只预测：已结束的比赛 + 指定日期范围内的比赛
-    const PREDICT_RANGE_START = new Date('2026-06-12');
-    const PREDICT_RANGE_END   = new Date('2026-06-18');
-    PREDICT_RANGE_END.setUTCHours(23, 59, 59, 999);
-
-    console.log('[预测] 预测检查 - 只预测已结束 + 6.12~6.18');
-    let updated = false;
-    let candidateCount = 0, backfillCount = 0;
-    for (const ms of Object.values(GROUP_MATCHES)) {
-      for (const m of ms) {
-        // 解析比赛日期（巴西时间，转成Date对象）
-        const dM = m.date.match(/(\d+)月(\d+)日/);
-        if (!dM) continue;
-        const matchDate = new Date(2026, parseInt(dM[1])-1, parseInt(dM[2]));
-
-        // 判断是否在预测范围内
-        const inRange = matchDate >= PREDICT_RANGE_START && matchDate <= PREDICT_RANGE_END;
-        const isFinished = matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null;
-
-        // 跳过：未结束 且 不在日期范围内
-        if (!isFinished && !inRange) {
-          console.log('[预测] 跳过（不在范围）:', m.id, m.date);
-          continue;
-        }
-
-        // 已完赛 → 用本地模型回填（不调SCF）
-        if (isFinished) {
-          if (!predictions[m.id]?.locked || !predictions[m.id]?.score) {
-            predictions[m.id] = predictMatch(m, null);
-            predictions[m.id].locked = true;
-            backfillCount++;
-            updated = true;
-          }
-          continue;
-        }
-
-        // 在范围内且未完赛 → 调 SCF
-        candidateCount++;
-        fetchScfPrediction(m);
-        console.log('[预测] 触发SCF:', m.id, m.date, m.home + ' vs ' + m.away);
-        updated = true;
-      }
-    }
-    console.log('[预测] 候选:', candidateCount, '回填:', backfillCount, '更新:', updated);
-    if (updated) {
-      saveScores();
-      console.log('[预测] 已保存到 localStorage');
-      return true;
-    }
+    const resp = await fetch(PREDICTIONS_JSON_URL + '?t=' + Math.floor(now / PRED_JSON_TTL));
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    predJsonCache = data;
+    predJsonTime = now;
+    console.log('[预测] 远程JSON加载成功，引擎:', data.engine, '模拟次数:', data.simulations);
+    return data;
   } catch(e) {
-    console.error('[预测] 出错:', e);
+    console.warn('[预测] 远程JSON加载失败，回退本地Poisson:', e.message);
+    return null;
   }
-  return false;
 }
 
-// 预测定时器：每小时检查一次是否需要预测明天比赛
+function checkAndPredict() {
+  // 异步加载远程预测
+  loadPredictionsFromJSON().then(data => {
+    if (!data || !data.predictions) {
+      console.warn('[预测] 无远程数据，使用本地Poisson兜底');
+      _localPredict();
+      return;
+    }
+    let updated = false;
+    for (const ms of Object.values(GROUP_MATCHES)) {
+      for (const m of ms) {
+        const isFinished = matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null;
+        const existing = predictions[m.id];
+        if (existing?.locked && existing?.score) continue;
+
+        const remote = data.predictions[m.id];
+        if (remote) {
+          // 用远程 Elo+MC 数据
+          predictions[m.id] = {
+            score: remote.score,
+            scoreB: remote.scoreB || '-',
+            scoreC: remote.scoreC || '-',
+            wdl: remote.wdl,
+            wdlLabel: remote.wdlLabel,
+            goals: remote.goals || '',
+            goalsNum: remote.goalsNum || 0,
+            reason: remote.reason || '',
+            isUpset: remote.isUpset || false,
+            coldWarning: remote.coldWarning || '',
+            confidence: remote.confidence || '中',
+            lambda: remote.lambda || {},
+            probH: remote.probH || 0,
+            probD: remote.probD || 0,
+            probA: remote.probA || 0,
+            eloDiff: remote.eloDiff || 0,
+            locked: false,
+          };
+          if (isFinished || remote.locked) {
+            predictions[m.id].locked = true;
+          }
+          updated = true;
+        } else {
+          // 远程无此场比赛，本地兜底
+          predictions[m.id] = predictMatch(m, null);
+          if (isFinished) predictions[m.id].locked = true;
+          updated = true;
+        }
+      }
+    }
+    if (updated) {
+      saveScores();
+      console.log('[预测] 远程数据已应用到 predictions');
+      // 重新渲染
+      if (typeof renderMatches === 'function') renderMatches();
+    }
+  });
+}
+
+// 本地 Poisson 兜底
+function _localPredict() {
+  let updated = false;
+  for (const ms of Object.values(GROUP_MATCHES)) {
+    for (const m of ms) {
+      const isFinished = matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null;
+      const existing = predictions[m.id];
+      if (existing?.locked && existing?.score) continue;
+      predictions[m.id] = predictMatch(m, null);
+      if (isFinished) predictions[m.id].locked = true;
+      updated = true;
+    }
+  }
+  if (updated) saveScores();
+}
+
+// 预测定时器：每5分钟刷新一次远程数据
 let predCheckTimer = null;
 function startPredCheck() {
   if (predCheckTimer) clearInterval(predCheckTimer);
-  checkAndPredict(); // 首次立即检查明天比赛
-  saveScores(); // 确保 _predVer 持久化（避免死循环清空）
-  predCheckTimer = setInterval(checkAndPredict, 3600000);
+  checkAndPredict();
+  predCheckTimer = setInterval(checkAndPredict, 300000);
 }
 startPredCheck();
 
@@ -1911,7 +1950,7 @@ function renderMatches(){
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
         </div>
-        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备选${p.scoreB}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreB||'-'} 大${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
   }
@@ -2006,7 +2045,8 @@ async function showMatchDetail(m){
     <div class="prediction-box">
       <div class="pred-row">
         <div class="pred-item"><div class="pred-label">实力碾压</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
-        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--accent)">${pred.scoreB}</div></div>
+        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--accent)">${pred.scoreB||'-'}</div></div>
+        <div class="pred-item"><div class="pred-label">大球备选</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
         <div class="pred-item"><div class="pred-label">总进球数</div><div class="pred-val">${pred.goals}</div></div>
       </div>
@@ -2240,9 +2280,18 @@ function predictMatch(m, oddsData){
 
   const s1=probs[0];
   const s1W=s1.hg>s1.ag?'H':s1.hg<s1.ag?'A':'D';
-  let s2=null;for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw!==s1W){s2=p;break;}}
+  // scoreB：反向赛果（主胜→客胜，客胜→主胜，平局→概率高的胜方）
+  let targetWdl;
+  if(s1W==='H')targetWdl='A';else if(s1W==='A')targetWdl='H';else{const phw=probs.reduce((s,p)=>s+(p.hg>p.ag?p.p:0),0);targetWdl=phw>=0.5?'H':'A';}
+  let s2=null;for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw===targetWdl&&p.p>=0.008){s2=p;break;}}
+  if(!s2){for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw!==s1W&&p.p>=0.008){s2=p;break;}}}
   if(!s2)s2=probs.find(p=>p.hg!==s1.hg||p.ag!==s1.ag)||{hg:s1.hg,ag:(s1.ag||1)+1,p:0.01};
-  let scoreA=`${s1.hg}-${s1.ag}`,scoreB=`${s2.hg}-${s2.ag}`;
+  // scoreC：大球备选
+  const s1Total=s1.hg+s1.ag;let scoreCObj=null;
+  for(const p of probs){const t=p.hg+p.ag;if(t>s1Total&&p.p>=0.015){if(!scoreCObj||t>(scoreCObj.hg+scoreCObj.ag))scoreCObj=p;}}
+  if(!scoreCObj){for(const p of probs){const t=p.hg+p.ag;if(t>=s1Total&&p.p>=0.015){if(!scoreCObj||p.p>scoreCObj.p)scoreCObj=p;}}}
+  if(!scoreCObj)scoreCObj=s2;
+  let scoreA=`${s1.hg}-${s1.ag}`,scoreB=`${s2.hg}-${s2.ag}`,scoreCStr=`${scoreCObj.hg}-${scoreCObj.ag}`;
 
   // ===== 胜平负概率 =====
   const probH=poissonWin(lambdaH,lambdaA,'home');

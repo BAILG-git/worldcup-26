@@ -129,7 +129,8 @@ def match_to_group_id(home, away):
 
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(script_dir, "data")
+    project_dir = os.path.dirname(script_dir)  # worldcup-26/
+    data_dir = os.path.join(project_dir, "data")
 
     # 1. 拉取 ESPN 已完赛数据
     print("[1/3] Fetching ESPN scores...")
