@@ -362,10 +362,11 @@ function playGoalSound(){
     });
   }catch(e){}
 }
-function showGoalToast(team, minute, scoreH, scoreA, home, away){
+function showGoalToast(team, minute, scoreH, scoreA, home, away, player, goalType){
   document.getElementById('goalTime').textContent = minute || '';
-  document.getElementById('goalScorer').textContent = '⚽ 进球！';
-  document.getElementById('goalTeam').textContent = team + ' 进球';
+  const typeLabel = goalType === 'penalty_scored' ? '⚽ 点球！' : goalType === 'own_goal' ? '😱 乌龙球！' : '⚽ 进球！';
+  document.getElementById('goalScorer').textContent = player ? player : typeLabel;
+  document.getElementById('goalTeam').textContent = team + (goalType === 'own_goal' ? ' 乌龙' : ' 进球');
   document.getElementById('goalScore').textContent = home + ' ' + scoreH + ' - ' + scoreA + ' ' + away;
   document.getElementById('goalToast').style.display = 'flex';
   playGoalSound();
@@ -1114,7 +1115,8 @@ function processESPN(data) {
         const sec = totalSec % 60;
         const minuteStr = sec > 0 ? String(minute) + "+" + String(sec) : String(minute);
         const goalType = (d.type?.text || '').toLowerCase().includes('penalty') ? 'penalty_scored' : (d.type?.text || '').toLowerCase().includes('own') ? 'own_goal' : 'goal';
-        goalEvents[key].push({ team: teamName, minute: minuteStr, clock: String(minute) + "'" + (sec > 0 ? "+" + String(sec) : ""), isHome: isHome, type: goalType });
+        const playerName = (d.athletesInvolved && d.athletesInvolved[0]) ? d.athletesInvolved[0].displayName || '' : '';
+        goalEvents[key].push({ team: teamName, minute: minuteStr, clock: String(minute) + "'" + (sec > 0 ? "+" + String(sec) : ""), isHome: isHome, type: goalType, player: playerName });
         goalIdx++;
       }
     }
@@ -1281,7 +1283,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
           const prevGoalCount = (prev[0] + prev[1]);
           const ev = events[prevGoalCount]; // 新进球的索引
           if (ev) {
-            showGoalToast(ev.team, ev.minute, ns[0], ns[1], mm.home, mm.away);
+            showGoalToast(ev.team, ev.minute, ns[0], ns[1], mm.home, mm.away, ev.player || '', ev.type || 'goal');
           } else {
             const scoringTeam = ns[0] > prev[0] ? mm.home : mm.away;
             showGoalToast(scoringTeam, clockStr || '', ns[0], ns[1], mm.home, mm.away);
@@ -1391,22 +1393,24 @@ function loadScores(){
       // 恢复已结束比赛的状态（避免每次都要重新从ESPN拉取）
       matchStatus = data.status || {};
       halftimeScores = data.ht || {};
+      goalEvents = data.ge || {};
       predictions = data.pred || {};
       // 清洗脏数据：score字段含半场比分（如 '1-2-2'）的统一修正
       for (const [k, v] of Object.entries(predictions)) {
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
-      if (!data._predVer || data._predVer < 15) {
-        // 升级引擎版本：清空旧预测，由远程 JSON 重新填充
+      if (!data._predVer || data._predVer < 18) {
+        // 升级引擎版本：清空旧预测和旧进球事件（缺球员名），由远程 JSON 重新填充
         predictions = {};
+        goalEvents = {};
       }
     }
-  } catch(e) { scores = {}; halftimeScores = {}; predictions = {}; }
+  } catch(e) { scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {}; }
 }
 function saveScores() {
   try {
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 15}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
   } catch(e) {}
 }
 loadScores();
@@ -2066,6 +2070,7 @@ async function showMatchDetail(m){
               ${events.map(ev => `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid var(--border)">
                 <span style="min-width:48px;font-weight:bold;color:${ev.team === m.home ? 'var(--home)' : 'var(--away)'}">${ev.team}</span>
                 <span style="min-width:28px;text-align:center;color:var(--gold);font-weight:bold">${ev.minute}'</span>
+                ${ev.player ? `<span style="font-size:12px;color:var(--text)">${ev.player}</span>` : ''}
                 <span style="min-width:32px;font-size:11px;color:var(--muted)">${typeLabel(ev.type)}</span>
               </div>`).join('')}
             </div>
