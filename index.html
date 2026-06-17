@@ -694,6 +694,14 @@ function genGroupMatches() {
 }
 
 let GROUP_MATCHES = genGroupMatches();
+// 预测可见性判断：比赛前一天0点才展示
+function isPredVisible(matchDateStr) {
+  const dm = matchDateStr.match(/(\d+)月(\d+)日/);
+  if (!dm) return true;
+  const matchDate = new Date(2026, parseInt(dm[1])-1, parseInt(dm[2]));
+  const dayBefore = new Date(matchDate); dayBefore.setDate(dayBefore.getDate()-1); dayBefore.setHours(0,0,0,0);
+  return new Date() >= dayBefore;
+}
 let scores = {};
 let matchStatus = {};
 let halftimeScores = {}; // { mid: [h, a] }
@@ -1966,7 +1974,7 @@ function renderMatches(){
     const played=s&&s[0]!==null&&s[1]!==null;
     const st= matchStatus[m.id]||'SCHEDULED';
     const stCls=st==='LIVE'?'live':st==='FINISHED'?'finished':'upcoming';
-    const stLabel=st==='LIVE'?'直播中':st==='FINISHED'?'已结束':'未开始';
+    const stLabel=st==='LIVE'?'直播中':st==='FINISHED'?'完场':'未开始';
     const clock=matchClock[m.id]||'';
     const ht=halftimeScores[m.id];
     const htStr=ht?`${ht[0]}-${ht[1]}`:'- -';
@@ -1993,7 +2001,7 @@ function renderMatches(){
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
         </div>
-        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${((g)=>{const m=(g||'').match(/[（(](.+)[)）]/);return m?m[1]:(g||'-');})(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
   }
@@ -2024,9 +2032,11 @@ async function showMatchDetail(m){
   const s = scores[m.id];
   const matchPlayed = s && s[0] !== null && s[1] !== null;
   const matchFinished = matchStatus[m.id] === 'FINISHED';
+  // 预测展示时间判断：比赛前一天0点才展示
+  const predVisible = matchFinished || isPredVisible(m.date);
   // 只看锁定预测，不实时生成（预测只在头天0点产出）
-  const pred = lockedPred;
-  const isLocked = !!lockedPred;
+  const pred = predVisible ? lockedPred : null;
+  const isLocked = !!(predVisible && lockedPred);
 
   // 带国旗的队名标签
   const teamLabel=(name,data)=>`${flagImgSm(name)}<b>${tname(name)}</b> <span style="font-size:11px;color:var(--muted)">FIFA#${data.rank||'?'} | 总身价 ${data.value||'--'}</span>`;
@@ -2090,7 +2100,7 @@ async function showMatchDetail(m){
         <div class="pred-item"><div class="pred-label">比分预测</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
         <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
-        <div class="pred-item"><div class="pred-label">总进球数</div><div class="pred-val">${pred.goals}</div></div>
+        <div class="pred-item"><div class="pred-label">进球数</div><div class="pred-val">${((g)=>{const m=(g||'').match(/[（(](.+)[)）]/);return m?m[1]:(g||'-');})(pred.goals)}</div></div>
       </div>
       <div class="pred-reason">${pred.reason}</div>
       ${pred.oddsInfo?`
