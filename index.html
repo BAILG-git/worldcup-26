@@ -1472,6 +1472,8 @@ let koScores = {};
 let koWinner = {};
 // slot display data: { "R32_1": {home:"巴西", away:"德国"}, ... }
 let koSlot = {};
+// knockout predictions from remote JSON
+let koPredictions = {};
 
 // 计算晋级队伍: 返回 { "1A":"墨西哥", "2A":"南非", "3A":"韩国", ... }
 function computeQualifiers() {
@@ -1583,6 +1585,37 @@ function getKoWinner(slotId) {
   if (!s || s[0] === null || s[1] === null) return null;
   return s[0] > s[1] ? koSlot[slotId]?.home :
          s[1] > s[0] ? koSlot[slotId]?.away : null; // 平局等点球，暂null
+}
+
+// 将远程淘汰赛预测应用到 bracket
+function applyKoPredictionsToBracket() {
+  if (!Object.keys(koPredictions).length) return;
+  // R32: 填对阵名 + 预测比分
+  for (const d of B32_DEF) {
+    const pred = koPredictions[d.id];
+    if (!pred) continue;
+    koSlot[d.id] = koSlot[d.id] || {};
+    koSlot[d.id].home = pred.koHome || koSlot[d.id].home;
+    koSlot[d.id].away = pred.koAway || koSlot[d.id].away;
+    // 填预测比分
+    const parts = pred.score.split('-');
+    koScores[d.id] = [parseInt(parts[0]), parseInt(parts[1])];
+  }
+  // 传播胜者到后续轮次
+  propagateKnockout();
+  // R16, QF, SF, FINAL, THIRD: 填对阵名 + 预测比分
+  const laterRounds = ['R16_U1A','R16_U1B','R16_U2A','R16_U2B','R16_L1A','R16_L1B','R16_L2A','R16_L2B',
+    'QF_U1','QF_U2','QF_L1','QF_L2','SF_U','SF_L','FINAL','THIRD'];
+  for (const mid of laterRounds) {
+    const pred = koPredictions[mid];
+    if (!pred) continue;
+    koSlot[mid] = koSlot[mid] || {};
+    if (pred.koHome) koSlot[mid].home = pred.koHome;
+    if (pred.koAway) koSlot[mid].away = pred.koAway;
+    const parts = pred.score.split('-');
+    koScores[mid] = [parseInt(parts[0]), parseInt(parts[1])];
+  }
+  propagateKnockout();
 }
 
 // 向下传播胜者
@@ -1789,7 +1822,7 @@ function generateDailyPrediction(m) {
 }
 
 // ========== 预测数据加载（Elo+MonteCarlo 远程JSON） ==========
-const PREDICTIONS_JSON_URL = 'https://bailg-git.github.io/worldcup-26/data/predictions.json';
+const PREDICTIONS_JSON_URL = 'https://BAILG-git.github.io/worldcup-26/data/predictions.json';
 let predJsonCache = null;
 let predJsonTime = 0;
 const PRED_JSON_TTL = 300000; // 5分钟缓存
@@ -1865,6 +1898,21 @@ function checkAndPredict() {
       console.log('[预测] 远程数据已应用到 predictions');
       // 重新渲染
       if (typeof renderMatches === 'function') renderMatches();
+    }
+    // 加载淘汰赛预测
+    const koKeys = Object.keys(data.predictions).filter(k =>
+      k.startsWith('R32') || k.startsWith('R16') || k.startsWith('QF') ||
+      k.startsWith('SF') || k === 'FINAL' || k === 'THIRD'
+    );
+    if (koKeys.length) {
+      koPredictions = {};
+      for (const k of koKeys) {
+        koPredictions[k] = data.predictions[k];
+      }
+      // 自动填入淘汰赛对阵
+      applyKoPredictionsToBracket();
+      console.log('[预测] 淘汰赛预测加载:', koKeys.length, '场');
+      if (typeof renderBracket === 'function' && currentTab === 'bracket') renderBracket();
     }
   });
 }
@@ -2436,7 +2484,9 @@ function buildSfSlot(slotId){
   const data=koSlot[slotId];
   if(!data||!data.home) return '';
   let html='';
-  html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span></div>`;
+  const pred = koPredictions[slotId];
+  const predScore = pred ? `<span style="font-size:9px;color:var(--gold);margin-left:2px">${pred.score}</span>` : '';
+  html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span>${predScore}</div>`;
   html+=data.away
     ?`<div class="bslot filled"><span class="slot-row">${flagImg(data.away,15)}<span class="team">${tname(data.away)}</span></span></div>`
     :'';
@@ -2459,8 +2509,10 @@ function buildRoundSlots(slots, round, half){
       slotId=`${prefix}_${h}${seq}`;
     }
     const data=koSlot[slotId];
+    const pred = koPredictions[slotId];
+    const predScore = pred ? `<span style="font-size:9px;color:var(--gold);margin-left:2px">${pred.score}</span>` : '';
     if(data&&data.home){
-      html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span></div>`;
+      html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span>${predScore}</div>`;
       html+=data.away
         ?`<div class="bslot filled"><span class="slot-row">${flagImg(data.away,15)}<span class="team">${tname(data.away)}</span></span></div>`
         :`<div class="bslot"></div>`;

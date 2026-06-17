@@ -572,13 +572,19 @@ def run_predictions(finished_matches=None, output_dir="data"):
                 result["locked"] = False
                 predictions[mid] = result
 
+    # ========== 淘汰赛预测 ==========
+    ko_predictions = predict_knockout(engine, sim, predictions)
+
+    # 合并
+    all_predictions = {**predictions, **ko_predictions}
+
     # 输出
     output = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
         "engine": "Elo+MonteCarlo",
         "simulations": sim.N,
         "elo_ratings": {k: round(v, 1) for k, v in engine.ratings.items()},
-        "predictions": predictions,
+        "predictions": all_predictions,
     }
 
     os.makedirs(output_dir, exist_ok=True)
@@ -587,8 +593,280 @@ def run_predictions(finished_matches=None, output_dir="data"):
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"[OK] 预测完成，输出到 {out_path}")
-    print(f"   共 {len(predictions)} 场比赛")
+    print(f"   共 {len(all_predictions)} 场比赛（小组{len(predictions)} + 淘汰{len(ko_predictions)}）")
     return output
+
+
+# ========== 6. 淘汰赛预测 ==========
+# 与前端 B32_DEF 对齐的淘汰赛对阵
+B32_DEF = [
+    {"id": "R32_73", "h": "1E", "a": "3rd"},
+    {"id": "R32_79", "h": "1I", "a": "3rd"},
+    {"id": "R32_77", "h": "2A", "a": "2B"},
+    {"id": "R32_76", "h": "1F", "a": "2C"},
+    {"id": "R32_80", "h": "1D", "a": "3rd"},
+    {"id": "R32_81", "h": "1G", "a": "3rd"},
+    {"id": "R32_83", "h": "2K", "a": "2L"},
+    {"id": "R32_84", "h": "1H", "a": "2J"},
+    {"id": "R32_74", "h": "1A", "a": "3rd"},
+    {"id": "R32_82", "h": "1L", "a": "3rd"},
+    {"id": "R32_75", "h": "1C", "a": "2F"},
+    {"id": "R32_78", "h": "2E", "a": "2I"},
+    {"id": "R32_87", "h": "1B", "a": "3rd"},
+    {"id": "R32_88", "h": "1K", "a": "3rd"},
+    {"id": "R32_86", "h": "1J", "a": "2H"},
+    {"id": "R32_85", "h": "2D", "a": "2G"},
+]
+
+NEXT_ROUND = {
+    "R32_73": "R16_U1A", "R32_79": "R16_U1A",
+    "R32_77": "R16_U1B", "R32_76": "R16_U1B",
+    "R16_U1A": "QF_U1", "R16_U1B": "QF_U1",
+    "R32_80": "R16_U2A", "R32_81": "R16_U2A",
+    "R32_83": "R16_U2B", "R32_84": "R16_U2B",
+    "R16_U2A": "QF_U2", "R16_U2B": "QF_U2",
+    "R32_74": "R16_L1A", "R32_82": "R16_L1A",
+    "R32_75": "R16_L1B", "R32_78": "R16_L1B",
+    "R16_L1A": "QF_L1", "R16_L1B": "QF_L1",
+    "R32_87": "R16_L2A", "R32_88": "R16_L2A",
+    "R32_86": "R16_L2B", "R32_85": "R16_L2B",
+    "R16_L2A": "QF_L2", "R16_L2B": "QF_L2",
+    "QF_U1": "SF_U", "QF_U2": "SF_U",
+    "QF_L1": "SF_L", "QF_L2": "SF_L",
+    "SF_U": "FINAL", "SF_L": "FINAL",
+}
+
+# Q区 → 小组字母
+Q_ZONES = {
+    "Q1": ["A", "B", "C"], "Q2": ["D", "I", "K"],
+    "Q3": ["E", "F", "G"], "Q4": ["H", "J", "L"],
+}
+
+# 第三名分配备选表
+THIRD_MATRIX = {
+    "A": {"dflt": "C", "fbs": ["D", "E", "F", "G", "H", "I", "J", "K", "L", "B"]},
+    "B": {"dflt": "D", "fbs": ["E", "F", "G", "H", "I", "J", "K", "L", "A", "C"]},
+    "C": {"dflt": "A", "fbs": ["B", "D", "E", "F", "G", "H", "I", "J", "K", "L"]},
+    "D": {"dflt": "B", "fbs": ["A", "C", "E", "F", "G", "H", "I", "J", "K", "L"]},
+    "E": {"dflt": "F", "fbs": ["G", "H", "A", "B", "C", "D", "I", "J", "K", "L"]},
+    "F": {"dflt": "E", "fbs": ["G", "H", "A", "B", "C", "D", "I", "J", "K", "L"]},
+    "G": {"dflt": "H", "fbs": ["I", "A", "B", "C", "D", "E", "F", "J", "K", "L"]},
+    "H": {"dflt": "G", "fbs": ["I", "A", "B", "C", "D", "E", "F", "J", "K", "L"]},
+    "I": {"dflt": "J", "fbs": ["K", "L", "A", "B", "C", "D", "E", "F", "G", "H"]},
+    "J": {"dflt": "I", "fbs": ["K", "L", "A", "B", "C", "D", "E", "F", "G", "H"]},
+    "K": {"dflt": "L", "fbs": ["I", "J", "A", "B", "C", "D", "E", "F", "G", "H"]},
+    "L": {"dflt": "K", "fbs": ["I", "J", "A", "B", "C", "D", "E", "F", "G", "H"]},
+}
+
+
+def _calc_group_standings(predictions):
+    """从预测结果计算小组排名"""
+    standings = {}
+    for group_name, teams in GROUPS.items():
+        stats = {t: {"pts": 0, "gd": 0, "gf": 0, "ga": 0, "w": 0, "d": 0, "l": 0} for t in teams}
+        for h_idx, a_idx, m_idx in MATCH_TEMPLATE:
+            mid = f"{group_name}_{m_idx}"
+            pred = predictions.get(mid)
+            if not pred:
+                continue
+            home = teams[h_idx]
+            away = teams[a_idx]
+            parts = pred["score"].split("-")
+            gh, ga = int(parts[0]), int(parts[1])
+            stats[home]["gf"] += gh
+            stats[home]["ga"] += ga
+            stats[home]["gd"] += gh - ga
+            stats[away]["gf"] += ga
+            stats[away]["ga"] += ga
+            stats[away]["gd"] += ga - gh
+            if gh > ga:
+                stats[home]["pts"] += 3
+                stats[home]["w"] += 1
+                stats[away]["l"] += 1
+            elif gh < ga:
+                stats[away]["pts"] += 3
+                stats[away]["w"] += 1
+                stats[home]["l"] += 1
+            else:
+                stats[home]["pts"] += 1
+                stats[away]["pts"] += 1
+                stats[home]["d"] += 1
+                stats[away]["d"] += 1
+        # 排名
+        ranked = sorted(teams, key=lambda t: (stats[t]["pts"], stats[t]["gd"], stats[t]["gf"]), reverse=True)
+        standings[group_name] = {
+            "1": ranked[0], "2": ranked[1], "3": ranked[2], "4": ranked[3],
+            "stats": stats,
+        }
+    return standings
+
+
+def _get_third_for_winner(w_group, top8):
+    """给小组第一分配对位的第三名小组"""
+    m = THIRD_MATRIX.get(w_group)
+    if not m:
+        return top8[0] if top8 else "A"
+    # 找w_group所在Q区
+    blocked = []
+    for _, groups in Q_ZONES.items():
+        if w_group in groups:
+            blocked = groups
+            break
+    if top8 and m["dflt"] in top8 and m["dflt"] not in blocked:
+        return m["dflt"]
+    for g in m["fbs"]:
+        if g in top8 and g != w_group and g not in blocked:
+            return g
+    fallback = next((g for g in top8 if g != w_group and g not in blocked), None)
+    return fallback or (top8[0] if top8 else "A")
+
+
+def predict_knockout(engine, sim, predictions):
+    """根据小组赛预测结果，推导淘汰赛对阵并预测"""
+    standings = _calc_group_standings(predictions)
+
+    # 构建排名映射: "1A" → 队名, "2A" → 队名, "3A" → 队名
+    rank_map = {}
+    for g, s in standings.items():
+        rank_map[f"1{g}"] = s["1"]
+        rank_map[f"2{g}"] = s["2"]
+        rank_map[f"3{g}"] = s["3"]
+
+    # 计算8个最佳第三名
+    third_list = []
+    for g, s in standings.items():
+        team = s["3"]
+        st = s["stats"][team]
+        third_list.append({"group": g, "team": team, "pts": st["pts"], "gd": st["gd"], "gf": st["gf"]})
+    third_list.sort(key=lambda x: (x["pts"], x["gd"], x["gf"]), reverse=True)
+    top8_groups = [t["group"] for t in third_list[:8]]
+
+    # 分配第三名到对阵位
+    third_assignments = {}  # slot_id → group_letter
+    used_groups = set()
+    for d in B32_DEF:
+        is_wvt = d["h"] == "3rd" or d["a"] == "3rd"
+        if not is_wvt:
+            continue
+        w_slot = d["a"] if d["h"] == "3rd" else d["h"]
+        w_group = w_slot[1]  # e.g. "1E" → "E"
+        available = [g for g in top8_groups if g not in used_groups]
+        if not available:
+            break
+        assigned = _get_third_for_winner(w_group, available)
+        third_assignments[d["id"]] = assigned
+        used_groups.add(assigned)
+
+    # 构建 R32 对阵
+    ko_preds = {}
+    winners = {}  # match_id → team_name
+
+    def resolve_team(slot_str, match_id=None):
+        """解析对阵位到队名"""
+        if slot_str == "3rd":
+            g = third_assignments.get(match_id, "A")
+            return rank_map.get(f"3{g}", "TBD")
+        return rank_map.get(slot_str, "TBD")
+
+    # R32
+    for d in B32_DEF:
+        home = resolve_team(d["h"], d["id"])
+        away = resolve_team(d["a"], d["id"])
+        result = sim.simulate_match(home, away, is_host=False, round_num=1, is_knockout=True)
+        result["locked"] = False
+        result["koHome"] = home
+        result["koAway"] = away
+        result["koRound"] = "R32"
+        ko_preds[d["id"]] = result
+        # 确定胜者
+        h_goals, a_goals = map(int, result["score"].split("-"))
+        winners[d["id"]] = home if h_goals > a_goals else away
+
+    # R16
+    r16_matches = {
+        "R16_U1A": [B32_DEF[0]["id"], B32_DEF[1]["id"]],
+        "R16_U1B": [B32_DEF[2]["id"], B32_DEF[3]["id"]],
+        "R16_U2A": [B32_DEF[4]["id"], B32_DEF[5]["id"]],
+        "R16_U2B": [B32_DEF[6]["id"], B32_DEF[7]["id"]],
+        "R16_L1A": [B32_DEF[8]["id"], B32_DEF[9]["id"]],
+        "R16_L1B": [B32_DEF[10]["id"], B32_DEF[11]["id"]],
+        "R16_L2A": [B32_DEF[12]["id"], B32_DEF[13]["id"]],
+        "R16_L2B": [B32_DEF[14]["id"], B32_DEF[15]["id"]],
+    }
+    for mid, [s1, s2] in r16_matches.items():
+        home = winners.get(s1, "TBD")
+        away = winners.get(s2, "TBD")
+        result = sim.simulate_match(home, away, is_host=False, round_num=1, is_knockout=True)
+        result["locked"] = False
+        result["koHome"] = home
+        result["koAway"] = away
+        result["koRound"] = "R16"
+        ko_preds[mid] = result
+        h_goals, a_goals = map(int, result["score"].split("-"))
+        winners[mid] = home if h_goals > a_goals else away
+
+    # QF
+    qf_matches = {
+        "QF_U1": ["R16_U1A", "R16_U1B"],
+        "QF_U2": ["R16_U2A", "R16_U2B"],
+        "QF_L1": ["R16_L1A", "R16_L1B"],
+        "QF_L2": ["R16_L2A", "R16_L2B"],
+    }
+    for mid, [s1, s2] in qf_matches.items():
+        home = winners.get(s1, "TBD")
+        away = winners.get(s2, "TBD")
+        result = sim.simulate_match(home, away, is_host=False, round_num=1, is_knockout=True)
+        result["locked"] = False
+        result["koHome"] = home
+        result["koAway"] = away
+        result["koRound"] = "QF"
+        ko_preds[mid] = result
+        h_goals, a_goals = map(int, result["score"].split("-"))
+        winners[mid] = home if h_goals > a_goals else away
+
+    # SF
+    sf_matches = {
+        "SF_U": ["QF_U1", "QF_U2"],
+        "SF_L": ["QF_L1", "QF_L2"],
+    }
+    for mid, [s1, s2] in sf_matches.items():
+        home = winners.get(s1, "TBD")
+        away = winners.get(s2, "TBD")
+        result = sim.simulate_match(home, away, is_host=False, round_num=1, is_knockout=True)
+        result["locked"] = False
+        result["koHome"] = home
+        result["koAway"] = away
+        result["koRound"] = "SF"
+        ko_preds[mid] = result
+        h_goals, a_goals = map(int, result["score"].split("-"))
+        winners[mid] = home if h_goals > a_goals else away
+
+    # 季军赛
+    sf_losers = []
+    for mid, [s1, s2] in sf_matches.items():
+        winner = winners[mid]
+        loser = winners.get(s1, "TBD") if winners.get(s1, "TBD") != winner else winners.get(s2, "TBD")
+        if loser == winner:
+            loser = winners.get(s2, "TBD") if winners.get(s1, "TBD") == winner else winners.get(s1, "TBD")
+        sf_losers.append(loser)
+    third_result = sim.simulate_match(sf_losers[0], sf_losers[1], is_host=False, round_num=1, is_knockout=True)
+    third_result["locked"] = False
+    third_result["koHome"] = sf_losers[0]
+    third_result["koAway"] = sf_losers[1]
+    third_result["koRound"] = "THIRD"
+    ko_preds["THIRD"] = third_result
+
+    # 决赛
+    home = winners.get("SF_U", "TBD")
+    away = winners.get("SF_L", "TBD")
+    final_result = sim.simulate_match(home, away, is_host=False, round_num=1, is_knockout=True)
+    final_result["locked"] = False
+    final_result["koHome"] = home
+    final_result["koAway"] = away
+    final_result["koRound"] = "FINAL"
+    ko_preds["FINAL"] = final_result
+
+    return ko_preds
 
 
 if __name__ == "__main__":
