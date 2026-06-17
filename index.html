@@ -827,22 +827,12 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-    // 固定日期范围：覆盖全部赛事（小组赛6/11~6/28，淘汰赛到7/19，决赛7/19）
-    // 首次加载全量拉取历史比赛，后续轮询只拉 ±3 天（减少请求量）
+    // 始终只拉 ±3 天的 ESPN 数据（历史比赛数据从 localStorage 恢复）
     const now = new Date();
-    const isFirstLoad = !window._espnLoaded;
     const dates = [];
-    if (isFirstLoad) {
-      const DATES_RANGE_START = new Date('2026-06-08');
-      const DATES_RANGE_END   = new Date('2026-07-20');
-      for (let d = new Date(DATES_RANGE_START); d <= DATES_RANGE_END; d.setUTCDate(d.getUTCDate()+1)) {
-        dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
-      }
-    } else {
-      for (let offset = -3; offset <= 3; offset++) {
-        const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-        dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
-      }
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
     }
 
     // ===== 缓存逻辑 =====
@@ -859,7 +849,6 @@ async function fetchAllSources() {
       const key = `espn_${d}`;
       const cached = cache[key];
       if (cached && cached.data && (nowTs - (cached._ts||0)) < CACHE_TTL) {
-        // 缓存命中，直接使用
         processESPN(cached.data);
         espnOk = true;
         espnEventsCount += (cached.data.events||[]).length;
@@ -869,7 +858,7 @@ async function fetchAllSources() {
       }
     }
 
-    console.log(`[fetchAllSources] 缓存命中=${dates.length - toFetch.length}天，需请求=${toFetch.length}天`);
+    console.log(`[fetchAllSources] ESPN请求: ±3天共${dates.length}天，缓存命中=${dates.length-toFetch.length}，需请求=${toFetch.length}`);
 
     // 请求未缓存的日期
     if (toFetch.length > 0) {
@@ -878,7 +867,6 @@ async function fetchAllSources() {
         urls.map((u,i) => corsFetch(u).then(r => {
           if (!r.ok) { console.warn('ESPN HTTP', r.status, u); return null; }
           const d = toFetch[i];
-          // 写入缓存
           try {
             r.clone().json().then(data => {
               if (data) {
@@ -899,7 +887,7 @@ async function fetchAllSources() {
       }
     }
 
-    console.log(`[fetchAllSources] ESPN OK=${espnOk}, total events=${espnEventsCount}`);
+    console.log(`[fetchAllSources] ESPN OK=${espnOk}, events=${espnEventsCount}`);
     window._espnLoaded = true;
     fetchInjuriesIfNeeded();
     renderMatches();
@@ -1400,10 +1388,10 @@ function loadScores(){
     if (raw) {
       const data = JSON.parse(raw);
       scores = data.scores || {};
-      // matchStatus / matchClock 不在这里恢复，由 ESPN 实时驱动
+      // 恢复已结束比赛的状态（避免每次都要重新从ESPN拉取）
+      matchStatus = data.status || {};
       halftimeScores = data.ht || {};
       predictions = data.pred || {};
-      const cleanScore = s => (s && s.split('-').length > 3) ? s.split('-').slice(-2).join('-') : s;
       // 清洗脏数据：score字段含半场比分（如 '1-2-2'）的统一修正
       for (const [k, v] of Object.entries(predictions)) {
         if (v && v.score) v.score = cleanScore(v.score);
@@ -1422,8 +1410,7 @@ function loadScores(){
 }
 function saveScores() {
   try {
-    // 只持久化比分和预测，状态和时钟由 ESPN 实时驱动，不写入 localStorage
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, ht: halftimeScores, pred: predictions, _predVer: 13}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 14}));
   } catch(e) {}
 }
 loadScores();
