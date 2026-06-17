@@ -1803,13 +1803,33 @@ function generateDailyPrediction(m) {
 
 function checkAndPredict() {
   try {
-    console.log('[预测] 全量预测检查 - 全部走SCF');
+    // 只预测：已结束的比赛 + 指定日期范围内的比赛
+    const PREDICT_RANGE_START = new Date('2026-06-12');
+    const PREDICT_RANGE_END   = new Date('2026-06-18');
+    PREDICT_RANGE_END.setUTCHours(23, 59, 59, 999);
+
+    console.log('[预测] 预测检查 - 只预测已结束 + 6.12~6.18');
     let updated = false;
     let candidateCount = 0, backfillCount = 0;
     for (const ms of Object.values(GROUP_MATCHES)) {
       for (const m of ms) {
-        // 已完赛且有真实比分 → 用本地模型回填锁定（不再调SCF）
-        if (matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null) {
+        // 解析比赛日期（巴西时间，转成Date对象）
+        const dM = m.date.match(/(\d+)月(\d+)日/);
+        if (!dM) continue;
+        const matchDate = new Date(2026, parseInt(dM[1])-1, parseInt(dM[2]));
+
+        // 判断是否在预测范围内
+        const inRange = matchDate >= PREDICT_RANGE_START && matchDate <= PREDICT_RANGE_END;
+        const isFinished = matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null;
+
+        // 跳过：未结束 且 不在日期范围内
+        if (!isFinished && !inRange) {
+          console.log('[预测] 跳过（不在范围）:', m.id, m.date);
+          continue;
+        }
+
+        // 已完赛 → 用本地模型回填（不调SCF）
+        if (isFinished) {
           if (!predictions[m.id]?.locked || !predictions[m.id]?.score) {
             predictions[m.id] = predictMatch(m, null);
             predictions[m.id].locked = true;
@@ -1818,11 +1838,11 @@ function checkAndPredict() {
           }
           continue;
         }
-        // 未完赛的比赛 → 强制走 SCF 预测（不管之前是否 locked）
-        if (matchStatus[m.id] === 'FINISHED') continue;
+
+        // 在范围内且未完赛 → 调 SCF
         candidateCount++;
-        fetchScfPrediction(m);  // 直接调 SCF，不走本地模型
-        console.log('[预测] 触发SCF:', m.id, m.home + ' vs ' + m.away);
+        fetchScfPrediction(m);
+        console.log('[预测] 触发SCF:', m.id, m.date, m.home + ' vs ' + m.away);
         updated = true;
       }
     }
