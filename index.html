@@ -1301,22 +1301,22 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   if (ns) saveScores();
   // ========== 旧预测数据回滚（v10：已完赛比赛锁定旧值） ==========
   const LEGACY_PREDICTIONS = {
-    // score = 全场比分（不含半场），scoreB = 备选全场比分
-    'A_1': { score:'0-2', scoreB:'2-0', wdl:'客胜', wdlLabel:'墨西哥·胜', goalsNum:2, locked:true, isUpset:true },
-    'A_2': { score:'1-2', scoreB:'2-1', wdl:'客胜', wdlLabel:'韩国·胜', goalsNum:3, locked:true },
-    'A_3': { score:'0-1', scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:1, locked:true },
-    'A_4': { score:'2-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'美国·胜', goalsNum:3, locked:true },
-    'B_1': { score:'0-2', scoreB:'2-0', wdl:'客胜', wdlLabel:'加拿大·胜',goalsNum:2, locked:true, isUpset:true },
-    'B_2': { score:'1-2', scoreB:'2-1', wdl:'客胜', wdlLabel:'智利·胜',   goalsNum:3, locked:true },
-    'C_1': { score:'0-1', scoreB:'1-1', wdl:'客胜', wdlLabel:'英格兰·胜', goalsNum:1, locked:true },
-    'C_2': { score:'1-1', scoreB:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
-    'C_3': { score:'1-3', scoreB:'1-1', wdl:'主胜', wdlLabel:'加纳·胜',   goalsNum:4, locked:true, isUpset:true },
-    'D_1': { score:'0-1', scoreB:'1-1', wdl:'客胜', wdlLabel:'巴西·胜',   goalsNum:1, locked:true },
-    'D_2': { score:'3-1', scoreB:'1-1', wdl:'主胜', wdlLabel:'哥伦比亚·胜',goalsNum:4, locked:true },
-    'E_1': { score:'4-0', scoreB:'1-1', wdl:'主胜', wdlLabel:'德国·胜',   goalsNum:4, locked:true },
-    'E_2': { score:'2-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'荷兰·胜',   goalsNum:2, locked:true },
-    'F_1': { score:'1-1', scoreB:'2-2', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
-    'G_1': { score:'3-0', scoreB:'1-0', wdl:'主胜', wdlLabel:'瑞典·胜',   goalsNum:3, locked:true },
+    // score = 全场比分（不含半场），scoreC = 大球备选
+    'A_1': { score:'0-2', scoreC:'2-0', wdl:'客胜', wdlLabel:'墨西哥·胜', goalsNum:2, locked:true },
+    'A_2': { score:'1-2', scoreC:'2-1', wdl:'客胜', wdlLabel:'韩国·胜', goalsNum:3, locked:true },
+    'A_3': { score:'0-1', scoreC:'1-1', wdl:'平局', wdlLabel:'平局',       goalsNum:1, locked:true },
+    'A_4': { score:'2-1', scoreC:'1-1', wdl:'主胜', wdlLabel:'美国·胜', goalsNum:3, locked:true },
+    'B_1': { score:'0-2', scoreC:'2-0', wdl:'客胜', wdlLabel:'加拿大·胜',goalsNum:2, locked:true },
+    'B_2': { score:'1-2', scoreC:'2-1', wdl:'客胜', wdlLabel:'智利·胜',   goalsNum:3, locked:true },
+    'C_1': { score:'0-1', scoreC:'1-1', wdl:'客胜', wdlLabel:'英格兰·胜', goalsNum:1, locked:true },
+    'C_2': { score:'1-1', scoreC:'2-1', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
+    'C_3': { score:'1-3', scoreC:'1-1', wdl:'主胜', wdlLabel:'加纳·胜',   goalsNum:4, locked:true },
+    'D_1': { score:'0-1', scoreC:'1-1', wdl:'客胜', wdlLabel:'巴西·胜',   goalsNum:1, locked:true },
+    'D_2': { score:'3-1', scoreC:'1-1', wdl:'主胜', wdlLabel:'哥伦比亚·胜',goalsNum:4, locked:true },
+    'E_1': { score:'4-0', scoreC:'1-1', wdl:'主胜', wdlLabel:'德国·胜',   goalsNum:4, locked:true },
+    'E_2': { score:'2-0', scoreC:'1-0', wdl:'主胜', wdlLabel:'荷兰·胜',   goalsNum:2, locked:true },
+    'F_1': { score:'1-1', scoreC:'2-2', wdl:'平局', wdlLabel:'平局',       goalsNum:2, locked:true },
+    'G_1': { score:'3-0', scoreC:'1-0', wdl:'主胜', wdlLabel:'瑞典·胜',   goalsNum:3, locked:true },
   };
   for (const [mid, pred] of Object.entries(LEGACY_PREDICTIONS)) {
     // 只写入：本地没有，或本地有但未锁定
@@ -1395,7 +1395,7 @@ function loadScores(){
       // 清洗脏数据：score字段含半场比分（如 '1-2-2'）的统一修正
       for (const [k, v] of Object.entries(predictions)) {
         if (v && v.score) v.score = cleanScore(v.score);
-        if (v && v.scoreB) v.scoreB = cleanScore(v.scoreB);
+        if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
       if (!data._predVer || data._predVer < 13) {
         // 升级引擎版本：只清空未锁定的预测，保留已锁定（已完赛）的预测
@@ -1864,7 +1864,6 @@ function checkAndPredict() {
           // 用远程 Elo+MC 数据
           predictions[m.id] = {
             score: remote.score,
-            scoreB: remote.scoreB || '-',
             scoreC: remote.scoreC || '-',
             wdl: remote.wdl,
             wdlLabel: remote.wdlLabel,
@@ -1981,7 +1980,7 @@ function renderMatches(){
     let verifyHtml='';
     if(st==='FINISHED' && played && predictions[m.id]){
       const p=predictions[m.id];
-      const scoreOk=p.score===dtStr||p.scoreB===dtStr;
+      const scoreOk=p.score===dtStr||p.scoreC===dtStr;
       const actualWdl=s[0]>s[1]?'主胜':s[0]<s[1]?'客胜':'平局';
       const wdlOk=p.wdl===actualWdl;
       const goalsOk=p.goalsNum===s[0]+s[1];
@@ -1998,7 +1997,7 @@ function renderMatches(){
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
         </div>
-        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreB||'-'} 大${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${predictions[m.id]?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（大${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${p.goalsNum}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
   }
@@ -2093,7 +2092,6 @@ async function showMatchDetail(m){
     <div class="prediction-box">
       <div class="pred-row">
         <div class="pred-item"><div class="pred-label">实力碾压</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
-        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--accent)">${pred.scoreB||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">大球备选</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
         <div class="pred-item"><div class="pred-label">总进球数</div><div class="pred-val">${pred.goals}</div></div>
@@ -2328,18 +2326,12 @@ function predictMatch(m, oddsData){
 
   const s1=probs[0];
   const s1W=s1.hg>s1.ag?'H':s1.hg<s1.ag?'A':'D';
-  // scoreB：反向赛果（主胜→客胜，客胜→主胜，平局→概率高的胜方）
-  let targetWdl;
-  if(s1W==='H')targetWdl='A';else if(s1W==='A')targetWdl='H';else{const phw=probs.reduce((s,p)=>s+(p.hg>p.ag?p.p:0),0);targetWdl=phw>=0.5?'H':'A';}
-  let s2=null;for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw===targetWdl&&p.p>=0.008){s2=p;break;}}
-  if(!s2){for(const p of probs){const pw=p.hg>p.ag?'H':p.hg<p.ag?'A':'D';if(pw!==s1W&&p.p>=0.008){s2=p;break;}}}
-  if(!s2)s2=probs.find(p=>p.hg!==s1.hg||p.ag!==s1.ag)||{hg:s1.hg,ag:(s1.ag||1)+1,p:0.01};
   // scoreC：大球备选
   const s1Total=s1.hg+s1.ag;let scoreCObj=null;
   for(const p of probs){const t=p.hg+p.ag;if(t>s1Total&&p.p>=0.015){if(!scoreCObj||t>(scoreCObj.hg+scoreCObj.ag))scoreCObj=p;}}
   if(!scoreCObj){for(const p of probs){const t=p.hg+p.ag;if(t>=s1Total&&p.p>=0.015){if(!scoreCObj||p.p>scoreCObj.p)scoreCObj=p;}}}
-  if(!scoreCObj)scoreCObj=s2;
-  let scoreA=`${s1.hg}-${s1.ag}`,scoreB=`${s2.hg}-${s2.ag}`,scoreCStr=`${scoreCObj.hg}-${scoreCObj.ag}`;
+  if(!scoreCObj)scoreCObj=probs[1]||s1;
+  let scoreA=`${s1.hg}-${s1.ag}`,scoreCStr=`${scoreCObj.hg}-${scoreCObj.ag}`;
 
   // ===== 胜平负概率 =====
   const probH=poissonWin(lambdaH,lambdaA,'home');
@@ -2386,10 +2378,10 @@ function predictMatch(m, oddsData){
   reasons.push('【概率】胜平负 '+Math.round(probH*100)+'%/'+Math.round(probD*100)+'%/'+Math.round(probA*100)+'%');
   if(oddsInfo){reasons.push('【盘口】'+oddsInfo.asian.replace('亚盘 ','')+' | '+oddsInfo.ou.replace('大小球 ','')+' | 市场'+oddsInfo.implied);if(handicapDir)reasons.push('【让球】'+handicapDir);}
   reasons.push('【预期】λ₁='+lambdaH.toFixed(2)+' λ₂='+lambdaA.toFixed(2)+' | 总进'+expTotal.toFixed(1)+'球（'+goalsRange+'）');
-  reasons.push('【比分】①'+scoreA+'（'+wdlLabel+'，置信'+conf+'）②'+scoreB+'（备选）');
+  reasons.push('【比分】①'+scoreA+'（'+wdlLabel+'，置信'+conf+'）②'+scoreCStr+'（大球）');
   if(coldWarn)reasons.push('⚠️冷门预警：'+coldWarn);
   return{
-    score:scoreA,scoreB:scoreB,wdl,wdlLabel,
+    score:scoreA,scoreC:scoreCStr,wdl,wdlLabel,
     goals:topGoals+'（'+goalsRange+'）',goalsNum:Math.round(hg+ag),
     reason:reasons.join('；'),isUpset:isCold,coldWarning:coldWarn,
     confidence:conf,lambda:{h:lambdaH,a:lambdaA,total:expTotal},

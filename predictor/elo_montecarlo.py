@@ -263,7 +263,7 @@ class MonteCarloSimulator:
     def simulate_match(self, home, away, is_host=False, round_num=1, is_knockout=False):
         """
         蒙特卡洛模拟一场比赛
-        返回: { score_a, score_b, wdl, score_b, score_c, prob_h/d/a, ... }
+        返回: { score, scoreC, wdl, prob_h/d/a, ... }
         """
         # Elo 差
         elo_h = self.elo.ratings[home]
@@ -362,31 +362,8 @@ class MonteCarloSimulator:
         score_a_str = top_scores[0][0]
         score_a_prob = top_scores[0][1]
 
-        # scoreB：反向赛果中概率最高的
-        ha, aa = map(int, score_a_str.split("-"))
-        if ha > aa:
-            target = "away"  # 主胜→找客胜
-        elif ha < aa:
-            target = "home"  # 客胜→找主胜
-        else:
-            target = "home" if prob_h >= prob_a else "away"  # 平局→概率高的胜方
-
-        score_b_str = None
-        for s, p in top_scores:
-            sh, sa = map(int, s.split("-"))
-            if target == "home" and sh > sa and p >= 0.01:
-                score_b_str = s
-                break
-            elif target == "away" and sa > sh and p >= 0.01:
-                score_b_str = s
-                break
-            elif target == "draw" and sh == sa and p >= 0.01 and s != score_a_str:
-                score_b_str = s
-                break
-        if not score_b_str:
-            score_b_str = top_scores[1][0] if len(top_scores) > 1 else "1-0"
-
         # scoreC：大球备选（总进球更高且概率合理）
+        ha, aa = map(int, score_a_str.split("-"))
         score_c_str = None
         base_total = ha + aa
         for s, p in top_scores:
@@ -401,7 +378,11 @@ class MonteCarloSimulator:
                     score_c_str = s
                     break
         if not score_c_str:
-            score_c_str = score_b_str
+            score_c_str = top_scores[1][0] if len(top_scores) > 1 else "1-0"
+
+
+
+
 
         # 置信度
         if score_a_prob > 0.15:
@@ -433,21 +414,7 @@ class MonteCarloSimulator:
             wdl = "平局"
             wdl_label = "平局"
 
-        # 冷门预警
-        cold_warn = ""
-        is_cold = False
-        cold_factors = []
         elo_gap = abs(elo_diff)
-        weaker = away if elo_diff > 0 else home
-        if elo_gap > 150 and prob_h > 0.55 and elo_diff > 0 and prob_a > 0.18:
-            cold_factors.append(f"{weaker}近期状态佳")
-        if same_cont and elo_gap > 100:
-            cold_factors.append("同大洲更熟悉")
-        if is_host and elo_gap < 100:
-            cold_factors.append("东道主加持")
-        if len(cold_factors) >= 2:
-            cold_warn = "；".join(cold_factors)
-            is_cold = True
 
         # 分析原因
         reasons = []
@@ -480,21 +447,16 @@ class MonteCarloSimulator:
 
         reasons.append(f"【概率】胜平负 {int(prob_h*100)}%/{int(prob_d*100)}%/{int(prob_a*100)}%")
         reasons.append(f"【预期】λ₁={lambda_h:.2f} λ₂={lambda_a:.2f} | 总进{avg_goals:.1f}球（{goals_label}）")
-        reasons.append(f"【比分】①{score_a_str}（{wdl_label}，置信{confidence}）②{score_b_str}（备选）③{score_c_str}（大球）")
-        if cold_warn:
-            reasons.append(f"⚠️冷门预警：{cold_warn}")
+        reasons.append(f"【比分】①{score_a_str}（{wdl_label}，置信{confidence}）②{score_c_str}（大球）")
 
         return {
             "score": score_a_str,
-            "scoreB": score_b_str,
             "scoreC": score_c_str,
             "wdl": wdl,
             "wdlLabel": wdl_label,
             "goals": "/".join(top_totals) + f"（{goals_label}）",
             "goalsNum": ha + aa,
             "reason": "；".join(reasons),
-            "isUpset": is_cold,
-            "coldWarning": cold_warn,
             "confidence": confidence,
             "lambda": {"h": round(lambda_h, 2), "a": round(lambda_a, 2), "total": round(lambda_h + lambda_a, 2)},
             "probH": round(prob_h, 4),
@@ -551,15 +513,12 @@ def run_predictions(finished_matches=None, output_dir="data"):
             if finished:
                 predictions[mid] = {
                     "score": f"{finished['score_h']}-{finished['score_a']}",
-                    "scoreB": "-",
                     "scoreC": "-",
                     "wdl": "主胜" if finished["score_h"] > finished["score_a"] else ("客胜" if finished["score_h"] < finished["score_a"] else "平局"),
                     "wdlLabel": f"{home}·胜" if finished["score_h"] > finished["score_a"] else (f"{away}·胜" if finished["score_h"] < finished["score_a"] else "平局"),
                     "goals": "",
                     "goalsNum": finished["score_h"] + finished["score_a"],
                     "reason": "已完赛",
-                    "isUpset": False,
-                    "coldWarning": "",
                     "confidence": "确定",
                     "locked": True,
                     "probH": 0, "probD": 0, "probA": 0,
