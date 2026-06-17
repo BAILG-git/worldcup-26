@@ -1407,6 +1407,52 @@ function loadScores(){
       }
     }
   } catch(e) { scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {}; }
+  // ========== 已完赛赛果硬编码（ESPN超出±3天窗口后兜底） ==========
+  const COMPLETED_RESULTS = {
+  'A_0': {score:[2, 0],ht:[1, 0],goals:[{team:'墨西哥',minute:"8+33'",isHome:true,type:'goal',player:"Julián Quiñones"},{team:'墨西哥',minute:"66+36'",isHome:true,type:'goal',player:"Raúl Jiménez"}]},
+  'A_1': {score:[2, 1],ht:[0, 0],goals:[{team:'捷克',minute:"58+11'",isHome:false,type:'goal',player:"Ladislav Krejcí"},{team:'韩国',minute:"66+44'",isHome:true,type:'goal',player:"Hwang In-Beom"},{team:'韩国',minute:"79+24'",isHome:true,type:'goal',player:"Oh Hyeon-Gyu"}]},
+  'B_0': {score:[1, 1],ht:[0, 1],goals:[{team:'波黑',minute:"20+28'",isHome:false,type:'goal',player:"Jovo Lukic"},{team:'加拿大',minute:"77+59'",isHome:true,type:'goal',player:"Cyle Larin"}]},
+  'B_1': {score:[1, 1],ht:[0, 1],goals:[{team:'瑞士',minute:"16+32'",isHome:false,type:'penalty_scored',player:"Breel Embolo"},{team:'卡塔尔',minute:"90'",isHome:true,type:'own_goal',player:"Miro Muheim"}]},
+  'C_0': {score:[1, 1],ht:[1, 1],goals:[{team:'摩洛哥',minute:"20+15'",isHome:false,type:'goal',player:"Ismael Saibari"},{team:'巴西',minute:"31+21'",isHome:true,type:'goal',player:"Vinícius Júnior"}]},
+  'C_1': {score:[0, 1],ht:[0, 1],goals:[{team:'苏格兰',minute:"27+53'",isHome:false,type:'goal',player:"John McGinn"}]},
+  'D_0': {score:[4, 1],ht:[3, 0],goals:[{team:'美国',minute:"6+48'",isHome:true,type:'own_goal',player:"Damián Bobadilla"},{team:'美国',minute:"30+19'",isHome:true,type:'goal',player:"Folarin Balogun"},{team:'美国',minute:"45'",isHome:true,type:'goal',player:"Folarin Balogun"},{team:'巴拉圭',minute:"72+42'",isHome:false,type:'goal',player:"Maurício"},{team:'美国',minute:"90'",isHome:true,type:'goal',player:"Giovanni Reyna"}]},
+  'D_1': {score:[2, 0],ht:[1, 0],goals:[{team:'澳大利亚',minute:"26+18'",isHome:true,type:'goal',player:"Nestory Irankunda"},{team:'澳大利亚',minute:"74+7'",isHome:true,type:'goal',player:"Connor Metcalfe"}]},
+  'E_0': {score:[7, 1],ht:[3, 1],goals:[{team:'德国',minute:"5+17'",isHome:true,type:'goal',player:"Felix Nmecha"},{team:'库拉索',minute:"20+44'",isHome:false,type:'goal',player:"Livano Comenencia"},{team:'德国',minute:"37+30'",isHome:true,type:'goal',player:"Nico Schlotterbeck"},{team:'德国',minute:"45'",isHome:true,type:'penalty_scored',player:"Kai Havertz"},{team:'德国',minute:"46+8'",isHome:true,type:'goal',player:"Jamal Musiala"},{team:'德国',minute:"67+42'",isHome:true,type:'goal',player:"Nathaniel Brown"},{team:'德国',minute:"77+6'",isHome:true,type:'goal',player:"Deniz Undav"},{team:'德国',minute:"87+43'",isHome:true,type:'goal',player:"Kai Havertz"}]},
+  'E_1': {score:[1, 0],ht:[0, 0],goals:[{team:'科特迪瓦',minute:"89+32'",isHome:true,type:'goal',player:"Amad Diallo"}]},
+  'F_0': {score:[2, 2],ht:[0, 0],goals:[{team:'荷兰',minute:"50+1'",isHome:true,type:'goal',player:"Virgil van Dijk"},{team:'日本',minute:"56+43'",isHome:false,type:'goal',player:"Keito Nakamura"},{team:'荷兰',minute:"63+8'",isHome:true,type:'goal',player:"Crysencio Summerville"},{team:'日本',minute:"88+1'",isHome:false,type:'goal',player:"Daichi Kamada"}]},
+  'F_1': {score:[5, 1],ht:[2, 1],goals:[{team:'瑞典',minute:"6+21'",isHome:true,type:'goal',player:"Yasin Ayari"},{team:'瑞典',minute:"29+8'",isHome:true,type:'goal',player:"Alexander Isak"},{team:'突尼斯',minute:"42+30'",isHome:false,type:'goal',player:"Omar Rekik"},{team:'瑞典',minute:"58+59'",isHome:true,type:'goal',player:"Viktor Gyökeres"},{team:'瑞典',minute:"83+31'",isHome:true,type:'goal',player:"Mattias Svanberg"},{team:'瑞典',minute:"90'",isHome:true,type:'goal',player:"Yasin Ayari"}]},
+  'G_0': {score:[1, 1],ht:[0, 1],goals:[{team:'埃及',minute:"19+2'",isHome:false,type:'goal',player:"Emam Ashour"},{team:'比利时',minute:"65+44'",isHome:true,type:'own_goal',player:"Mohamed Hany"}]},
+  'G_1': {score:[2, 2],ht:[1, 1],goals:[{team:'新西兰',minute:"6+43'",isHome:false,type:'goal',player:"Elijah Just"},{team:'伊朗',minute:"31+48'",isHome:true,type:'goal',player:"Ramin Rezaeian"},{team:'新西兰',minute:"54'",isHome:false,type:'goal',player:"Elijah Just"},{team:'伊朗',minute:"63+4'",isHome:true,type:'goal',player:"Mohammad Mohebbi"}]},
+  'H_0': {score:[0, 0],ht:[0, 0]},
+  'H_1': {score:[1, 1],ht:[1, 0],goals:[{team:'沙特阿拉伯',minute:"40+3'",isHome:true,type:'goal',player:"Abdulelah Al-Amri"},{team:'乌拉圭',minute:"79+27'",isHome:false,type:'goal',player:"Maxi Araújo"}]},
+  'I_0': {score:[3, 1],ht:[0, 0],goals:[{team:'法国',minute:"65+31'",isHome:true,type:'goal',player:"Kylian Mbappé"},{team:'法国',minute:"81+36'",isHome:true,type:'goal',player:"Bradley Barcola"},{team:'塞内加尔',minute:"90'",isHome:false,type:'goal',player:"Ibrahim Mbaye"},{team:'法国',minute:"90'",isHome:true,type:'goal',player:"Kylian Mbappé"}]},
+  'I_1': {score:[1, 4],ht:[1, 2],goals:[{team:'挪威',minute:"28+15'",isHome:false,type:'goal',player:"Erling Haaland"},{team:'伊拉克',minute:"38+20'",isHome:true,type:'goal',player:"Aymen Hussein"},{team:'挪威',minute:"42+22'",isHome:false,type:'goal',player:"Erling Haaland"},{team:'挪威',minute:"75+55'",isHome:false,type:'goal',player:"Leo Østigard"},{team:'挪威',minute:"90'",isHome:false,type:'own_goal',player:"Aymen Hussein"}]},
+  'J_0': {score:[3, 0],ht:[1, 0],goals:[{team:'阿根廷',minute:"16+39'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"59+42'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"75+38'",isHome:true,type:'goal',player:"Lionel Messi"}]},
+  'J_1': {score:[3, 1],ht:[1, 0],goals:[{team:'奥地利',minute:"20+1'",isHome:true,type:'goal',player:"Romano Schmid"},{team:'约旦',minute:"49+9'",isHome:false,type:'goal',player:"Ali Olwan"},{team:'奥地利',minute:"75+53'",isHome:true,type:'own_goal',player:"Yazan Al-Arab"},{team:'奥地利',minute:"90'",isHome:true,type:'penalty_scored',player:"Marko Arnautovic"}]},
+  };
+  for (const [mid, res] of Object.entries(COMPLETED_RESULTS)) {
+    if (!scores[mid] || scores[mid][0] === null) {
+      scores[mid] = res.score;
+      matchStatus[mid] = 'FINISHED';
+      matchClock[mid] = '完场';
+    }
+    if (res.ht && !halftimeScores[mid]) {
+      halftimeScores[mid] = res.ht;
+    }
+    if (res.goals && res.goals.length > 0) {
+      // 找到 match 的 home/away 以构建 goalEvents key
+      let key = null;
+      for (const ms of Object.values(GROUP_MATCHES)) {
+        for (const m of ms) {
+          if (m.id === mid) { key = m.home + '_' + m.away; break; }
+        }
+        if (key) break;
+      }
+      if (key && (!goalEvents[key] || goalEvents[key].length < res.goals.length)) {
+        goalEvents[key] = res.goals;
+      }
+    }
+  }
 }
 function saveScores() {
   try {
