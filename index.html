@@ -694,38 +694,40 @@ function genGroupMatches() {
 
 let GROUP_MATCHES = genGroupMatches();
 
-// ========== 已完赛比分（硬编码，确保超出 ESPN ±3 天窗口的赛果也能显示） ==========
+// ========== 已完赛比分（硬编码，验证直接校验，无需 ESPN 回溯） ==========
+// score = [主队进球, 客队进球]，ht = 半场比分（null=未知待补填）
+// 数据源：ESPN API 实时拉取确认，每日有新完赛时追加
 const COMPLETED_RESULTS = {
   // Group A: 墨西哥 南非 韩国 捷克
-  'A_0': { score: [2, 0], ht: [1, 0] },  // 墨西哥 2-0 南非 (6月11日)
-  'A_1': { score: [2, 1], ht: [1, 0] },  // 韩国 2-1 捷克 (6月11日)
+  'A_0': { score: [2, 0] },  // 墨西哥 2-0 南非 (6.11)
+  'A_1': { score: [2, 1] },  // 韩国 2-1 捷克 (6.11)
   // Group B: 加拿大 波黑 卡塔尔 瑞士
-  'B_0': { score: [1, 1], ht: [0, 0] },  // 加拿大 1-1 波黑 (6月13日)
-  'B_1': { score: [1, 1], ht: [0, 1] },  // 卡塔尔 1-1 瑞士 (6月14日)
+  'B_0': { score: [1, 1] },  // 加拿大 1-1 波黑 (6.12)
+  'B_1': { score: [1, 1] },  // 卡塔尔 1-1 瑞士 (6.13)
   // Group C: 巴西 摩洛哥 海地 苏格兰
-  'C_0': { score: [1, 1], ht: [0, 0] },  // 巴西 1-1 摩洛哥 (6月14日)
-  'C_1': { score: [0, 1], ht: [0, 0] },  // 海地 0-1 苏格兰 (6月14日)
+  'C_0': { score: [1, 1] },  // 巴西 1-1 摩洛哥 (6.13)
+  'C_1': { score: [0, 1] },  // 海地 0-1 苏格兰 (6.13)
   // Group D: 美国 巴拉圭 澳大利亚 土耳其
-  'D_0': { score: [4, 1], ht: [2, 0] },  // 美国 4-1 巴拉圭 (6月13日)
-  'D_1': { score: [2, 0], ht: [1, 0] },  // 澳大利亚 2-0 土耳其 (6月14日)
+  'D_0': { score: [4, 1] },  // 美国 4-1 巴拉圭 (6.12)
+  'D_1': { score: [2, 0] },  // 澳大利亚 2-0 土耳其 (6.14)
   // Group E: 德国 库拉索 科特迪瓦 厄瓜多尔
-  'E_0': { score: [7, 1], ht: [4, 0] },  // 德国 7-1 库拉索 (6月15日)
-  'E_1': { score: [1, 0], ht: [0, 0] },  // 科特迪瓦 1-0 厄瓜多尔 (6月15日)
+  'E_0': { score: [7, 1] },  // 德国 7-1 库拉索 (6.14)
+  'E_1': { score: [1, 0] },  // 科特迪瓦 1-0 厄瓜多尔 (6.14)
   // Group F: 荷兰 日本 瑞典 突尼斯
-  'F_0': { score: [2, 2], ht: [1, 1] },  // 荷兰 2-2 日本 (6月15日)
-  'F_1': { score: [5, 1], ht: [3, 0] },  // 瑞典 5-1 突尼斯 (6月15日)
+  'F_0': { score: [2, 2] },  // 荷兰 2-2 日本 (6.14)
+  'F_1': { score: [5, 1] },  // 瑞典 5-1 突尼斯 (6.14)
   // Group G: 比利时 埃及 伊朗 新西兰
-  'G_0': { score: [1, 1], ht: [0, 0] },  // 比利时 1-1 埃及 (6月16日)
-  'G_1': { score: [2, 2], ht: [1, 1] },  // 伊朗 2-2 新西兰 (6月16日)
+  'G_0': { score: [1, 1] },  // 比利时 1-1 埃及 (6.15)
+  'G_1': { score: [2, 2] },  // 伊朗 2-2 新西兰 (6.15)
   // Group H: 西班牙 佛得角 沙特阿拉伯 乌拉圭
-  'H_0': { score: [0, 0], ht: [0, 0] },  // 西班牙 0-0 佛得角 (6月16日)
-  'H_1': { score: [1, 1], ht: [0, 0] },  // 沙特阿拉伯 1-1 乌拉圭 (6月16日)
+  'H_0': { score: [0, 0] },  // 西班牙 0-0 佛得角 (6.15)
+  'H_1': { score: [1, 1] },  // 沙特阿拉伯 1-1 乌拉圭 (6.15)
   // Group I: 法国 塞内加尔 伊拉克 挪威
-  'I_0': { score: [3, 1], ht: [2, 0] },  // 法国 3-1 塞内加尔 (6月17日)
-  'I_1': { score: [1, 4], ht: [0, 2] },  // 伊拉克 1-4 挪威 (6月17日)
+  'I_0': { score: [3, 1] },  // 法国 3-1 塞内加尔 (6.16)
+  'I_1': { score: [1, 4] },  // 伊拉克 1-4 挪威 (6.16)
   // Group J: 阿根廷 阿尔及利亚 奥地利 约旦
-  'J_0': { score: [3, 0], ht: [1, 0] },  // 阿根廷 3-0 阿尔及利亚 (6月17日)
-  'J_1': { score: [3, 1], ht: [2, 1] },  // 奥地利 3-1 约旦 (6月17日)
+  'J_0': { score: [3, 0] },  // 阿根廷 3-0 阿尔及利亚 (6.16)
+  'J_1': { score: [3, 1] },  // 奥地利 3-1 约旦 (6.17)
 };
 
 let scores = {};
@@ -862,12 +864,10 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-    // 从赛事开始日(6月11日)到未来3天，确保所有已完赛赛果都能拉到
+    // 已完赛赛果已硬编码到 COMPLETED_RESULTS，ESPN 只需拉 ±1 天覆盖直播/今日赛程
     const now = new Date();
-    const TOURNAMENT_START = new Date(Date.UTC(2026, 5, 11)); // 2026-06-11 UTC
-    const startOffset = Math.max(-3, Math.floor((TOURNAMENT_START - now) / 86400000));
     const dates = [];
-    for (let offset = startOffset; offset <= 3; offset++) {
+    for (let offset = -1; offset <= 1; offset++) {
       const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
       dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
     }
@@ -1336,7 +1336,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
       }
     }
   if (ns) saveScores();
-  // 旧 LEGACY_PREDICTIONS 已移除（ID 映射错误且阻止远程数据更新）
+  // 已完赛预测统一由 checkAndPredict() 从远程 JSON 加载
   // 已完赛预测统一由 checkAndPredict() 从远程 JSON 加载
   // 自动补填：ESPN 返回已结束比赛但缺预测 → 立即生成并锁定
   try {
@@ -1411,27 +1411,22 @@ function loadScores(){
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
-      if (!data._predVer || data._predVer < 16) {
-        // 升级引擎版本：清空旧预测（含 LEGACY_PREDICTIONS 错误 ID 数据），由远程 JSON 重新填充
+      if (!data._predVer || data._predVer < 17) {
+        // v17: 清空旧预测+赛果（改用 COMPLETED_RESULTS 硬编码赛果，±1天ESPN）
         predictions = {};
       }
     }
   } catch(e) { scores = {}; halftimeScores = {}; predictions = {}; }
-  // 用硬编码完赛结果补填缺失数据（确保超出 ESPN 窗口的赛果也能显示）
+  // 硬编码完赛结果：直接写入 scores/matchStatus，验证行无需 ESPN 回溯
   for (const [mid, res] of Object.entries(COMPLETED_RESULTS)) {
-    if (!scores[mid] || scores[mid][0] === null) {
-      scores[mid] = res.score;
-      matchStatus[mid] = 'FINISHED';
-      matchClock[mid] = '完场';
-    }
-    if (!halftimeScores[mid] && res.ht) {
-      halftimeScores[mid] = res.ht;
-    }
+    scores[mid] = res.score;
+    matchStatus[mid] = 'FINISHED';
+    matchClock[mid] = '完场';
   }
 }
 function saveScores() {
   try {
-    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 16}));
+    localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, pred: predictions, _predVer: 17}));
   } catch(e) {}
 }
 loadScores();
