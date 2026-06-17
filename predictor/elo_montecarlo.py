@@ -531,19 +531,13 @@ def run_predictions(finished_matches=None, output_dir="data"):
                 result["locked"] = False
                 predictions[mid] = result
 
-    # ========== 淘汰赛预测 ==========
-    ko_predictions = predict_knockout(engine, sim, predictions)
-
-    # 合并
-    all_predictions = {**predictions, **ko_predictions}
-
     # 输出
     output = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
         "engine": "Elo+MonteCarlo",
         "simulations": sim.N,
         "elo_ratings": {k: round(v, 1) for k, v in engine.ratings.items()},
-        "predictions": all_predictions,
+        "predictions": predictions,
     }
 
     os.makedirs(output_dir, exist_ok=True)
@@ -552,7 +546,7 @@ def run_predictions(finished_matches=None, output_dir="data"):
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"[OK] 预测完成，输出到 {out_path}")
-    print(f"   共 {len(all_predictions)} 场比赛（小组{len(predictions)} + 淘汰{len(ko_predictions)}）")
+    print(f"   共 {len(predictions)} 场小组赛")
     return output
 
 
