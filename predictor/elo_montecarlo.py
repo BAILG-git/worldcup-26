@@ -399,9 +399,9 @@ class MonteCarloSimulator:
             t = sh + sa
             total_goals_dist[t] = total_goals_dist.get(t, 0) + p
         sorted_totals = sorted(total_goals_dist.items(), key=lambda x: -x[1])
-        top_totals = [f"{t}球" for t, _ in sorted_totals[:3]]
+        top2_goals = sorted([t for t, _ in sorted_totals[:2]])
+        goals_str = f"{top2_goals[0]}, {top2_goals[1]}"
         avg_goals = lambda_h + lambda_a
-        goals_label = "大球" if avg_goals > 2.8 else ("小球" if avg_goals < 2.0 else "适中")
 
         # 赛果标签
         if ha > aa:
@@ -445,8 +445,9 @@ class MonteCarloSimulator:
         if same_cont:
             reasons.append(f"【同洲】同大洲交锋")
 
+        goals_tag = "大球" if avg_goals > 2.8 else ("小球" if avg_goals < 2.0 else "适中")
         reasons.append(f"【概率】胜平负 {int(prob_h*100)}%/{int(prob_d*100)}%/{int(prob_a*100)}%")
-        reasons.append(f"【预期】λ₁={lambda_h:.2f} λ₂={lambda_a:.2f} | 总进{avg_goals:.1f}球（{goals_label}）")
+        reasons.append(f"【预期】λ₁={lambda_h:.2f} λ₂={lambda_a:.2f} | 总进{avg_goals:.1f}球（{goals_tag}）")
         reasons.append(f"【比分】①{score_a_str}（{wdl_label}，置信{confidence}）②{score_c_str}（备选）")
 
         return {
@@ -454,7 +455,7 @@ class MonteCarloSimulator:
             "scoreC": score_c_str,
             "wdl": wdl,
             "wdlLabel": wdl_label,
-            "goals": "/".join(top_totals) + f"（{goals_label}）",
+            "goals": goals_str,
             "goalsNum": ha + aa,
             "reason": "；".join(reasons),
             "confidence": confidence,
