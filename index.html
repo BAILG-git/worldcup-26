@@ -1935,6 +1935,14 @@ function fairPlayCompare(teamA, teamB) {
   return fpA - fpB; // 负分越大(扣分多)排在后面，即 fp值小的排在前面
 }
 
+// 确定性排序兜底：队名字符串 hash → 0~1 小数，保证同分不跳
+function tieHash(a, b) {
+  let ha = 0, hb = 0;
+  for (let i = 0; i < a.length; i++) ha = ((ha << 5) - ha) + a.charCodeAt(i);
+  for (let i = 0; i < b.length; i++) hb = ((hb << 5) - hb) + b.charCodeAt(i);
+  return (ha & 0x7fffffff) / 0x7fffffff - (hb & 0x7fffffff) / 0x7fffffff;
+}
+
 function calcStandings() {
   const standings = {};
   for (const [g, teams] of Object.entries(GROUPS)) {
@@ -1959,7 +1967,7 @@ function calcStandings() {
       b.gf - a.gf ||                      // 3. 进球
       h2hCompare(a.team, b.team, GROUP_MATCHES[g], scores) || // 4. 相互战绩
       fairPlayCompare(a.team, b.team) ||  // 5. 公平竞赛
-      Math.random() - 0.5                 // 6. 抽签(简化)
+      tieHash(a.team, b.team)             // 6. 抽签（队名hash确定排序，不跳）
     );
   }
   return standings;
@@ -1974,7 +1982,7 @@ function calcBestThirds(s) {
     b.gd - a.gd ||                  // 2. 净胜球
     b.gf - a.gf ||                  // 3. 进球
     ((fairPlay[a.team] || 0) - (fairPlay[b.team] || 0)) || // 4. 公平竞赛
-    Math.random() - 0.5             // 5. 抽签(简化)
+    tieHash(a.team, b.team)         // 5. 抽签（队名hash确定排序，不跳）
   );
   return t;
 }
