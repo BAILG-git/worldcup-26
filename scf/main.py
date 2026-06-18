@@ -506,8 +506,8 @@ def main_handler(event, context):
 
     path = (event.get('path') or '').strip()
 
-    # 路由：/upsets
-    if path == '/upsets':
+    # 路由：/upsets（兼容带 API 网关 stage 前缀如 /release/upsets）
+    if path == '/upsets' or path.endswith('/upsets'):
         method = (event.get('httpMethod') or 'GET').upper()
         cors_headers = {
             'Content-Type': 'application/json',
