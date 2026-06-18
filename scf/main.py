@@ -464,11 +464,12 @@ def _github_api(method, body=None):
     return json.loads(resp.read().decode('utf-8'))
 
 def handle_upsets_get():
-    """读取爆冷标记（无需认证，直接走 raw）"""
+    """读取爆冷标记（走 GitHub API，兼容国内 SCF 环境）"""
     try:
-        req = urllib.request.Request(RAW_URL, headers={'User-Agent': 'worldcup-scf'})
-        resp = urllib.request.urlopen(req, timeout=10)
-        return resp.read().decode('utf-8')
+        data = _github_api('GET')
+        content = data.get('content', '')
+        import base64
+        return base64.b64decode(content).decode('utf-8') if content else '{}'
     except Exception as e:
         return json.dumps({})
 
