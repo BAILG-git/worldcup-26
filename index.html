@@ -852,8 +852,9 @@ function genGroupMatches() {
   const matches = {};
   for (const [g, teams] of Object.entries(GROUPS)) {
     const sch = MATCH_SCHEDULE[g];
+    // FIFA 标准小组赛配对阵: MD1 1v2&3v4, MD2 1v3&4v2, MD3 4v1&2v3
     const template = [
-      {h:0,a:1,i:0},{h:2,a:3,i:1},{h:2,a:0,i:2},{h:3,a:1,i:3},{h:3,a:0,i:4},{h:2,a:1,i:5}
+      {h:0,a:1,i:0},{h:2,a:3,i:1},{h:0,a:2,i:2},{h:3,a:1,i:3},{h:3,a:0,i:4},{h:1,a:2,i:5}
     ];
     matches[g] = template.map((m) => ({
       id:`${g}_${m.i}`, home:teams[m.h], away:teams[m.a],
