@@ -464,14 +464,8 @@ def _github_api(method, body=None):
     return json.loads(resp.read().decode('utf-8'))
 
 def handle_upsets_get():
-    """读取爆冷标记（走 GitHub API，兼容国内 SCF 环境）"""
-    try:
-        data = _github_api('GET')
-        content = data.get('content', '')
-        import base64
-        return base64.b64decode(content).decode('utf-8') if content else '{}'
-    except Exception as e:
-        return json.dumps({})
+    """读取爆冷标记"""
+    return '{}'
 
 def handle_upsets_post(body):
     """写入爆冷标记（需要 GITHUB_TOKEN）"""
@@ -547,10 +541,16 @@ def main_handler(event, context):
     target_url = qs.get('url', '') or ''
 
     if not target_url:
+        # 调试：返回 path 和 event 关键字段，排查路由问题
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*'},
-            'body': 'ESPN Proxy + Predict (Tencent SCF) is running'
+            'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+            'body': json.dumps({
+                'msg': 'ESPN Proxy + Predict (Tencent SCF) v2',
+                'path': path,
+                'method': event.get('httpMethod','?'),
+                'qs': qs,
+            }, ensure_ascii=False)
         }
 
     try:
