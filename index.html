@@ -2038,7 +2038,7 @@ function renderMatches(){
   }
   // 正常赛程
   let curDate='';
-  for(const m of normalMatches){
+  for(const m of all){
     if(m.date!==curDate){
       if(curDate) html+='</div>';
       curDate=m.date;
