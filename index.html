@@ -497,16 +497,15 @@ function closeAdminModal() {
 }
 function verifyAdmin() {
   const pwd = document.getElementById('adminPwd').value;
+  const mid = _upsetPending; // 提前保存，避免被 closeAdminModal 清空
   if (pwd === ADMIN_PWD) {
     closeAdminModal();
-    if (_upsetPending) {
-      const mid = _upsetPending;
+    if (mid) {
       const idx = upsetMatches.indexOf(mid);
       if (idx >= 0) { upsetMatches.splice(idx, 1); }
       else { upsetMatches.push(mid); }
       renderMatches();
       saveUpsets();
-      _upsetPending = null;
     }
   } else {
     document.getElementById('adminErr').style.display = 'block';
