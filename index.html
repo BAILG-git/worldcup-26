@@ -297,6 +297,26 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 }
 .goal-toast .goal-close:hover{color:var(--red)}
 @keyframes slideDown{from{opacity:0;transform:translateY(-40px)}to{opacity:1;transform:translateY(0)}}
+.match-card.pressing{opacity:.7;transform:scale(.98);transition:.3s}
+/* 爆冷标记弹窗 */
+.upset-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:999;animation:fadeIn .2s}
+.upset-modal-box{background:#1a1f2e;border:1px solid var(--border);border-radius:12px;padding:24px;min-width:320px;max-width:400px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.upset-modal-box h3{margin:0 0 16px;font-size:18px;color:var(--gold)}
+.upset-modal-box p{margin:0 0 20px;font-size:14px;color:var(--muted)}
+.upset-modal-box .btn-row{display:flex;gap:12px;justify-content:center}
+.upset-modal-box button{padding:8px 24px;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;transition:.15s}
+.btn-confirm{background:var(--gold);color:#0d1117}
+.btn-confirm:hover{background:#d4a62e}
+.btn-cancel{background:rgba(125,133,144,.2);color:var(--muted)}
+.btn-cancel:hover{background:rgba(125,133,144,.35)}
+/* 管理密码弹窗 */
+.admin-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .2s}
+.admin-modal-box{background:#1a1f2e;border:1px solid var(--border);border-radius:12px;padding:24px;min-width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.admin-modal-box h3{margin:0 0 12px;font-size:16px;color:#e5534b}
+.admin-modal-box input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;background:#0d1117;color:#e6edf3;font-size:14px;margin-bottom:16px;box-sizing:border-box;outline:none}
+.admin-modal-box input:focus{border-color:var(--gold)}
+.admin-modal-box .err-msg{color:#e5534b;font-size:12px;margin-bottom:12px;display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
 </style>
 </head>
@@ -338,11 +358,124 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
   <div class="modal-panel" id="modalPanel"></div>
 </div>
 
+<!-- 爆冷标记确认弹窗 -->
+<div class="upset-modal" id="upsetModal" style="display:none">
+  <div class="upset-modal-box">
+    <h3 id="upsetModalTitle">标记为爆冷</h3>
+    <p id="upsetModalText">确认将此比赛标记为爆冷？</p>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeUpsetModal()">取消</button>
+      <button class="btn-confirm" id="upsetConfirmBtn" onclick="confirmUpset()">确认</button>
+    </div>
+  </div>
+</div>
+<!-- 管理验证弹窗 -->
+<div class="admin-modal" id="adminModal" style="display:none">
+  <div class="admin-modal-box">
+    <h3>admin</h3>
+    <input type="password" id="adminPwd" placeholder="请输入密码" autocomplete="off" onkeydown="if(event.key==='Enter')verifyAdmin()">
+    <div class="err-msg" id="adminErr">验证失败</div>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeAdminModal()">取消</button>
+      <button class="btn-confirm" onclick="verifyAdmin()">确认</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ========== 进球事件存储 ==========
 let goalEvents = {};
-let upsetMatches = ['B_1', 'D_1']; // 爆冷比赛ID列表，后续告诉我哪场我直接加
+let upsetMatches = []; // 从 SCF remote 加载
+let _upsetPending = null; // 待标记的 match id
+let _upsetTimer = null; // 长按计时器
+const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
+const ADMIN_PWD = 'blg-admin';
+// 加载远程爆冷标记
+async function loadUpsets() {
+  try {
+    const resp = await fetch(SCF_UPSETS_URL);
+    const data = await resp.json();
+    upsetMatches = Object.keys(data).filter(k => data[k] === true);
+    console.log('[爆冷] 已加载:', upsetMatches);
+  } catch(e) {
+    console.warn('[爆冷] 加载失败，使用空列表', e);
+  }
+}
+// 保存爆冷标记到远程
+async function saveUpsets() {
+  const obj = {};
+  upsetMatches.forEach(mid => obj[mid] = true);
+  try {
+    const resp = await fetch(SCF_UPSETS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(obj)
+    });
+    const result = await resp.json();
+    if (result.ok) {
+      console.log('[爆冷] 已同步:', upsetMatches);
+    } else {
+      console.warn('[爆冷] 同步失败:', result.error);
+    }
+  } catch(e) {
+    console.warn('[爆冷] 同步异常:', e);
+  }
+}
+// 长按开始
+function startLongPress(matchId) {
+  window._longPressFired = false;
+  _upsetPending = matchId;
+  _upsetTimer = setTimeout(() => {
+    window._longPressFired = true;
+    const m = _matchMap[matchId];
+    if (!m) return;
+    const isUpset = upsetMatches.includes(matchId);
+    document.getElementById('upsetModalTitle').textContent = isUpset ? '取消爆冷标记' : '标记为爆冷';
+    document.getElementById('upsetModalText').textContent = isUpset
+      ? `确认取消 ${m.home} vs ${m.away} 的爆冷标记？`
+      : `确认将 ${m.home} vs ${m.away} 标记为爆冷？`;
+    document.getElementById('upsetConfirmBtn').textContent = '确认';
+    document.getElementById('upsetModal').style.display = 'flex';
+    _upsetTimer = null;
+  }, 4000);
+}
+function cancelLongPress() {
+  if (_upsetTimer) { clearTimeout(_upsetTimer); _upsetTimer = null; }
+}
+function closeUpsetModal() {
+  document.getElementById('upsetModal').style.display = 'none';
+  _upsetPending = null;
+}
+function confirmUpset() {
+  closeUpsetModal();
+  document.getElementById('adminPwd').value = '';
+  document.getElementById('adminErr').style.display = 'none';
+  document.getElementById('adminModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('adminPwd').focus(), 100);
+}
+function closeAdminModal() {
+  document.getElementById('adminModal').style.display = 'none';
+  _upsetPending = null;
+}
+function verifyAdmin() {
+  const pwd = document.getElementById('adminPwd').value;
+  if (pwd === ADMIN_PWD) {
+    closeAdminModal();
+    if (_upsetPending) {
+      const mid = _upsetPending;
+      const idx = upsetMatches.indexOf(mid);
+      if (idx >= 0) { upsetMatches.splice(idx, 1); }
+      else { upsetMatches.push(mid); }
+      renderMatches();
+      saveUpsets();
+      _upsetPending = null;
+    }
+  } else {
+    document.getElementById('adminErr').style.display = 'block';
+    document.getElementById('adminPwd').value = '';
+  }
+}
 let prevScores = {};
 let audioCtx = null;
 function getAudioCtx(){
@@ -1991,7 +2124,7 @@ function buildMatchCard(m){
     verifyHtml=`<div class="mc-verify"><span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span></div>`;
   }
   const isUpset = upsetMatches.includes(m.id);
-  return `<div class="match-card${isUpset?' upset':''}" onclick="showMatchDetail(_matchMap['${m.id}'])">
+  return `<div class="match-card${isUpset?' upset':''}" onmousedown="startLongPress('${m.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress('${m.id}')" ontouchend="cancelLongPress()" ontouchcancel="cancelLongPress()" onclick="if(!window._longPressFired){showMatchDetail(_matchMap['${m.id}'])};window._longPressFired=false">
       ${isUpset?'<span class="upset-badge">爆冷</span>':''}
       <span class="mc-group-tag">${m.group}组</span>
       <div class="mc-head"><span class="mc-time">${m.time}</span><span class="mc-venue">${m.venue||''}${m.city?' · '+m.city:''}</span><span class="mc-status ${stCls}">${stLabel}</span>${clock?`<span class="mc-clock">${clock}</span>`:''}</div>
@@ -2662,9 +2795,9 @@ function switchTab(tab){
 
 // ========== INIT ==========
 try {
-  renderStandings(); renderMatches(); renderBest3rd();
-  // 页面加载自动连接，无需手动点击
-  connectAll();
+  renderStandings(); renderBest3rd();
+  // 先加载爆冷标记，再渲染赛程
+  loadUpsets().then(() => { renderMatches(); connectAll(); });
 } catch(e) {
   console.error('INIT error:', e);
   document.body.innerHTML += '<div style="color:red;padding:20px">初始化错误: '+e.message+'<br>请按F12查看控制台</div>';

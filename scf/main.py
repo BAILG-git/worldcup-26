@@ -444,6 +444,55 @@ def handle_predict(params):
     result = predict_match(home, away, match_id)
     return result
 
+# ========== 爆冷标记同步（读写 GitHub upserts.json） ==========
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
+UPSETS_REPO = 'BAILG-git/worldcup-26'
+UPSETS_PATH = 'data/upsets.json'
+RAW_URL = f'https://raw.githubusercontent.com/{UPSETS_REPO}/main/{UPSETS_PATH}'
+API_URL = f'https://api.github.com/repos/{UPSETS_REPO}/contents/{UPSETS_PATH}'
+
+def _github_api(method, body=None):
+    """调用 GitHub REST API"""
+    data = body and json.dumps(body).encode('utf-8') or None
+    req = urllib.request.Request(API_URL, data=data, headers={
+        'User-Agent': 'worldcup-scf',
+        'Authorization': f'Bearer {GITHUB_TOKEN}',
+        'Accept': 'application/vnd.github.v3+json',
+    })
+    req.get_method = lambda: method
+    resp = urllib.request.urlopen(req, timeout=15)
+    return json.loads(resp.read().decode('utf-8'))
+
+def handle_upsets_get():
+    """读取爆冷标记（无需认证，直接走 raw）"""
+    try:
+        req = urllib.request.Request(RAW_URL, headers={'User-Agent': 'worldcup-scf'})
+        resp = urllib.request.urlopen(req, timeout=10)
+        return resp.read().decode('utf-8')
+    except Exception as e:
+        return json.dumps({})
+
+def handle_upsets_post(body):
+    """写入爆冷标记（需要 GITHUB_TOKEN）"""
+    if not GITHUB_TOKEN:
+        return {'error': '服务器未配置 GitHub Token'}
+    try:
+        # 获取当前文件
+        current = _github_api('GET')
+        sha = current.get('sha', '')
+        # 更新内容
+        new_content = json.dumps(body, ensure_ascii=False, indent=2)
+        import base64
+        commit_body = {
+            'message': 'update upsets.json via SCF',
+            'content': base64.b64encode(new_content.encode('utf-8')).decode('utf-8'),
+            'sha': sha,
+        }
+        _github_api('PUT', commit_body)
+        return {'ok': True}
+    except Exception as e:
+        return {'error': str(e)}
+
 # ========== SCF 主入口 ==========
 def main_handler(event, context):
     qs = (event.get('queryStringParameters') or
@@ -455,8 +504,32 @@ def main_handler(event, context):
         qs = parse_qs(qs)
         qs = {k: v[0] for k, v in qs.items()}
 
-    # 路由：/predict
     path = (event.get('path') or '').strip()
+
+    # 路由：/upsets
+    if path == '/upsets':
+        method = (event.get('httpMethod') or 'GET').upper()
+        cors_headers = {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Cache-Control': 'no-cache',
+        }
+        if method == 'OPTIONS':
+            return {'statusCode': 204, 'headers': cors_headers, 'body': ''}
+        if method == 'POST':
+            try:
+                raw_body = event.get('body', '{}') or '{}'
+                payload = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
+                result = handle_upsets_post(payload)
+            except Exception as e:
+                result = {'error': str(e)}
+            return {'statusCode': 200 if result.get('ok') else 500, 'headers': cors_headers,
+                    'body': json.dumps(result, ensure_ascii=False)}
+        # GET
+        return {'statusCode': 200, 'headers': cors_headers, 'body': handle_upsets_get()}
+
+    # 路由：/predict
     if path == '/predict' or qs.get('action','') == 'predict':
         result = handle_predict(qs)
         return {
