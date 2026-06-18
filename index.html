@@ -1552,16 +1552,15 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   if (updated) { refreshAll(); }
 }
 
-// 有直播中的比赛时用 30s，否则 60s
+// 有直播时10秒，无直播时30秒
 function getPollingInterval() {
-  // 有直播时10秒，无直播时30秒（用户无感体验）
   return Object.values(matchStatus).some(s => s === 'LIVE') ? 10000 : 30000;
 }
 function startPolling() {
   stopPolling();
   pollingTimer = setInterval(() => {
     fetchAllSources().then(() => {
-      // 动态调整下一轮间隔（有直播变30s，无直播变60s）
+      // 动态调整下一轮间隔（有直播10s，无直播30s）
       startPolling();
     });
   }, getPollingInterval());
@@ -1574,7 +1573,7 @@ function updateStatus(state, msg) {
     case 'live': {
       dot.classList.add('live');
       const hasLive = Object.values(matchStatus).some(s => s === 'LIVE');
-      text.textContent = hasLive ? 'Live · Refreshing every 30s' : 'Live · Refreshing every 60s';
+      text.textContent = hasLive ? 'Live · Refreshing every 10s' : 'Live · Refreshing every 30s';
       break;
     }
     case 'connecting': text.textContent = 'Connecting...'; break;
