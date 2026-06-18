@@ -1340,7 +1340,8 @@ function processESPN(data) {
     // 策略2：从 details 进球事件反推（覆盖所有情况）
     // 上半场 = 45分钟以内（clock.value <= 2700 秒）
     // 用 scoringPlay 判断进球，比 type.id 列表更可靠
-    if (c.details && c.details.length > 0) {
+    // 注意：不覆盖策略1（中场休息时的比分是权威数据）
+    if (!htScores && c.details && c.details.length > 0) {
       let hHt = 0, aHt = 0;
       const hcId = String(hc.id || '');
       const acId = String(ac.id || '');
@@ -1496,8 +1497,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
           halftimeScores[mm.id] = ns ? [ns[0], ns[1]] : [0, 0];
         }
         matchStatus[mm.id] = st;
-        // 已完赛比赛不再被 ESPN 轮询覆盖半场比分（COMPLETED_RESULTS 已用进球事件精确计算）
-        if (htScores && st !== 'FINISHED') halftimeScores[mm.id] = htScores;
+        if (htScores) halftimeScores[mm.id] = htScores;
         if (clockStr !== undefined) matchClock[mm.id] = clockStr;
       }
     }
@@ -1672,6 +1672,8 @@ function loadScores(){
       }
     }
   }
+  // 持久化 COMPLETED_RESULTS 修正后的半场比分，避免后续 ESPN 轮询覆盖
+  saveScores();
 }
 function saveScores() {
   try {
