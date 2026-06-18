@@ -2184,7 +2184,7 @@ function buildMatchCard(m){
       <span class="mc-group-tag">${m.group}组</span>
       <div class="mc-head"><span class="mc-time">${m.time}</span><span class="mc-venue">${m.venue||''}${m.city?' · '+m.city:''}</span><span class="mc-status ${stCls}">${stLabel}</span>${clock?`<span class="mc-clock">${clock}</span>`:''}</div>
       <div class="mc-body">
-        <div class="mc-vs">${flagImg(m.home,18)}<span>${m.home}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${m.away}</span></div>
+        <div class="mc-vs">${flagImg(m.home,18)}<span>${tname(m.home)}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${tname(m.away)}</span></div>
         <div class="mc-detail">
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
