@@ -2197,6 +2197,9 @@ function renderMatches(){
     if(st==='LIVE') liveMatches.push(m); else normalMatches.push(m);
   }
   let html='';
+  // 计算今日日期字符串（格式 "6月18日"）
+  const tdy=new Date();
+  const tdyStr=`${tdy.getMonth()+1}月${tdy.getDate()}日`;
   // 直播比赛置顶
   if(liveMatches.length>0){
     html+='<div class="match-live-block"><div class="match-live-header">🔴 正在直播</div><div class="match-grid">';
@@ -2204,10 +2207,20 @@ function renderMatches(){
       html+=buildMatchCard(m);
     }
     html+='</div></div>';
+    // 直播下方紧跟今日赛程
+    const todayMatches=normalMatches.filter(m=>m.date===tdyStr);
+    if(todayMatches.length>0){
+      html+=`<div class="match-date-block"><div class="match-date-header">📅 今日赛程 · ${tdyStr}</div><div class="match-grid">`;
+      for(const m of todayMatches){
+        html+=buildMatchCard(m);
+      }
+      html+='</div></div>';
+    }
   }
-  // 正常赛程
+  // 正常赛程（如有直播则跳过今日，避免重复）
   let curDate='';
   for(const m of all){
+    if(liveMatches.length>0 && m.date===tdyStr) continue;
     if(m.date!==curDate){
       if(curDate) html+='</div>';
       curDate=m.date;
