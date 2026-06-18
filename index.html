@@ -388,7 +388,9 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 let goalEvents = {};
 let upsetMatches = []; // 从 SCF remote 加载
 let _upsetPending = null; // 待标记的 match id
-let _upsetTimer = null; // 长按计时器
+let _lpTimer = null; // 长按计时器
+let _lpMid = null;   // 当前长按的 match id
+let _lpFired = false; // 长按是否已触发
 const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记
@@ -422,26 +424,61 @@ async function saveUpsets() {
     console.warn('[爆冷] 同步异常:', e);
   }
 }
-// 长按开始
-function startLongPress(matchId) {
-  window._longPressFired = false;
-  _upsetPending = matchId;
-  _upsetTimer = setTimeout(() => {
-    window._longPressFired = true;
-    const m = _matchMap[matchId];
+// ========== 事件委托：长按 + 点击 ==========
+function _findMatchId(el) {
+  while (el && el !== document) {
+    const mid = el.getAttribute('data-mid');
+    if (mid) return mid;
+    el = el.parentElement;
+  }
+  return null;
+}
+function _lpStart(mid) {
+  _lpMid = mid; _lpFired = false;
+  _lpTimer = setTimeout(() => {
+    _lpFired = true; _lpTimer = null;
+    const m = _matchMap[mid];
     if (!m) return;
-    const isUpset = upsetMatches.includes(matchId);
+    _upsetPending = mid;
+    const isUpset = upsetMatches.includes(mid);
     document.getElementById('upsetModalTitle').textContent = isUpset ? '取消爆冷标记' : '标记为爆冷';
     document.getElementById('upsetModalText').textContent = isUpset
       ? `确认取消 ${m.home} vs ${m.away} 的爆冷标记？`
       : `确认将 ${m.home} vs ${m.away} 标记为爆冷？`;
     document.getElementById('upsetConfirmBtn').textContent = '确认';
     document.getElementById('upsetModal').style.display = 'flex';
-    _upsetTimer = null;
   }, 4000);
 }
-function cancelLongPress() {
-  if (_upsetTimer) { clearTimeout(_upsetTimer); _upsetTimer = null; }
+function _lpCancel() {
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+  _lpMid = null;
+}
+function setupMatchCardEvents() {
+  const cont = document.getElementById('tab-matches');
+  if (!cont || cont._lpBound) return;
+  cont._lpBound = true;
+  // mousedown / touchstart → 启动长按计时
+  cont.addEventListener('mousedown', e => {
+    const mid = _findMatchId(e.target);
+    if (mid) _lpStart(mid);
+  });
+  cont.addEventListener('touchstart', e => {
+    const mid = _findMatchId(e.target);
+    if (mid) _lpStart(mid);
+  }, {passive: true});
+  // 取消
+  const cancel = () => _lpCancel();
+  cont.addEventListener('mouseup', cancel);
+  cont.addEventListener('mouseleave', cancel);
+  cont.addEventListener('touchend', cancel);
+  cont.addEventListener('touchcancel', cancel);
+  // click → 未长按时打开详情
+  cont.addEventListener('click', e => {
+    const mid = _findMatchId(e.target);
+    if (!mid) return;
+    if (_lpFired) { _lpFired = false; return; }
+    if (_matchMap[mid]) showMatchDetail(_matchMap[mid]);
+  });
 }
 function closeUpsetModal() {
   document.getElementById('upsetModal').style.display = 'none';
@@ -2124,7 +2161,7 @@ function buildMatchCard(m){
     verifyHtml=`<div class="mc-verify"><span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span></div>`;
   }
   const isUpset = upsetMatches.includes(m.id);
-  return `<div class="match-card${isUpset?' upset':''}" onmousedown="startLongPress('${m.id}')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress('${m.id}')" ontouchend="cancelLongPress()" ontouchcancel="cancelLongPress()" onclick="if(!window._longPressFired){showMatchDetail(_matchMap['${m.id}'])};window._longPressFired=false">
+  return `<div class="match-card${isUpset?' upset':''}" data-mid="${m.id}">
       ${isUpset?'<span class="upset-badge">爆冷</span>':''}
       <span class="mc-group-tag">${m.group}组</span>
       <div class="mc-head"><span class="mc-time">${m.time}</span><span class="mc-venue">${m.venue||''}${m.city?' · '+m.city:''}</span><span class="mc-status ${stCls}">${stLabel}</span>${clock?`<span class="mc-clock">${clock}</span>`:''}</div>
@@ -2181,6 +2218,7 @@ function renderMatches(){
   }
   if(curDate) html+='</div></div>';
   cont.innerHTML=html;
+  setupMatchCardEvents();
 }
 
 // ========== FLAG IMG SMALL (for modal) ==========
