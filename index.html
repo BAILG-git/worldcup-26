@@ -485,7 +485,7 @@ function closeUpsetModal() {
   _upsetPending = null;
 }
 function confirmUpset() {
-  closeUpsetModal();
+  document.getElementById('upsetModal').style.display = 'none'; // 不清 _upsetPending
   document.getElementById('adminPwd').value = '';
   document.getElementById('adminErr').style.display = 'none';
   document.getElementById('adminModal').style.display = 'flex';
