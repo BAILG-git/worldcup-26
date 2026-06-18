@@ -1338,7 +1338,7 @@ function processESPN(data) {
       console.log('ESPN: ht from HT live', h, a, htScores);
     }
     // 策略2：从 details 进球事件反推（覆盖所有情况）
-    // 上半场 = 60分钟以内（含伤停补时，clock.value <= 3600 秒）
+    // 上半场 = 45分钟以内（clock.value <= 2700 秒）
     // 用 scoringPlay 判断进球，比 type.id 列表更可靠
     if (c.details && c.details.length > 0) {
       let hHt = 0, aHt = 0;
@@ -1346,8 +1346,8 @@ function processESPN(data) {
       const acId = String(ac.id || '');
       for (const d of c.details) {
         if (!d.clock || d.scoringPlay !== true) continue;
-        // 上半场 cutoff：60分钟（含伤停补时，实际一般不超过55分钟）
-        if (d.clock.value <= 3600) {
+        // 上半场 cutoff：45分钟（2700秒），含伤停补时
+        if (d.clock.value <= 2700) {
           const tid = String(d.team?.id || d.competitor?.id || '');
           if (tid === hcId) hHt++;
           else if (tid === acId) aHt++;
@@ -1363,7 +1363,7 @@ function processESPN(data) {
       const acId = String(ac.id || '');
       for (const d of c.details) {
         if (!d.clock || d.scoringPlay !== true) continue;
-        if (d.clock.value > 3600) {
+        if (d.clock.value > 2700) {
           const tid = String(d.team?.id || d.competitor?.id || '');
           if (tid === hcId) h2Ht++;
           else if (tid === acId) a2Ht++;
@@ -1496,7 +1496,8 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
           halftimeScores[mm.id] = ns ? [ns[0], ns[1]] : [0, 0];
         }
         matchStatus[mm.id] = st;
-        if (htScores) halftimeScores[mm.id] = htScores;
+        // 已完赛比赛不再被 ESPN 轮询覆盖半场比分（COMPLETED_RESULTS 已用进球事件精确计算）
+        if (htScores && st !== 'FINISHED') halftimeScores[mm.id] = htScores;
         if (clockStr !== undefined) matchClock[mm.id] = clockStr;
       }
     }
@@ -1630,13 +1631,31 @@ function loadScores(){
   'J_0': {score:[3, 0],ht:[1, 0],goals:[{team:'阿根廷',minute:"16+39'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"59+42'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"75+38'",isHome:true,type:'goal',player:"Lionel Messi"}]},
   'J_1': {score:[3, 1],ht:[1, 0],goals:[{team:'奥地利',minute:"20+1'",isHome:true,type:'goal',player:"Romano Schmid"},{team:'约旦',minute:"49+9'",isHome:false,type:'goal',player:"Ali Olwan"},{team:'奥地利',minute:"75+53'",isHome:true,type:'own_goal',player:"Yazan Al-Arab"},{team:'奥地利',minute:"90'",isHome:true,type:'penalty_scored',player:"Marko Arnautovic"}]},
   };
+  // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
+  const calcHalftimeFromGoals = (goals) => {
+    let hHt = 0, aHt = 0;
+    for (const g of goals) {
+      const m = (g.minute || '').match(/^(\d+)/);
+      if (!m) continue;
+      const baseMin = parseInt(m[1]);
+      if (baseMin <= 45) { // 上半场（含伤停补时如 45+3'）
+        if (g.isHome) hHt++;
+        else aHt++;
+      }
+    }
+    return [hHt, aHt];
+  };
+
   for (const [mid, res] of Object.entries(COMPLETED_RESULTS)) {
     if (!scores[mid] || scores[mid][0] === null) {
       scores[mid] = res.score;
       matchStatus[mid] = 'FINISHED';
       matchClock[mid] = '完场';
     }
-    if (res.ht && !halftimeScores[mid]) {
+    // 强制从进球事件重新计算半场比分（覆盖可能被 ESPN 轮询污染的错误值）
+    if (res.goals && res.goals.length > 0) {
+      halftimeScores[mid] = calcHalftimeFromGoals(res.goals);
+    } else if (res.ht && !halftimeScores[mid]) {
       halftimeScores[mid] = res.ht;
     }
     if (res.goals && res.goals.length > 0) {
