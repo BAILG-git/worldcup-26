@@ -49,6 +49,8 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 #tab-matches{padding:12px;overflow-y:auto;height:calc(100vh - 160px)}
 .match-date-block{margin-bottom:16px}
 .match-date-header{font-weight:bold;font-size:14px;color:var(--gold);margin-bottom:8px;padding-left:4px}
+.match-live-block{margin-bottom:16px}
+.match-live-header{font-weight:bold;font-size:14px;color:#ff4444;margin-bottom:8px;padding-left:4px;animation:pulse 1.5s infinite}
 .match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media(max-width:1200px){.match-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){
@@ -59,6 +61,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
   .tabs{gap:3px;margin-bottom:10px}
   .tab-btn{padding:5px 10px;font-size:11px}
   .match-date-block{margin-bottom:10px}
+  .match-live-block{margin-bottom:10px}
   .match-date-header{font-size:13px;margin-bottom:6px}
   .match-grid{grid-template-columns:1fr;gap:8px}
   .mc-head{padding:6px 8px 6px 35px;font-size:10px}
@@ -1966,6 +1969,42 @@ function startPredCheck() {
 startPredCheck();
 
 let _matchMap={};
+function buildMatchCard(m){
+  const s=scores[m.id];
+  const played=s&&s[0]!==null&&s[1]!==null;
+  const st= matchStatus[m.id]||'SCHEDULED';
+  const stCls=st==='LIVE'?'live':st==='FINISHED'?'finished':'upcoming';
+  const stLabel=st==='LIVE'?'直播中':st==='FINISHED'?'完场':'未开始';
+  const clock=matchClock[m.id]||'';
+  const ht=halftimeScores[m.id];
+  const htStr=ht?`${ht[0]}-${ht[1]}`:'- -';
+  const dtLabel=st==='FINISHED'?'最终':'实时';
+  const dtStr=played?`${s[0]}-${s[1]}`:'- -';
+  // 完赛预测验证
+  let verifyHtml='';
+  if(st==='FINISHED' && played && predictions[m.id]){
+    const p=predictions[m.id];
+    const scoreOk=p.score===dtStr||p.scoreC===dtStr;
+    const actualWdl=s[0]>s[1]?'主胜':s[0]<s[1]?'客胜':'平局';
+    const wdlOk=p.wdl===actualWdl;
+    const goalsOk=p.goalsNum===s[0]+s[1];
+    verifyHtml=`<div class="mc-verify"><span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span></div>`;
+  }
+  const isUpset = upsetMatches.includes(m.id);
+  return `<div class="match-card${isUpset?' upset':''}" onclick="showMatchDetail(_matchMap['${m.id}'])">
+      ${isUpset?'<span class="upset-badge">爆冷</span>':''}
+      <span class="mc-group-tag">${m.group}组</span>
+      <div class="mc-head"><span class="mc-time">${m.time}</span><span class="mc-venue">${m.venue||''}${m.city?' · '+m.city:''}</span><span class="mc-status ${stCls}">${stLabel}</span>${clock?`<span class="mc-clock">${clock}</span>`:''}</div>
+      <div class="mc-body">
+        <div class="mc-vs">${flagImg(m.home,18)}<span>${m.home}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${m.away}</span></div>
+        <div class="mc-detail">
+          <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
+          <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
+        </div>
+        ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+      </div>
+    </div>`;
+}
 function renderMatches(){
   const cont=document.getElementById('tab-matches');
   cont.style.display='block';
@@ -1981,49 +2020,31 @@ function renderMatches(){
     return a.time.localeCompare(b.time);
   });
   _matchMap={};
-  let html='';
-  let curDate='';
+  // 先提取直播中的比赛
+  const liveMatches=[], normalMatches=[];
   for(const m of all){
     _matchMap[m.id]=m;
+    const st=matchStatus[m.id]||'SCHEDULED';
+    if(st==='LIVE') liveMatches.push(m); else normalMatches.push(m);
+  }
+  let html='';
+  // 直播比赛置顶
+  if(liveMatches.length>0){
+    html+='<div class="match-live-block"><div class="match-live-header">🔴 正在直播</div><div class="match-grid">';
+    for(const m of liveMatches){
+      html+=buildMatchCard(m);
+    }
+    html+='</div></div>';
+  }
+  // 正常赛程
+  let curDate='';
+  for(const m of normalMatches){
     if(m.date!==curDate){
       if(curDate) html+='</div>';
       curDate=m.date;
       html+=`<div class="match-date-block"><div class="match-date-header">${curDate}</div><div class="match-grid">`;
     }
-    const s=scores[m.id];
-    const played=s&&s[0]!==null&&s[1]!==null;
-    const st= matchStatus[m.id]||'SCHEDULED';
-    const stCls=st==='LIVE'?'live':st==='FINISHED'?'finished':'upcoming';
-    const stLabel=st==='LIVE'?'直播中':st==='FINISHED'?'完场':'未开始';
-    const clock=matchClock[m.id]||'';
-    const ht=halftimeScores[m.id];
-    const htStr=ht?`${ht[0]}-${ht[1]}`:'- -';
-    const dtLabel=st==='FINISHED'?'最终':'实时';
-    const dtStr=played?`${s[0]}-${s[1]}`:'- -';
-    // 完赛预测验证
-    let verifyHtml='';
-    if(st==='FINISHED' && played && predictions[m.id]){
-      const p=predictions[m.id];
-      const scoreOk=p.score===dtStr||p.scoreC===dtStr;
-      const actualWdl=s[0]>s[1]?'主胜':s[0]<s[1]?'客胜':'平局';
-      const wdlOk=p.wdl===actualWdl;
-      const goalsOk=p.goalsNum===s[0]+s[1];
-      verifyHtml=`<div class="mc-verify"><span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span></div>`;
-    }
-    const isUpset = upsetMatches.includes(m.id);
-    html+=`<div class="match-card${isUpset?' upset':''}" onclick="showMatchDetail(_matchMap['${m.id}'])">
-      ${isUpset?'<span class="upset-badge">爆冷</span>':''}
-      <span class="mc-group-tag">${m.group}组</span>
-      <div class="mc-head"><span class="mc-time">${m.time}</span><span class="mc-venue">${m.venue||''}${m.city?' · '+m.city:''}</span><span class="mc-status ${stCls}">${stLabel}</span>${clock?`<span class="mc-clock">${clock}</span>`:''}</div>
-      <div class="mc-body">
-        <div class="mc-vs">${flagImg(m.home,18)}<span>${m.home}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${m.away}</span></div>
-        <div class="mc-detail">
-          <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
-          <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
-        </div>
-        ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
-      </div>
-    </div>`;
+    html+=buildMatchCard(m);
   }
   if(curDate) html+='</div></div>';
   cont.innerHTML=html;
