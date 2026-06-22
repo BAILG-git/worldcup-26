@@ -216,16 +216,16 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   padding:3px;margin:4px 0;
   background:transparent;transition:.15s;
 }
-/* Left half (upper side) — Blue series: deeper toward center */
-.qz-lr32{border-color:rgba(25,118,210,.3);background:rgba(227,242,253,.35)}
-.qz-lr16{border-color:rgba(25,118,210,.4);background:rgba(187,222,251,.4)}
-.qz-luf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.3)}
-.qz-lsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.2)}
-/* Right half (lower side) — Green series: deeper toward center */
-.qz-rr32{border-color:rgba(56,142,60,.3);background:rgba(232,245,233,.35)}
-.qz-rr16{border-color:rgba(56,142,60,.4);background:rgba(200,230,201,.4)}
-.qz-ruf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.3)}
-.qz-rsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.2)}
+/* Upper group within each half — Green series: deeper toward center */
+.qz-gr32{border-color:rgba(56,142,60,.3);background:rgba(232,245,233,.35)}
+.qz-gr16{border-color:rgba(56,142,60,.4);background:rgba(200,230,201,.4)}
+.qz-guf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.3)}
+.qz-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.2)}
+/* Lower group within each half — Blue series: deeper toward center */
+.qz-br32{border-color:rgba(25,118,210,.3);background:rgba(227,242,253,.35)}
+.qz-br16{border-color:rgba(25,118,210,.4);background:rgba(187,222,251,.4)}
+.qz-buf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.3)}
+.qz-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.2)}
 /* Make bslots inside qz-group fill width */
 .qz-group .bslot{margin:2px 0;min-width:60px}
 
@@ -2917,34 +2917,34 @@ function renderBracket(){
 
   // -- R32 column (8 slots, 4 Q-zones, 2 slots per zone) --
   html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
-  // Q-zone 1: R32_73, R32_79  → R16_U1A
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_73',(koSlot['R32_73']||{}).home,'home',(koSlot['R32_73']||{}).homeB3)}${renderBslot('R32_73',(koSlot['R32_73']||{}).away,'away',(koSlot['R32_73']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_79',(koSlot['R32_79']||{}).home,'home',(koSlot['R32_79']||{}).homeB3)}${renderBslot('R32_79',(koSlot['R32_79']||{}).away,'away',(koSlot['R32_79']||{}).awayB3)}</div>`;
-  // Q-zone 1: R32_77, R32_76  → R16_U1B
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_77',(koSlot['R32_77']||{}).home,'home',(koSlot['R32_77']||{}).homeB3)}${renderBslot('R32_77',(koSlot['R32_77']||{}).away,'away',(koSlot['R32_77']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_76',(koSlot['R32_76']||{}).home,'home',(koSlot['R32_76']||{}).homeB3)}${renderBslot('R32_76',(koSlot['R32_76']||{}).away,'away',(koSlot['R32_76']||{}).awayB3)}</div>`;
-  // Q-zone 2: R32_80, R32_81  → R16_U2A
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_80',(koSlot['R32_80']||{}).home,'home',(koSlot['R32_80']||{}).homeB3)}${renderBslot('R32_80',(koSlot['R32_80']||{}).away,'away',(koSlot['R32_80']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_81',(koSlot['R32_81']||{}).home,'home',(koSlot['R32_81']||{}).homeB3)}${renderBslot('R32_81',(koSlot['R32_81']||{}).away,'away',(koSlot['R32_81']||{}).awayB3)}</div>`;
-  // Q-zone 2: R32_83, R32_84  → R16_U2B
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_83',(koSlot['R32_83']||{}).home,'home',(koSlot['R32_83']||{}).homeB3)}${renderBslot('R32_83',(koSlot['R32_83']||{}).away,'away',(koSlot['R32_83']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_84',(koSlot['R32_84']||{}).home,'home',(koSlot['R32_84']||{}).homeB3)}${renderBslot('R32_84',(koSlot['R32_84']||{}).away,'away',(koSlot['R32_84']||{}).awayB3)}</div>`;
+  // Q-zone 1: R32_73, R32_79  → R16_U1A (GREEN - upper group)
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_73',(koSlot['R32_73']||{}).home,'home',(koSlot['R32_73']||{}).homeB3)}${renderBslot('R32_73',(koSlot['R32_73']||{}).away,'away',(koSlot['R32_73']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_79',(koSlot['R32_79']||{}).home,'home',(koSlot['R32_79']||{}).homeB3)}${renderBslot('R32_79',(koSlot['R32_79']||{}).away,'away',(koSlot['R32_79']||{}).awayB3)}</div>`;
+  // Q-zone 1: R32_77, R32_76  → R16_U1B (GREEN)
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_77',(koSlot['R32_77']||{}).home,'home',(koSlot['R32_77']||{}).homeB3)}${renderBslot('R32_77',(koSlot['R32_77']||{}).away,'away',(koSlot['R32_77']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_76',(koSlot['R32_76']||{}).home,'home',(koSlot['R32_76']||{}).homeB3)}${renderBslot('R32_76',(koSlot['R32_76']||{}).away,'away',(koSlot['R32_76']||{}).awayB3)}</div>`;
+  // Q-zone 2: R32_80, R32_81  → R16_U2A (BLUE - lower group)
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_80',(koSlot['R32_80']||{}).home,'home',(koSlot['R32_80']||{}).homeB3)}${renderBslot('R32_80',(koSlot['R32_80']||{}).away,'away',(koSlot['R32_80']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_81',(koSlot['R32_81']||{}).home,'home',(koSlot['R32_81']||{}).homeB3)}${renderBslot('R32_81',(koSlot['R32_81']||{}).away,'away',(koSlot['R32_81']||{}).awayB3)}</div>`;
+  // Q-zone 2: R32_83, R32_84  → R16_U2B (BLUE)
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_83',(koSlot['R32_83']||{}).home,'home',(koSlot['R32_83']||{}).homeB3)}${renderBslot('R32_83',(koSlot['R32_83']||{}).away,'away',(koSlot['R32_83']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_84',(koSlot['R32_84']||{}).home,'home',(koSlot['R32_84']||{}).homeB3)}${renderBslot('R32_84',(koSlot['R32_84']||{}).away,'away',(koSlot['R32_84']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   // -- R16 column (4 slots, 2 Q-zones) --
   html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
-  // Q-zone 1: R16_U1A, R16_U1B  → QF_U1
-  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).home,'home',(koSlot['R16_U1A']||{}).homeB3)}${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).away,'away',(koSlot['R16_U1A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).home,'home',(koSlot['R16_U1B']||{}).homeB3)}${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).away,'away',(koSlot['R16_U1B']||{}).awayB3)}</div>`;
-  // Q-zone 2: R16_U2A, R16_U2B  → QF_U2
-  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).home,'home',(koSlot['R16_U2A']||{}).homeB3)}${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).away,'away',(koSlot['R16_U2A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).home,'home',(koSlot['R16_U2B']||{}).homeB3)}${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).away,'away',(koSlot['R16_U2B']||{}).awayB3)}</div>`;
+  // Q-zone 1: R16_U1A, R16_U1B  → QF_U1 (GREEN)
+  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).home,'home',(koSlot['R16_U1A']||{}).homeB3)}${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).away,'away',(koSlot['R16_U1A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).home,'home',(koSlot['R16_U1B']||{}).homeB3)}${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).away,'away',(koSlot['R16_U1B']||{}).awayB3)}</div>`;
+  // Q-zone 2: R16_U2A, R16_U2B  → QF_U2 (BLUE)
+  html+=`<div class="qz-group qz-br16">${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).home,'home',(koSlot['R16_U2A']||{}).homeB3)}${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).away,'away',(koSlot['R16_U2A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br16">${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).home,'home',(koSlot['R16_U2B']||{}).homeB3)}${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).away,'away',(koSlot['R16_U2B']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   // -- QF column (2 slots, 2 Q-zones) --
   html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
-  html+=`<div class="qz-group qz-luf">${renderBslot('QF_U1',(koSlot['QF_U1']||{}).home,'home',(koSlot['QF_U1']||{}).homeB3)}${renderBslot('QF_U1',(koSlot['QF_U1']||{}).away,'away',(koSlot['QF_U1']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-luf">${renderBslot('QF_U2',(koSlot['QF_U2']||{}).home,'home',(koSlot['QF_U2']||{}).homeB3)}${renderBslot('QF_U2',(koSlot['QF_U2']||{}).away,'away',(koSlot['QF_U2']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-guf">${renderBslot('QF_U1',(koSlot['QF_U1']||{}).home,'home',(koSlot['QF_U1']||{}).homeB3)}${renderBslot('QF_U1',(koSlot['QF_U1']||{}).away,'away',(koSlot['QF_U1']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-buf">${renderBslot('QF_U2',(koSlot['QF_U2']||{}).home,'home',(koSlot['QF_U2']||{}).homeB3)}${renderBslot('QF_U2',(koSlot['QF_U2']||{}).away,'away',(koSlot['QF_U2']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   // -- SF column (1 slot, no zone grouping needed) --
@@ -2978,28 +2978,29 @@ function renderBracket(){
 
   // -- QF column --
   html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
-  html+=`<div class="qz-group qz-ruf">${renderBslot('QF_L1',(koSlot['QF_L1']||{}).home,'home',(koSlot['QF_L1']||{}).homeB3)}${renderBslot('QF_L1',(koSlot['QF_L1']||{}).away,'away',(koSlot['QF_L1']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-ruf">${renderBslot('QF_L2',(koSlot['QF_L2']||{}).home,'home',(koSlot['QF_L2']||{}).homeB3)}${renderBslot('QF_L2',(koSlot['QF_L2']||{}).away,'away',(koSlot['QF_L2']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-guf">${renderBslot('QF_L1',(koSlot['QF_L1']||{}).home,'home',(koSlot['QF_L1']||{}).homeB3)}${renderBslot('QF_L1',(koSlot['QF_L1']||{}).away,'away',(koSlot['QF_L1']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-buf">${renderBslot('QF_L2',(koSlot['QF_L2']||{}).home,'home',(koSlot['QF_L2']||{}).homeB3)}${renderBslot('QF_L2',(koSlot['QF_L2']||{}).away,'away',(koSlot['QF_L2']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   // -- R16 column --
   html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
-  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).home,'home',(koSlot['R16_L1A']||{}).homeB3)}${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).away,'away',(koSlot['R16_L1A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).home,'home',(koSlot['R16_L1B']||{}).homeB3)}${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).away,'away',(koSlot['R16_L1B']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).home,'home',(koSlot['R16_L2A']||{}).homeB3)}${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).away,'away',(koSlot['R16_L2A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).home,'home',(koSlot['R16_L2B']||{}).homeB3)}${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).away,'away',(koSlot['R16_L2B']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).home,'home',(koSlot['R16_L1A']||{}).homeB3)}${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).away,'away',(koSlot['R16_L1A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).home,'home',(koSlot['R16_L1B']||{}).homeB3)}${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).away,'away',(koSlot['R16_L1B']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br16">${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).home,'home',(koSlot['R16_L2A']||{}).homeB3)}${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).away,'away',(koSlot['R16_L2A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br16">${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).home,'home',(koSlot['R16_L2B']||{}).homeB3)}${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).away,'away',(koSlot['R16_L2B']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   // -- R32 column --
   html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_74',(koSlot['R32_74']||{}).home,'home',(koSlot['R32_74']||{}).homeB3)}${renderBslot('R32_74',(koSlot['R32_74']||{}).away,'away',(koSlot['R32_74']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_82',(koSlot['R32_82']||{}).home,'home',(koSlot['R32_82']||{}).homeB3)}${renderBslot('R32_82',(koSlot['R32_82']||{}).away,'away',(koSlot['R32_82']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_75',(koSlot['R32_75']||{}).home,'home',(koSlot['R32_75']||{}).homeB3)}${renderBslot('R32_75',(koSlot['R32_75']||{}).away,'away',(koSlot['R32_75']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_78',(koSlot['R32_78']||{}).home,'home',(koSlot['R32_78']||{}).homeB3)}${renderBslot('R32_78',(koSlot['R32_78']||{}).away,'away',(koSlot['R32_78']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_87',(koSlot['R32_87']||{}).home,'home',(koSlot['R32_87']||{}).homeB3)}${renderBslot('R32_87',(koSlot['R32_87']||{}).away,'away',(koSlot['R32_87']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_88',(koSlot['R32_88']||{}).home,'home',(koSlot['R32_88']||{}).homeB3)}${renderBslot('R32_88',(koSlot['R32_88']||{}).away,'away',(koSlot['R32_88']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_86',(koSlot['R32_86']||{}).home,'home',(koSlot['R32_86']||{}).homeB3)}${renderBslot('R32_86',(koSlot['R32_86']||{}).away,'away',(koSlot['R32_86']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_85',(koSlot['R32_85']||{}).home,'home',(koSlot['R32_85']||{}).homeB3)}${renderBslot('R32_85',(koSlot['R32_85']||{}).away,'away',(koSlot['R32_85']||{}).awayB3)}</div>`;
+  // R32: upper group GREEN, lower group BLUE
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_74',(koSlot['R32_74']||{}).home,'home',(koSlot['R32_74']||{}).homeB3)}${renderBslot('R32_74',(koSlot['R32_74']||{}).away,'away',(koSlot['R32_74']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_82',(koSlot['R32_82']||{}).home,'home',(koSlot['R32_82']||{}).homeB3)}${renderBslot('R32_82',(koSlot['R32_82']||{}).away,'away',(koSlot['R32_82']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_75',(koSlot['R32_75']||{}).home,'home',(koSlot['R32_75']||{}).homeB3)}${renderBslot('R32_75',(koSlot['R32_75']||{}).away,'away',(koSlot['R32_75']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_78',(koSlot['R32_78']||{}).home,'home',(koSlot['R32_78']||{}).homeB3)}${renderBslot('R32_78',(koSlot['R32_78']||{}).away,'away',(koSlot['R32_78']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_87',(koSlot['R32_87']||{}).home,'home',(koSlot['R32_87']||{}).homeB3)}${renderBslot('R32_87',(koSlot['R32_87']||{}).away,'away',(koSlot['R32_87']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_88',(koSlot['R32_88']||{}).home,'home',(koSlot['R32_88']||{}).homeB3)}${renderBslot('R32_88',(koSlot['R32_88']||{}).away,'away',(koSlot['R32_88']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_86',(koSlot['R32_86']||{}).home,'home',(koSlot['R32_86']||{}).homeB3)}${renderBslot('R32_86',(koSlot['R32_86']||{}).away,'away',(koSlot['R32_86']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-br32">${renderBslot('R32_85',(koSlot['R32_85']||{}).home,'home',(koSlot['R32_85']||{}).homeB3)}${renderBslot('R32_85',(koSlot['R32_85']||{}).away,'away',(koSlot['R32_85']||{}).awayB3)}</div>`;
   html+=`</div>`;
 
   html+=`</div>`; // .side-lower
