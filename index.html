@@ -367,9 +367,9 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('groups')">📊 Group Table</button>
-  <button class="tab-btn" onclick="switchTab('bracket')">🏟 Knockout Stage Bracket</button>
-  <button class="tab-btn" onclick="switchTab('matches')">📅 Group Stage Fixtures</button>
-  <button class="tab-btn" onclick="switchTab('best3rd')">📈 Best Third-Placed Teams</button>
+  <button class="tab-btn" onclick="switchTab('matches')">📅 Group Fixtures</button>
+  <button class="tab-btn" onclick="switchTab('bracket')">🏟 Knockout Bracket</button>
+  <button class="tab-btn" onclick="switchTab('best3rd')">📈 Best 3rd</button>
 </div>
 
 <div id="tab-groups" class="tab-content"></div>
@@ -1589,19 +1589,19 @@ function startPolling() {
 function stopPolling() { if (pollingTimer) { clearInterval(pollingTimer); clearTimeout(pollingTimer); pollingTimer = null; } }
 function updateStatus(state, msg) {
   const badge = document.getElementById('yearBadge');
+  if (!badge) return;
+  badge.className = 'yearBadge';
   switch(state) {
-    case 'live': {
-      badge.classList.add('connected'); badge.style.color = '';
+    case 'live':
+      badge.classList.add('connected');
       break;
-    }
-    case 'connecting': { badge.className = ''; break; }
-    case 'error': {
-      badge.classList.remove('connected'); badge.style.color = '#f85149';
+    case 'connecting':
       break;
-    }
-    default: badge.className = '';
+    case 'error':
+      badge.style.color = '#f85149';
+      break;
   }
-  }
+}
 }
 
 // ========== STORAGE ==========
