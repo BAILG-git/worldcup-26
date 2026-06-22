@@ -219,11 +219,11 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .sub-q4 .bslot{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.35)}
 .sub-q4 .bslot.filled{background:rgba(139,92,246,.22);border-color:rgba(139,92,246,.6)}
 
-/* SF merge row */
-.sf-merge-row{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0}
-.sf-merge-row .r-col{flex:0 0 auto;border-color:transparent!important;display:flex;flex-direction:column;gap:3px}
-.sf-merge-row .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 16px;text-align:center;background:var(--card)}
-.sf-label{font-size:11px;font-weight:bold;color:var(--muted);align-self:center;padding:0 4px}
+/* SF column: between halves and finals */
+.sf-column{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;flex:0 0 auto}
+.sf-title{font-size:11px;font-weight:bold;color:var(--muted);margin-bottom:6px;text-align:center}
+.sf-slots{display:flex;flex-direction:column;gap:4px}
+.sf-slots .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 14px;text-align:center;background:var(--card);min-width:80px}
 
 /* rounds row: R32 → R16 → QF */
 .rounds-row{display:flex;flex-direction:row;align-items:stretch;flex:1}
@@ -2900,7 +2900,12 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'QF_U2'}],'qf','up')}</div>
       </div>
     </div>
-    ${(() => { const s = buildSfSlot('SF_U'); return `<div class="sf-merge-row"><div class="sf-label">⚡ SF</div><div class="r-col slots">${s}</div></div>`; })()}}
+  </div>`;
+
+  // ===== SF Upper: 上半区半决赛（在半区和决赛之间）=====
+  html+=`<div class="sf-column sf-upper">
+    <div class="sf-title">⚡ Semi-Final</div>
+    <div class="sf-slots">${buildSfSlot('SF_U')}</div>
   </div>`;
 
   // ===== CENTER: Finals =====
@@ -2917,6 +2922,12 @@ function renderBracket(){
       <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
       <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
+  </div>`;
+
+  // ===== SF Lower: 下半区半决赛（在决赛和下半区之间）=====
+  html+=`<div class="sf-column sf-lower">
+    <div class="sf-title">⚡ Semi-Final</div>
+    <div class="sf-slots">${buildSfSlot('SF_L')}</div>
   </div>`;
 
   // ===== RIGHT: 下半区 =====
@@ -2937,7 +2948,6 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32','down')}</div>
       </div>
     </div>
-    ${(() => { const s = buildSfSlot('SF_L'); return `<div class="sf-merge-row"><div class="r-col slots">${s}</div><div class="sf-label">⚡ SF</div></div>`; })()}
   </div>`;
 
   html+='</div></div></div>';
