@@ -2224,7 +2224,6 @@ function buildMatchCard(m){
 }
 function renderMatches(){
   const cont=document.getElementById('tab-matches');
-  cont.style.display='block';
   let all=[];
   for(const[g,ms] of Object.entries(GROUP_MATCHES)){
     ms.forEach(m=>all.push({...m,group:g}));
