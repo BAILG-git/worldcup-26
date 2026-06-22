@@ -221,7 +221,9 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* SF merge row */
 .sf-merge-row{display:flex;justify-content:center;align-items:center;gap:12px;padding:6px 0}
-.sf-merge-row .r-col{flex:0 0 auto;border-color:transparent!important}
+.sf-merge-row .r-col{flex:0 0 auto;border-color:transparent!important;display:flex;flex-direction:column;gap:3px}
+.sf-merge-row .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 16px;text-align:center;background:var(--card)}
+.sf-label{font-size:11px;font-weight:bold;color:var(--muted);align-self:center;padding:0 4px}
 
 /* rounds row: R32 → R16 → QF */
 .rounds-row{display:flex;flex-direction:row;align-items:stretch;flex:1}
@@ -2898,7 +2900,7 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'QF_U2'}],'qf','up')}</div>
       </div>
     </div>
-    ${(()=>{const s=buildSfSlot('SF_U');return s?`<div class="sf-merge-row"><div class="r-col slots">${s}</div></div>`:'';})()}
+    ${(() => { const s = buildSfSlot('SF_U'); return `<div class="sf-merge-row"><div class="sf-label">⚡ SF</div><div class="r-col slots">${s}</div></div>`; })()}}
   </div>`;
 
   // ===== CENTER: Finals =====
@@ -2935,7 +2937,7 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32','down')}</div>
       </div>
     </div>
-    ${(()=>{const s=buildSfSlot('SF_L');return s?`<div class="sf-merge-row"><div class="r-col slots">${s}</div></div>`:'';})()}
+    ${(() => { const s = buildSfSlot('SF_L'); return `<div class="sf-merge-row"><div class="r-col slots">${s}</div><div class="sf-label">⚡ SF</div></div>`; })()}
   </div>`;
 
   html+='</div></div></div>';
@@ -2953,10 +2955,14 @@ function renderBracket(){
 
 function buildSfSlot(slotId){
   const data=koSlot[slotId];
-  if(!data||!data.home) return '';
+  if(!data||!data.home) {
+    // 始终渲染占位槽位，不隐藏
+    return `<div class="bslot"><span class="desc">TBD</span></div>
+            <div class="bslot"><span class="desc">TBD</span></div>`;
+  }
   let html='';
   html+=renderBslot(slotId, data.home, 'home', data.homeB3);
-  html+=data.away ? renderBslot(slotId, data.away, 'away', data.awayB3) : '';
+  html+=data.away ? renderBslot(slotId, data.away, 'away', data.awayB3) : '<div class="bslot"><span class="desc">TBD</span></div>';
   return html;
 }
 
