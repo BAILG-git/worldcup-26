@@ -276,7 +276,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .btn.danger{background:var(--red);border-color:var(--red);color:#fff}
 .btn.small{padding:3px 10px;font-size:11px}
 
-@media(max-width:900px){.groups-grid{grid-template-columns:1fr}.full-bracket{flex-direction:column;align-items:center}.bracket-half{flex:0 0 auto;width:100%;min-width:0}}
+@media(max-width:900px){.groups-grid{grid-template-columns:1fr}}
 
 /* ========== 进球弹窗 Toast ========== */
 .goal-toast-overlay{
@@ -3050,6 +3050,7 @@ function setupBracketPan(){
     e.preventDefault();
     bracketZoom(e.deltaY>0?-0.1:0.1);
   },{passive:false});
+  // 鼠标拖拽
   vp.addEventListener('mousedown',e=>{
     isPanning=true; panStartX=e.clientX; panStartY=e.clientY;
     panOrigX=bPanX; panOrigY=bPanY;
@@ -3062,6 +3063,24 @@ function setupBracketPan(){
     applyTransform();
   });
   window.addEventListener('mouseup',()=>{
+    if(isPanning){ isPanning=false; document.getElementById('bracketViewport')?.classList.remove('grabbing'); }
+  });
+  // 触屏拖拽
+  vp.addEventListener('touchstart',e=>{
+    if(e.touches.length===1){
+      isPanning=true; panStartX=e.touches[0].clientX; panStartY=e.touches[0].clientY;
+      panOrigX=bPanX; panOrigY=bPanY;
+      vp.classList.add('grabbing');
+    }
+  },{passive:false});
+  vp.addEventListener('touchmove',e=>{
+    if(!isPanning||e.touches.length!==1) return;
+    e.preventDefault();
+    bPanX=panOrigX+(e.touches[0].clientX-panStartX);
+    bPanY=panOrigY+(e.touches[0].clientY-panStartY);
+    applyTransform();
+  },{passive:false});
+  vp.addEventListener('touchend',()=>{
     if(isPanning){ isPanning=false; document.getElementById('bracketViewport')?.classList.remove('grabbing'); }
   });
 }
