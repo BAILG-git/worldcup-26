@@ -175,78 +175,71 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .bracket-canvas{position:absolute;top:0;left:0;width:max-content;transform-origin:0 0;will-change:transform}
 .bracket-canvas .tree-bracket{overflow:visible!important;width:auto!important}
 
-/* ========== TREE BRACKET ========== */
+/* ========== TREE BRACKET – Classic knockout with centered winners ========== */
 .tree-bracket{
   display:flex;flex-direction:row;align-items:stretch;justify-content:center;
-  gap:0;padding:20px 0;min-width:1100px;
+  gap:0;padding:20px 10px;min-width:1100px;overflow-x:auto;
 }
-/* Each side: a vertical stack of round columns */
 .bracket-side{
   display:flex;flex-direction:row;align-items:stretch;
   flex:1 1 0;min-width:0;
 }
-.bracket-side.side-upper{justify-content:flex-end}  /* columns pack toward center */
-.bracket-side.side-lower{justify-content:flex-start} /* columns pack toward center */
-
-/* Each round column */
+/* Each round column — CSS Grid: 8 equal rows */
 .bracket-col{
-  display:flex;flex-direction:column;justify-content:space-around;
-  flex:1 1 0;min-width:100px;padding:0 2px;position:relative;
+  display:grid;grid-template-rows:repeat(8,1fr);align-items:center;
+  flex:1 1 0;min-width:90px;padding:0 3px;position:relative;
 }
 .col-head{
-  text-align:center;font-size:10px;font-weight:bold;
-  color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
+  text-align:center;font-size:11px;font-weight:bold;
+  color:var(--text);grid-row:1/-1;line-height:1.2;padding:2px 0;
+}
+/* Row spans: R32=1, R16=2, QF=4, SF=8 */
+.gs-1{grid-row:span 1}
+.gs-2{grid-row:span 2}
+.gs-4{grid-row:span 4}
+.gs-8{grid-row:span 8}
+
+/* Match pair container: holds home+away bslots */
+.match-pair{
+  border-radius:6px;padding:2px;margin:1px 0;
+  border:1.5px solid transparent;background:transparent;display:flex;flex-direction:column;gap:1px;
 }
 
-/* Connector lines: drawn with borders on .qz-group pseudo-elements */
-/* Upper side: connector from right edge of qz-group toward center */
-.bracket-side.side-upper .qz-group::after{
-  content:'';position:absolute;right:-14px;top:50%;
-  width:14px;height:0;border-top:1px solid var(--border);z-index:0;
+/* Color zones — upper group GREEN, lower group BLUE within each half */
+.mp-gr32{border-color:rgba(56,142,60,.35);background:rgba(232,245,233,.4)}
+.mp-gr16{border-color:rgba(56,142,60,.45);background:rgba(200,230,201,.45)}
+.mp-gqf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.35)}
+.mp-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.25)}
+
+.mp-br32{border-color:rgba(25,118,210,.35);background:rgba(227,242,253,.4)}
+.mp-br16{border-color:rgba(25,118,210,.45);background:rgba(187,222,251,.45)}
+.mp-bqf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.35)}
+.mp-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.25)}
+
+/* Connector lines: horizontal line from right edge of match-pair */
+.side-upper .match-pair{position:relative}
+.side-upper .match-pair::after{
+  content:'';position:absolute;right:-12px;top:50%;
+  width:12px;height:0;border-top:1.5px solid rgba(255,255,255,.15);z-index:0;
 }
-/* Lower side: connector from left edge of qz-group toward center */
-.bracket-side.side-lower .qz-group::after{
-  content:'';position:absolute;left:-14px;top:50%;
-  width:14px;height:0;border-top:1px solid var(--border);z-index:0;
+.side-lower .match-pair{position:relative}
+.side-lower .match-pair::after{
+  content:'';position:absolute;left:-12px;top:50%;
+  width:12px;height:0;border-top:1.5px solid rgba(255,255,255,.15);z-index:0;
 }
 
-/* Q-zone group: color accent border + background */
-.qz-group{
-  border:2px solid transparent;border-radius:8px;
-  padding:3px;margin:4px 0;
-  background:transparent;transition:.15s;
-}
-/* Upper group within each half — Green series: deeper toward center */
-.qz-gr32{border-color:rgba(56,142,60,.3);background:rgba(232,245,233,.35)}
-.qz-gr16{border-color:rgba(56,142,60,.4);background:rgba(200,230,201,.4)}
-.qz-guf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.3)}
-.qz-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.2)}
-/* Lower group within each half — Blue series: deeper toward center */
-.qz-br32{border-color:rgba(25,118,210,.3);background:rgba(227,242,253,.35)}
-.qz-br16{border-color:rgba(25,118,210,.4);background:rgba(187,222,251,.4)}
-.qz-buf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.3)}
-.qz-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.2)}
-/* Make bslots inside qz-group fill width */
-.qz-group .bslot{margin:2px 0;min-width:60px}
-
-/* Vertical connector: from a slot in col N to the merge point */
-.bracket-col .slot-wrapper{
-  display:flex;flex-direction:column;justify-content:center;
-  flex:1;position:relative;
-}
-
-/* Bracket slot – base (keep existing .bslot styles, just ensure block layout) */
+/* Bracket slot base */
 .bslot{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  margin:3px auto;padding:5px 8px;
-  border:1px dashed var(--border);border-radius:6px;
+  margin:0 auto;padding:3px 6px;
+  border:1px dashed var(--border);border-radius:5px;
   font-size:11px;text-align:center;
-  background:rgba(22,27,34,.9);
-  transition:.15s;min-height:32px;min-width:70px;max-width:110px;
+  background:rgba(22,27,34,.92);
+  transition:.15s;height:100%;min-height:28px;min-width:65px;max-width:100px;
   overflow:hidden;white-space:nowrap;position:relative;z-index:1;
 }
-.bslot .flag{font-size:15px;margin-bottom:1px}
-.bslot .team{font-weight:bold;color:var(--text);font-size:12px;line-height:1.2}
+.bslot .flag{font-size:14px;margin-bottom:1px}
+.bslot .team{font-weight:bold;color:var(--text);font-size:11px;line-height:1.2}
 .bslot .desc{color:var(--muted);font-size:9px}
 .bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.08)}
 .bslot.filled .slot-row{display:flex;align-items:center;gap:2px;justify-content:center}
@@ -255,31 +248,30 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 /* Center: Finals */
 .bracket-center{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:16px;flex:0 0 auto;padding:0 12px;z-index:2;
+  gap:18px;flex:0 0 auto;padding:0 14px;z-index:2;min-width:130px;
 }
 .final-box{
   background:rgba(22,27,34,.95);border:2px solid rgba(240,192,64,.3);border-radius:10px;
-  padding:10px 14px;text-align:center;min-width:110px;
+  padding:10px 14px;text-align:center;min-width:120px;
 }
 .final-box .f-title{font-size:13px;font-weight:bold;margin-bottom:6px;color:var(--gold)}
 .final-box.champion{border-color:var(--gold);border-width:3px;background:linear-gradient(135deg,rgba(240,192,64,.18),rgba(240,192,64,.04),rgba(22,27,34,.95))}
 .final-box.champion .f-title{color:var(--gold);font-size:14px}
 .final-box.third{border-color:rgba(192,192,192,.5);background:linear-gradient(135deg,rgba(192,192,192,.1),rgba(22,27,34,.95))}
 .final-box.third .f-title{color:var(--muted)}
-.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px}
+.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:110px}
 .final-box .bslot .team{font-size:11px;font-weight:bold}
 .final-box .bslot .desc{font-size:9px}
 
-/* Responsive: allow horizontal scroll on small screens */
 @media(max-width:1200px){
   .tree-bracket{min-width:900px}
-  .bracket-col{min-width:80px}
+  .bracket-col{min-width:75px}
 }
 @media(max-width:768px){
   .tree-bracket{min-width:700px;padding:10px 0}
-  .bracket-col{min-width:60px;padding:0 1px}
-  .col-head{font-size:8px}
-  .bslot{font-size:9px;padding:3px 4px;min-height:24px;min-width:50px}
+  .bracket-col{min-width:55px;padding:0 2px}
+  .col-head{font-size:9px}
+  .bslot{padding:2px 4px;min-height:24px;min-width:50px}
   .bslot .team{font-size:10px}
 }
 
@@ -2912,43 +2904,41 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
+  // Helper: render a match pair (home+away bslots)
+  const mp=(id,cls)=>`<div class="match-pair ${cls}">${renderBslot(id,(koSlot[id]||{}).home,'home',(koSlot[id]||{}).homeB3)}${renderBslot(id,(koSlot[id]||{}).away,'away',(koSlot[id]||{}).awayB3)}</div>`;
+
   // ===== LEFT SIDE: Upper Half =====
   html+=`<div class="bracket-side side-upper">`;
 
-  // -- R32 column (8 slots, 4 Q-zones, 2 slots per zone) --
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
-  // Q-zone 1: R32_73, R32_79  → R16_U1A (GREEN - upper group)
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_73',(koSlot['R32_73']||{}).home,'home',(koSlot['R32_73']||{}).homeB3)}${renderBslot('R32_73',(koSlot['R32_73']||{}).away,'away',(koSlot['R32_73']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_79',(koSlot['R32_79']||{}).home,'home',(koSlot['R32_79']||{}).homeB3)}${renderBslot('R32_79',(koSlot['R32_79']||{}).away,'away',(koSlot['R32_79']||{}).awayB3)}</div>`;
-  // Q-zone 1: R32_77, R32_76  → R16_U1B (GREEN)
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_77',(koSlot['R32_77']||{}).home,'home',(koSlot['R32_77']||{}).homeB3)}${renderBslot('R32_77',(koSlot['R32_77']||{}).away,'away',(koSlot['R32_77']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_76',(koSlot['R32_76']||{}).home,'home',(koSlot['R32_76']||{}).homeB3)}${renderBslot('R32_76',(koSlot['R32_76']||{}).away,'away',(koSlot['R32_76']||{}).awayB3)}</div>`;
-  // Q-zone 2: R32_80, R32_81  → R16_U2A (BLUE - lower group)
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_80',(koSlot['R32_80']||{}).home,'home',(koSlot['R32_80']||{}).homeB3)}${renderBslot('R32_80',(koSlot['R32_80']||{}).away,'away',(koSlot['R32_80']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_81',(koSlot['R32_81']||{}).home,'home',(koSlot['R32_81']||{}).homeB3)}${renderBslot('R32_81',(koSlot['R32_81']||{}).away,'away',(koSlot['R32_81']||{}).awayB3)}</div>`;
-  // Q-zone 2: R32_83, R32_84  → R16_U2B (BLUE)
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_83',(koSlot['R32_83']||{}).home,'home',(koSlot['R32_83']||{}).homeB3)}${renderBslot('R32_83',(koSlot['R32_83']||{}).away,'away',(koSlot['R32_83']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_84',(koSlot['R32_84']||{}).home,'home',(koSlot['R32_84']||{}).homeB3)}${renderBslot('R32_84',(koSlot['R32_84']||{}).away,'away',(koSlot['R32_84']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // R32 column — 8 matches, each 1 row (GREEN rows 0-3, BLUE rows 4-7)
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_73','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_79','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_77','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_76','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_80','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_81','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_83','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_84','')}</div>
+  </div>`;
 
-  // -- R16 column (4 slots, 2 Q-zones) --
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
-  // Q-zone 1: R16_U1A, R16_U1B  → QF_U1 (GREEN)
-  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).home,'home',(koSlot['R16_U1A']||{}).homeB3)}${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).away,'away',(koSlot['R16_U1A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).home,'home',(koSlot['R16_U1B']||{}).homeB3)}${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).away,'away',(koSlot['R16_U1B']||{}).awayB3)}</div>`;
-  // Q-zone 2: R16_U2A, R16_U2B  → QF_U2 (BLUE)
-  html+=`<div class="qz-group qz-br16">${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).home,'home',(koSlot['R16_U2A']||{}).homeB3)}${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).away,'away',(koSlot['R16_U2A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br16">${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).home,'home',(koSlot['R16_U2B']||{}).homeB3)}${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).away,'away',(koSlot['R16_U2B']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // R16 column — 4 matches, each spans 2 rows
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
+    <div class="match-pair mp-gr16 gs-2">${mp('R16_U1A','')}</div>
+    <div class="match-pair mp-gr16 gs-2">${mp('R16_U1B','')}</div>
+    <div class="match-pair mp-br16 gs-2">${mp('R16_U2A','')}</div>
+    <div class="match-pair mp-br16 gs-2">${mp('R16_U2B','')}</div>
+  </div>`;
 
   // -- QF column (2 slots, 2 Q-zones) --
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
-  html+=`<div class="qz-group qz-guf">${renderBslot('QF_U1',(koSlot['QF_U1']||{}).home,'home',(koSlot['QF_U1']||{}).homeB3)}${renderBslot('QF_U1',(koSlot['QF_U1']||{}).away,'away',(koSlot['QF_U1']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-buf">${renderBslot('QF_U2',(koSlot['QF_U2']||{}).home,'home',(koSlot['QF_U2']||{}).homeB3)}${renderBslot('QF_U2',(koSlot['QF_U2']||{}).away,'away',(koSlot['QF_U2']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // QF column
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
+    <div class="match-pair mp-gqf gs-4">${mp('QF_U1','')}</div>
+    <div class="match-pair mp-bqf gs-4">${mp('QF_U2','')}</div>
+  </div>`;
 
-  // -- SF column (1 slot, no zone grouping needed) --
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>${buildSfSlot('SF_U')}</div>`;
+  // SF column
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div><div class="match-pair mp-gsf gs-8">${buildSfSlot('SF_U')}</div></div>`;
   html+=`</div>`;
 
   html+=`</div>`; // .side-upper
@@ -2958,50 +2948,48 @@ function renderBracket(){
   const thirdData=koSlot['THIRD']||{};
   html+=`<div class="bracket-center">
     <div class="final-box third${thirdData.home?' filled':''}">
-      <div class="f-title">左右半区败方季殿军赛</div>
+      <div class="f-title">季殿军赛</div>
       <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
       <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
     <div class="final-box champion${finalData.home?' filled':''}">
-      <div class="f-title">左右半区胜方冠亚军赛</div>
+      <div class="f-title">冠亚军决赛</div>
       <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
       <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
   </div>`;
 
-  // ===== RIGHT SIDE: Lower Half =====
+    // ===== RIGHT SIDE: Lower Half =====
   html+=`<div class="bracket-side side-lower">`;
 
-  // -- SF column --
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>${buildSfSlot('SF_L')}</div>`;
-  html+=`</div>`;
+  // SF column
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4"></div><div class="match-pair mp-bsf gs-8">${buildSfSlot('SF_L')}</div></div>`;
 
-  // -- QF column --
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
-  html+=`<div class="qz-group qz-guf">${renderBslot('QF_L1',(koSlot['QF_L1']||{}).home,'home',(koSlot['QF_L1']||{}).homeB3)}${renderBslot('QF_L1',(koSlot['QF_L1']||{}).away,'away',(koSlot['QF_L1']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-buf">${renderBslot('QF_L2',(koSlot['QF_L2']||{}).home,'home',(koSlot['QF_L2']||{}).homeB3)}${renderBslot('QF_L2',(koSlot['QF_L2']||{}).away,'away',(koSlot['QF_L2']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // QF column
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8"></div>
+    <div class="match-pair mp-gqf gs-4">${mp('QF_L1','')}</div>
+    <div class="match-pair mp-bqf gs-4">${mp('QF_L2','')}</div>
+  </div>`;
 
-  // -- R16 column --
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
-  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).home,'home',(koSlot['R16_L1A']||{}).homeB3)}${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).away,'away',(koSlot['R16_L1A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr16">${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).home,'home',(koSlot['R16_L1B']||{}).homeB3)}${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).away,'away',(koSlot['R16_L1B']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br16">${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).home,'home',(koSlot['R16_L2A']||{}).homeB3)}${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).away,'away',(koSlot['R16_L2A']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br16">${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).home,'home',(koSlot['R16_L2B']||{}).homeB3)}${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).away,'away',(koSlot['R16_L2B']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // R16 column
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16"></div>
+    <div class="match-pair mp-gr16 gs-2">${mp('R16_L1A','')}</div>
+    <div class="match-pair mp-gr16 gs-2">${mp('R16_L1B','')}</div>
+    <div class="match-pair mp-br16 gs-2">${mp('R16_L2A','')}</div>
+    <div class="match-pair mp-br16 gs-2">${mp('R16_L2B','')}</div>
+  </div>`;
 
-  // -- R32 column --
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
-  // R32: upper group GREEN, lower group BLUE
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_74',(koSlot['R32_74']||{}).home,'home',(koSlot['R32_74']||{}).homeB3)}${renderBslot('R32_74',(koSlot['R32_74']||{}).away,'away',(koSlot['R32_74']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_82',(koSlot['R32_82']||{}).home,'home',(koSlot['R32_82']||{}).homeB3)}${renderBslot('R32_82',(koSlot['R32_82']||{}).away,'away',(koSlot['R32_82']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_75',(koSlot['R32_75']||{}).home,'home',(koSlot['R32_75']||{}).homeB3)}${renderBslot('R32_75',(koSlot['R32_75']||{}).away,'away',(koSlot['R32_75']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-gr32">${renderBslot('R32_78',(koSlot['R32_78']||{}).home,'home',(koSlot['R32_78']||{}).homeB3)}${renderBslot('R32_78',(koSlot['R32_78']||{}).away,'away',(koSlot['R32_78']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_87',(koSlot['R32_87']||{}).home,'home',(koSlot['R32_87']||{}).homeB3)}${renderBslot('R32_87',(koSlot['R32_87']||{}).away,'away',(koSlot['R32_87']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_88',(koSlot['R32_88']||{}).home,'home',(koSlot['R32_88']||{}).homeB3)}${renderBslot('R32_88',(koSlot['R32_88']||{}).away,'away',(koSlot['R32_88']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_86',(koSlot['R32_86']||{}).home,'home',(koSlot['R32_86']||{}).homeB3)}${renderBslot('R32_86',(koSlot['R32_86']||{}).away,'away',(koSlot['R32_86']||{}).awayB3)}</div>`;
-  html+=`<div class="qz-group qz-br32">${renderBslot('R32_85',(koSlot['R32_85']||{}).home,'home',(koSlot['R32_85']||{}).homeB3)}${renderBslot('R32_85',(koSlot['R32_85']||{}).away,'away',(koSlot['R32_85']||{}).awayB3)}</div>`;
-  html+=`</div>`;
+  // R32 column
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32"></div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_74','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_82','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_75','')}</div>
+    <div class="match-pair mp-gr32 gs-1">${mp('R32_78','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_87','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_88','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_86','')}</div>
+    <div class="match-pair mp-br32 gs-1">${mp('R32_85','')}</div>
+  </div>`;
 
   html+=`</div>`; // .side-lower
 
