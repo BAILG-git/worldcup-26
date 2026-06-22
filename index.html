@@ -106,6 +106,8 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .match-card.upset{border-color:#e5534b;background:rgba(229,83,75,.08);box-shadow:0 0 8px rgba(229,83,75,.25)}
 .match-card.upset .mc-head{background:rgba(229,83,75,.18)}
 .upset-badge{position:absolute;bottom:6px;right:8px;font-size:9px;background:rgba(229,83,75,.9);color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;z-index:2}
+.score-clickable{cursor:pointer;transition:.15s;border-radius:4px}
+.score-clickable:hover{background:rgba(240,192,64,.12)}
 .mc-head{display:flex;align-items:center;justify-content:space-between;padding:7px 10px 7px 40px;font-size:11px;color:var(--muted);background:rgba(13,17,23,.5);border-bottom:1px solid var(--border)}
 .mc-time{color:#f0c040;font-weight:bold;font-size:13px}
 .mc-venue{font-size:10px;opacity:.8}
@@ -393,9 +395,6 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 let goalEvents = {};
 let upsetMatches = []; // 从 SCF remote 加载
 let _upsetPending = null; // 待标记的 match id
-let _lpTimer = null; // 长按计时器
-let _lpMid = null;   // 当前长按的 match id
-let _lpFired = false; // 长按是否已触发
 const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记
@@ -429,62 +428,39 @@ async function saveUpsets() {
     console.warn('[爆冷] 同步异常:', e);
   }
 }
-// ========== 事件委托：长按 + 点击 ==========
-function _findMatchId(el) {
-  while (el && el !== document) {
-    const mid = el.getAttribute('data-mid');
-    if (mid) return mid;
-    el = el.parentElement;
-  }
-  return null;
-}
-function _lpStart(mid) {
-  _lpMid = mid; _lpFired = false;
-  _lpTimer = setTimeout(() => {
-    _lpFired = true; _lpTimer = null;
-    const m = _matchMap[mid];
-    if (!m) return;
-    _upsetPending = mid;
-    const isUpset = upsetMatches.includes(mid);
-    document.getElementById('upsetModalTitle').textContent = isUpset ? '取消爆冷标记' : '标记为爆冷';
-    document.getElementById('upsetModalText').textContent = isUpset
-      ? `确认取消 ${m.home} vs ${m.away} 的爆冷标记？`
-      : `确认将 ${m.home} vs ${m.away} 标记为爆冷？`;
-    document.getElementById('upsetConfirmBtn').textContent = '确认';
-    document.getElementById('upsetModal').style.display = 'flex';
-  }, 4000);
-}
-function _lpCancel() {
-  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
-  _lpMid = null;
-}
+// ========== 事件委托：点击最终比分标记爆冷 + 点击卡片看详情 ==========
 function setupMatchCardEvents() {
   const cont = document.getElementById('tab-matches');
-  if (!cont || cont._lpBound) return;
-  cont._lpBound = true;
-  // mousedown / touchstart → 启动长按计时
-  cont.addEventListener('mousedown', e => {
-    const mid = _findMatchId(e.target);
-    if (mid) _lpStart(mid);
-  });
-  cont.addEventListener('touchstart', e => {
-    const mid = _findMatchId(e.target);
-    if (mid) _lpStart(mid);
-  }, {passive: true});
-  // 取消
-  const cancel = () => _lpCancel();
-  cont.addEventListener('mouseup', cancel);
-  cont.addEventListener('mouseleave', cancel);
-  cont.addEventListener('touchend', cancel);
-  cont.addEventListener('touchcancel', cancel);
-  // click → 未长按时打开详情
+  if (!cont || cont._evtBound) return;
+  cont._evtBound = true;
+  // 点击最终比分 → 标记/取消爆冷（仅完赛）
   cont.addEventListener('click', e => {
-    const mid = _findMatchId(e.target);
-    if (!mid) return;
-    if (_lpFired) { _lpFired = false; return; }
-    if (_matchMap[mid]) showMatchDetail(_matchMap[mid]);
+    const scoreEl = e.target.closest('.score-clickable');
+    if (scoreEl) {
+      e.stopPropagation(); // 防止触发卡片详情
+      const card = scoreEl.closest('.match-card');
+      if (!card) return;
+      const mid = card.dataset.mid;
+      const m = _matchMap[mid];
+      if (!m) return;
+      _upsetPending = mid;
+      const isUpset = upsetMatches.includes(mid);
+      document.getElementById('upsetModalTitle').textContent = isUpset ? '取消爆冷标记' : '标记为爆冷';
+      document.getElementById('upsetModalText').textContent = isUpset
+        ? `确认取消 ${m.home} vs ${m.away} 的爆冷标记？`
+        : `确认将 ${m.home} vs ${m.away} 标记为爆冷？`;
+      document.getElementById('upsetConfirmBtn').textContent = '确认';
+      document.getElementById('upsetModal').style.display = 'flex';
+      return;
+    }
+    // 点击卡片其他区域 → 打开详情
+    const card = e.target.closest('.match-card');
+    if (card && _matchMap[card.dataset.mid]) {
+      showMatchDetail(_matchMap[card.dataset.mid]);
+    }
   });
 }
+
 function closeUpsetModal() {
   document.getElementById('upsetModal').style.display = 'none';
   _upsetPending = null;
@@ -2216,7 +2192,7 @@ function buildMatchCard(m){
         <div class="mc-vs">${flagImg(m.home,18)}<span>${tname(m.home)}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${tname(m.away)}</span></div>
         <div class="mc-detail">
           <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
-          <div class="ditem">${dtLabel}<br><span class="dval">${dtStr}</span></div>
+          <div class="ditem">${dtLabel}<br><span class="dval${st==='FINISHED'?' score-clickable':''}">${dtStr}</span></div>
         </div>
         ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
