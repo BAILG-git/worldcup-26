@@ -58,6 +58,47 @@ MATCH_TEMPLATE = [
     (0, 1, 0), (2, 3, 1), (0, 2, 2), (1, 3, 3), (0, 3, 4), (1, 2, 5)
 ]
 
+# 比赛日期（北京时间 UTC+8，格式 YYYY-MM-DD）
+# 规则：只生成"已完赛"或"距今 ≤1 天"的场次预测
+MATCH_DATES = {
+    "A_0": "2026-06-11", "A_1": "2026-06-11",
+    "A_2": "2026-06-19", "A_3": "2026-06-19",
+    "A_4": "2026-06-25", "A_5": "2026-06-25",
+    "B_0": "2026-06-13", "B_1": "2026-06-14",
+    "B_2": "2026-06-19", "B_3": "2026-06-19",
+    "B_4": "2026-06-25", "B_5": "2026-06-25",
+    "C_0": "2026-06-14", "C_1": "2026-06-14",
+    "C_2": "2026-06-20", "C_3": "2026-06-20",
+    "C_4": "2026-06-25", "C_5": "2026-06-25",
+    "D_0": "2026-06-13", "D_1": "2026-06-14",
+    "D_2": "2026-06-20", "D_3": "2026-06-20",
+    "D_4": "2026-06-26", "D_5": "2026-06-26",
+    "E_0": "2026-06-15", "E_1": "2026-06-15",
+    "E_2": "2026-06-21", "E_3": "2026-06-21",
+    "E_4": "2026-06-26", "E_5": "2026-06-26",
+    "F_0": "2026-06-15", "F_1": "2026-06-15",
+    "F_2": "2026-06-21", "F_3": "2026-06-22",
+    "F_4": "2026-06-26", "F_5": "2026-06-26",
+    "G_0": "2026-06-16", "G_1": "2026-06-16",
+    "G_2": "2026-06-22", "G_3": "2026-06-22",
+    "G_4": "2026-06-27", "G_5": "2026-06-27",
+    "H_0": "2026-06-16", "H_1": "2026-06-16",
+    "H_2": "2026-06-22", "H_3": "2026-06-22",
+    "H_4": "2026-06-27", "H_5": "2026-06-27",
+    "I_0": "2026-06-17", "I_1": "2026-06-17",
+    "I_2": "2026-06-23", "I_3": "2026-06-23",
+    "I_4": "2026-06-27", "I_5": "2026-06-27",
+    "J_0": "2026-06-17", "J_1": "2026-06-17",
+    "J_2": "2026-06-23", "J_3": "2026-06-23",
+    "J_4": "2026-06-28", "J_5": "2026-06-28",
+    "K_0": "2026-06-18", "K_1": "2026-06-18",
+    "K_2": "2026-06-24", "K_3": "2026-06-24",
+    "K_4": "2026-06-28", "K_5": "2026-06-28",
+    "L_0": "2026-06-18", "L_1": "2026-06-18",
+    "L_2": "2026-06-24", "L_3": "2026-06-24",
+    "L_4": "2026-06-28", "L_5": "2026-06-28",
+}
+
 # 球队风格数据（attack/defense 1-10）
 STYLE_DATA = {
     "墨西哥": {"style": "快速转换", "attack": 7.5, "defense": 6.0},
@@ -482,12 +523,20 @@ class MonteCarloSimulator:
 
 
 # ========== 5. 主流程 ==========
-def run_predictions(finished_matches=None, output_dir="data"):
+def run_predictions(finished_matches=None, output_dir="data", predict_until=None):
     """
     执行全量预测
     finished_matches: [{"id": "A_0", "home": "墨西哥", "away": "南非", "score_h": 2, "score_a": 1}, ...]
+    predict_until: datetime.date — 只预测日期 ≤ 此值的场次（北京时间）
+                   默认 None 表示「今天(CST) + 1 天」，即提前一天预测
     """
+    from datetime import datetime, timedelta, date as _date
     finished_matches = finished_matches or []
+
+    # 计算预测截止日期（北京时间 = UTC+8）
+    if predict_until is None:
+        today_cst = (datetime.utcnow() + timedelta(hours=8)).date()
+        predict_until = today_cst + timedelta(days=1)
 
     # 初始化 Elo 引擎
     engine = EloEngine()
@@ -503,13 +552,14 @@ def run_predictions(finished_matches=None, output_dir="data"):
 
     # 预测所有小组赛
     predictions = {}
+    skipped = 0
     for group_name, teams in GROUPS.items():
         for h_idx, a_idx, m_idx in MATCH_TEMPLATE:
             mid = f"{group_name}_{m_idx}"
             home = teams[h_idx]
             away = teams[a_idx]
 
-            # 如果已完赛，用实际比分
+            # 如果已完赛，用实际比分（始终包含，不受日期过滤影响）
             finished = next((f for f in finished_matches if f["id"] == mid), None)
             if finished:
                 predictions[mid] = {
@@ -526,17 +576,29 @@ def run_predictions(finished_matches=None, output_dir="data"):
                     "eloDiff": 0,
                 }
             else:
+                # 日期过滤：只预测距今 ≤1 天的场次
+                match_date_str = MATCH_DATES.get(mid)
+                if match_date_str:
+                    match_date = _date.fromisoformat(match_date_str)
+                    if match_date > predict_until:
+                        skipped += 1
+                        continue  # 太远，跳过
+
                 is_host = home in HOSTS and not (m_idx >= 3)  # 小组赛前2轮有东道主加成
                 round_num = m_idx // 2 + 1  # 第1/2/3轮
                 result = sim.simulate_match(home, away, is_host=is_host, round_num=round_num)
                 result["locked"] = False
                 predictions[mid] = result
 
+    if skipped:
+        print(f"   (跳过 {skipped} 场超出预测窗口的比赛，截止日期 {predict_until})")
+
     # 输出
     output = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
         "engine": "Elo+MonteCarlo",
         "simulations": sim.N,
+        "predictUntil": predict_until.isoformat(),
         "elo_ratings": {k: round(v, 1) for k, v in engine.ratings.items()},
         "predictions": predictions,
     }
@@ -547,7 +609,7 @@ def run_predictions(finished_matches=None, output_dir="data"):
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"[OK] 预测完成，输出到 {out_path}")
-    print(f"   共 {len(predictions)} 场小组赛")
+    print(f"   共 {len(predictions)} 场（预测截止 {predict_until}）")
     return output
 
 
