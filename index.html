@@ -13,14 +13,9 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;padding:16px}
 h1{text-align:center;font-size:26px;margin-bottom:4px}
-.sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
-
-/* status bar */
-.status-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 16px;
-  background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;font-size:12px;flex-wrap:wrap}
-.status-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 1.5s infinite}
-.status-dot.live{background:var(--green);animation:blink .8s infinite}
-@keyframes blink{50%{opacity:.3}}
+#yearBadge{font-weight:bold;transition:.3s;color:#f85149} /* default red = disconnected */
+#yearBadge.connected{color:#2ea04f}
+h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* tabs */
 .tabs{display:flex;gap:4px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
@@ -56,8 +51,8 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 @media(max-width:768px){
   body{padding:8px}
   h1{font-size:20px}
+  #yearBadge{font-size:inherit}
   .sub{font-size:12px;margin-bottom:8px}
-  .status-bar{font-size:10px;padding:6px 10px;gap:8px}
   .tabs{gap:3px;margin-bottom:10px}
   .tab-btn{padding:5px 10px;font-size:11px}
   .match-date-block{margin-bottom:10px}
@@ -368,13 +363,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 </head>
 <body>
 
-<h1>FIFA World Cup 2026 United States, Canada, Mexic</h1>
-
-<div class="status-bar">
-  <span class="status-dot" id="statusDot"></span>
-  <span id="statusText">Click to connect live data</span>
-  <button class="btn small primary" onclick="connectAll()" id="btnConnect">Reconnect</button>
-</div>
+<h1>FIFA World Cup <span id="yearBadge">2026</span> United States, Canada, Mexico</h1>
 
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('groups')">📊 Group Table</button>
@@ -1599,18 +1588,19 @@ function startPolling() {
 }
 function stopPolling() { if (pollingTimer) { clearInterval(pollingTimer); clearTimeout(pollingTimer); pollingTimer = null; } }
 function updateStatus(state, msg) {
-  const dot = document.getElementById('statusDot'), text = document.getElementById('statusText');
-  dot.className = 'status-dot';
+  const badge = document.getElementById('yearBadge');
   switch(state) {
     case 'live': {
-      dot.classList.add('live');
-      const hasLive = Object.values(matchStatus).some(s => s === 'LIVE');
-      text.textContent = hasLive ? 'Live · Refreshing every 10s' : 'Live · Refreshing every 30s';
+      badge.classList.add('connected'); badge.style.color = '';
       break;
     }
-    case 'connecting': text.textContent = 'Connecting...'; break;
-    case 'error': text.textContent = 'Connection failed: ' + (msg||''); break;
-    default: text.textContent = '点击按钮连接实时数据';
+    case 'connecting': { badge.className = ''; break; }
+    case 'error': {
+      badge.classList.remove('connected'); badge.style.color = '#f85149';
+      break;
+    }
+    default: badge.className = '';
+  }
   }
 }
 
