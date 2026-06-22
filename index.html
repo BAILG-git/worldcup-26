@@ -182,11 +182,11 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 
 /* ========== FULL BRACKET ========== */
 .full-bracket{display:flex;flex-direction:row;align-items:stretch;justify-content:center;gap:0;overflow-x:auto;padding:10px 0;width:100%}
-.bracket-half{display:flex;flex-direction:column;flex:1 1 0;min-width:340px}
+.bracket-half{display:flex;flex-direction:column;flex:1 1 0;min-width:380px}
 .bracket-half .half-header{text-align:center;padding:6px 10px;font-weight:bold;font-size:14px;border-radius:8px 8px 0 0;margin-bottom:4px}
 .bracket-half.upper .half-header{color:var(--up);background:rgba(46,160,67,.1);border:1px solid rgba(46,160,67,.3)}
 .bracket-half.lower .half-header{color:var(--down);background:rgba(31,111,235,.1);border:1px solid rgba(31,111,235,.3)}
-.half-groups{text-align:center;font-size:10px;color:var(--muted);margin-bottom:6px}
+.half-groups{text-align:center;font-size:12px;color:var(--muted);margin-bottom:6px}
 
 /* Sub-blocks: Q-Zone */
 .sub-block{margin:4px 0;border-radius:8px;padding:4px;overflow:hidden}
@@ -235,20 +235,20 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .r-arrow{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;min-width:16px;font-size:18px;flex:0 0 16px}
 
 /* Bracket slot */
-.bslot{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:2px 3px;
-  padding:2px 4px;border:1px dashed var(--border);border-radius:6px;font-size:9px;text-align:center;
-  background:rgba(22,27,34,.8);transition:.15s;min-height:24px;overflow:hidden;white-space:nowrap}
-.bslot .flag{font-size:14px}
-.bslot .team{font-weight:bold;color:var(--text);font-size:11px}
-.bslot .desc{color:var(--muted);font-size:9px}
+.bslot{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:3px 4px;
+  padding:4px 8px;border:1px dashed var(--border);border-radius:6px;font-size:11px;text-align:center;
+  background:rgba(22,27,34,.8);transition:.15s;min-height:30px;overflow:hidden;white-space:nowrap}
+.bslot .flag{font-size:16px}
+.bslot .team{font-weight:bold;color:var(--text);font-size:13px}
+.bslot .desc{color:var(--muted);font-size:10px}
 .bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.06)}
 .bslot.filled .slot-row{display:flex;align-items:center;gap:2px;justify-content:center}
 .bslot.champion{border-color:var(--gold);background:linear-gradient(135deg,rgba(240,192,64,.12),rgba(240,192,64,.02))}
 
 /* Finals center */
 .finals-center{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;flex:0 0 auto;padding:0 6px}
-.final-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;min-width:100px}
-.final-box .f-title{font-size:11px;font-weight:bold;margin-bottom:4px}
+.final-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;min-width:120px}
+.final-box .f-title{font-size:13px;font-weight:bold;margin-bottom:4px}
 .final-box.champion{border-color:var(--gold);border-width:2px;background:linear-gradient(135deg,rgba(240,192,64,.1),rgba(240,192,64,.02))}
 .final-box.champion .f-title{color:var(--gold)}
 .final-box .bslot{margin:2px 0;padding:4px 6px;min-width:80px}
@@ -320,7 +320,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .bslot.b3-slot{cursor:pointer;border-style:dashed;border-color:rgba(240,192,64,.5);background:rgba(240,192,64,.06);transition:.15s}
 .bslot.b3-slot:hover{border-color:rgba(240,192,64,.8);background:rgba(240,192,64,.15)}
 .bslot.b3-slot.filled{border-style:solid;border-color:rgba(46,160,67,.5);background:rgba(46,160,67,.08)}
-.bslot.b3-slot .b3-desc{font-size:9px;color:var(--muted)}
+.bslot.b3-slot .b3-desc{font-size:11px;color:var(--muted)}
 .bslot.b3-slot.filled .b3-desc{color:var(--green)}
 /* 最佳第三选择弹窗 */
 .b3-picker-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1001;animation:fadeIn .2s}
@@ -2965,7 +2965,7 @@ function renderBslot(slotId, team, side) {
   }
   if (team && team !== '3rd') {
     // 正常队伍填充
-    return `<div class="bslot filled"><span class="slot-row">${flagImg(team, 15)}<span class="team">${tname(team)}</span></span></div>`;
+    return `<div class="bslot filled"><span class="slot-row">${flagImg(team, 16)}<span class="team">${tname(team)}</span></span></div>`;
   }
   // 空槽位
   return `<div class="bslot"><span class="desc">-</span></div>`;
