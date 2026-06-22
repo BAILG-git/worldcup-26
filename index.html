@@ -191,31 +191,43 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 /* Each round column */
 .bracket-col{
   display:grid;grid-template-rows:repeat(8,1fr);align-items:center;
-  flex:1 1 0;min-width:100px;padding:0 4px;position:relative;
+  flex:1 1 0;min-width:80px;padding:6px 4px;position:relative;
+  border-right:1px solid rgba(255,255,255,.15);
 }
 .col-head{
-  text-align:center;font-size:10px;font-weight:bold;
-  color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
-  grid-column:1/-1;
+  text-align:center;font-size:12px;font-weight:bold;
+  color:var(--text);margin-bottom:2px;letter-spacing:.3px;
+  grid-column:1/-1;line-height:1.4;
 }
 .g-slot{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:3px;border-radius:8px;padding:4px 2px;position:relative;
+  gap:3px;border-radius:6px;padding:3px 2px;position:relative;
 }
-.g-slot .bslot{margin:0 auto}
+.g-slot .bslot{margin:0 auto;background:transparent;border:none}
 .gs-span2{grid-row:span 2}
 .gs-span4{grid-row:span 4}
 .gs-span8{grid-row:span 8}
-/* Left half — Blue series: deeper as rounds progress inward */
-.g-lr32{border:2px solid rgba(25,118,210,.25);background:rgba(227,242,253,.4)}
-.g-lr16{border:2px solid rgba(25,118,210,.35);background:rgba(187,222,251,.45)}
-.g-lqf{border:2px solid rgba(25,118,210,.5);background:rgba(100,181,246,.35)}
-.g-lsf{border:2px solid rgba(25,118,210,.65);background:rgba(25,118,210,.25)}
-/* Right half — Green series: deeper as rounds progress inward */
-.g-rr32{border:2px solid rgba(56,142,60,.25);background:rgba(232,245,233,.4)}
-.g-rr16{border:2px solid rgba(56,142,60,.35);background:rgba(200,230,201,.45)}
-.g-rqf{border:2px solid rgba(56,142,60,.5);background:rgba(129,199,132,.35)}
-.g-rsf{border:2px solid rgba(56,142,60,.65);background:rgba(56,142,60,.25)}
+
+/* Left half — Blue series: full-column bg, deeper as rounds progress inward */
+.bracket-col.g-lr32{background:rgba(227,242,253,.55)}
+.bracket-col.g-lr16{background:rgba(187,222,251,.6)}
+.bracket-col.g-lqf{background:rgba(144,202,249,.55)}
+.bracket-col.g-lsf{background:rgba(100,181,246,.5)}
+.bracket-col.g-l2{background:rgba(66,165,245,.55)}
+
+/* Right half — Green series: full-column bg, deeper as rounds progress inward */
+.bracket-col.g-rr32{background:rgba(232,245,233,.55)}
+.bracket-col.g-rr16{background:rgba(200,230,201,.6)}
+.bracket-col.g-rqf{background:rgba(165,214,167,.55)}
+.bracket-col.g-rsf{background:rgba(129,199,132,.5)}
+.bracket-col.g-r2{background:rgba(102,187,106,.5)}
+
+/* "2" column label style */
+.col-semi-label{
+  font-size:18px;font-weight:bold;color:var(--text);
+  text-align:center;grid-row:1/-1;grid-column:1/-1;
+  display:flex;align-items:center;justify-content:center;
+}
 .col-head{
   text-align:center;font-size:10px;font-weight:bold;
   color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
@@ -2929,12 +2941,12 @@ function renderBracket(){
   // ===== UPPER HALF =====
   html+=`<div class="bracket-side side-upper">`;
   // R32: 8 matches, 1 row each
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
-    <div class="g-slot g-lr32">${bs('R32_73',h('R32_73'),'home',hb('R32_73'))}${bs('R32_73',a('R32_73'),'away',ab('R32_73'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_79',h('R32_79'),'home',hb('R32_79'))}${bs('R32_79',a('R32_79'),'away',ab('R32_79'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_77',h('R32_77'),'home',hb('R32_77'))}${bs('R32_77',a('R32_77'),'away',ab('R32_77'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_76',h('R32_76'),'home',hb('R32_76'))}${bs('R32_76',a('R32_76'),'away',ab('R32_76'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_80',h('R32_80'),'home',hb('R32_80'))}${bs('R32_80',a('R32_80'),'away',ab('R32_80'))}</div>
+  html+=`<div class="bracket-col col-r32 g-lr32"><div class="col-head">32</div>
+    <div class="g-slot">${bs('R32_73',h('R32_73'),'home',hb('R32_73'))}${bs('R32_73',a('R32_73'),'away',ab('R32_73'))}</div>
+    <div class="g-slot">${bs('R32_79',h('R32_79'),'home',hb('R32_79'))}${bs('R32_79',a('R32_79'),'away',ab('R32_79'))}</div>
+    <div class="g-slot">${bs('R32_77',h('R32_77'),'home',hb('R32_77'))}${bs('R32_77',a('R32_77'),'away',ab('R32_77'))}</div>
+    <div class="g-slot">${bs('R32_76',h('R32_76'),'home',hb('R32_76'))}${bs('R32_76',a('R32_76'),'away',ab('R32_76'))}</div>
+    <div class="g-slot">${bs('R32_80',h('R32_80'),'home',hb('R32_80'))}${bs('R32_80',a('R32_80'),'away',ab('R32_80'))}</div>
     <div class="g-slot g-lr32">${bs('R32_81',h('R32_81'),'home',hb('R32_81'))}${bs('R32_81',a('R32_81'),'away',ab('R32_81'))}</div>
     <div class="g-slot g-lr32">${bs('R32_83',h('R32_83'),'home',hb('R32_83'))}${bs('R32_83',a('R32_83'),'away',ab('R32_83'))}</div>
     <div class="g-slot g-lr32">${bs('R32_84',h('R32_84'),'home',hb('R32_84'))}${bs('R32_84',a('R32_84'),'away',ab('R32_84'))}</div>
@@ -2952,9 +2964,11 @@ function renderBracket(){
     <div class="g-slot gs-span4 g-lqf">${bs('QF_U2',h('QF_U2'),'home',hb('QF_U2'))}${bs('QF_U2',a('QF_U2'),'away',ab('QF_U2'))}</div>
   </div>`;
   // SF: 1 match, span 8 rows
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>
-    <div class="g-slot gs-span8 g-lsf">${buildSfSlot('SF_U')}</div>
+  html+=`<div class="bracket-col col-sf g-lsf"><div class="col-head">4</div>
+    <div class="g-slot gs-span8">${buildSfSlot('SF_U')}</div>
   </div>`;
+  // Semi-final winner ("2"): label only
+  html+=`<div class="bracket-col g-l2"><div class="col-semi-label">2</div></div>`;
   html+=`</div>`; // side-upper
 
   // ===== CENTER =====
@@ -2968,7 +2982,9 @@ function renderBracket(){
   // ===== LOWER HALF =====
   html+=`<div class="bracket-side side-lower">`;
   // SF
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div><div class="g-slot gs-span8 g-rsf">${buildSfSlot('SF_L')}</div></div>`;
+  html+=`<div class="bracket-col col-sf g-rsf"><div class="col-head">4</div><div class="g-slot gs-span8">${buildSfSlot('SF_L')}</div></div>`;
+  // Semi-final winner ("2"): label only
+  html+=`<div class="bracket-col g-r2"><div class="col-semi-label">2</div></div>`;
   // QF
   html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
     <div class="g-slot gs-span4 g-rqf">${bs('QF_L1',h('QF_L1'),'home',hb('QF_L1'))}${bs('QF_L1',a('QF_L1'),'away',ab('QF_L1'))}</div>
