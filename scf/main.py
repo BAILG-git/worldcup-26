@@ -488,6 +488,68 @@ def handle_upsets_post(body):
     except Exception as e:
         return {'error': str(e)}
 
+# ========== 完赛赛果自动持久化 ==========
+COMPLETED_PATH = 'data/completed_results.json'
+COMPLETED_API_URL = f'https://api.github.com/repos/{UPSETS_REPO}/contents/{COMPLETED_PATH}'
+
+def handle_completed_get():
+    """读取自动持久化的完赛赛果"""
+    if not GITHUB_TOKEN:
+        return '{}'
+    try:
+        current = _github_api('GET', COMPLETED_API_URL)
+        import base64
+        content = current.get('content', '')
+        if content:
+            return base64.b64decode(content).decode('utf-8')
+        return '{}'
+    except Exception:
+        return '{}'
+
+def _github_api_custom(url, method, body=None):
+    """调用 GitHub REST API（自定义 URL）"""
+    data = body and json.dumps(body).encode('utf-8') or None
+    req = urllib.request.Request(url, data=data, headers={
+        'User-Agent': 'worldcup-scf',
+        'Authorization': f'Bearer {GITHUB_TOKEN}',
+        'Accept': 'application/vnd.github.v3+json',
+    })
+    req.get_method = lambda: method
+    resp = urllib.request.urlopen(req, timeout=15)
+    return json.loads(resp.read().decode('utf-8'))
+
+def handle_completed_post(body):
+    """合并新完赛赛果（需要 GITHUB_TOKEN）"""
+    if not GITHUB_TOKEN:
+        return {'error': '服务器未配置 GitHub Token'}
+    try:
+        import base64
+        # 读取现有数据
+        existing = {}
+        try:
+            current = _github_api_custom(COMPLETED_API_URL, 'GET')
+            sha = current.get('sha', '')
+            content = current.get('content', '')
+            if content:
+                existing = json.loads(base64.b64decode(content).decode('utf-8'))
+        except Exception:
+            sha = ''
+        # 合并新数据（body 格式: {matchId: {score,ht,goals}, ...}）
+        for mid, data in body.items():
+            existing[mid] = data
+        # 写回 GitHub
+        new_content = json.dumps(existing, ensure_ascii=False, indent=2)
+        commit_body = {
+            'message': 'auto-persist completed results via SCF',
+            'content': base64.b64encode(new_content.encode('utf-8')).decode('utf-8'),
+        }
+        if sha:
+            commit_body['sha'] = sha
+        _github_api_custom(COMPLETED_API_URL, 'PUT', commit_body)
+        return {'ok': True, 'count': len(existing)}
+    except Exception as e:
+        return {'error': str(e)}
+
 # ========== SCF 主入口 ==========
 def main_handler(event, context):
     qs = (event.get('queryStringParameters') or
@@ -525,7 +587,7 @@ def main_handler(event, context):
         # GET
         return {'statusCode': 200, 'headers': cors_headers, 'body': handle_upsets_get()}
 
-    # 路由：/predict
+    # 路由：/completed（自动持久化完赛赛果）\n    if path == '/completed' or path.endswith('/completed'):\n        method = (event.get('httpMethod') or 'GET').upper()\n        cors_headers = {\n            'Content-Type': 'application/json',\n            'Access-Control-Allow-Origin': '*',\n            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n            'Access-Control-Allow-Headers': 'Content-Type',\n        }\n        if method == 'OPTIONS':\n            return {'statusCode': 204, 'headers': cors_headers, 'body': ''}\n        if method == 'POST':\n            try:\n                raw_body = event.get('body', '{}') or '{}'\n                payload = json.loads(raw_body) if isinstance(raw_body, str) else raw_body\n                result = handle_completed_post(payload)\n            except Exception as e:\n                result = {'error': str(e)}\n            return {'statusCode': 200 if result.get('ok') else 500, 'headers': cors_headers,\n                    'body': json.dumps(result, ensure_ascii=False)}\n        # GET\n        return {'statusCode': 200, 'headers': cors_headers, 'body': handle_completed_get()}\n\n    # 路由：/predict
     if path == '/predict' or qs.get('action','') == 'predict':
         result = handle_predict(qs)
         return {

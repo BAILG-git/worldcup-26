@@ -435,6 +435,7 @@ let goalEvents = {};
 let upsetMatches = []; // 从 SCF remote 加载
 let _upsetPending = null; // 待标记的 match id
 const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
+const SCF_COMPLETED_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/completed';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记
 async function loadUpsets() {
@@ -1520,6 +1521,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
           halftimeScores[mm.id] = ns ? [ns[0], ns[1]] : [0, 0];
         }
         matchStatus[mm.id] = st;
+        if (st === 'FINISHED') autoPersistCompleted(mm.id);
         if (htScores) halftimeScores[mm.id] = htScores;
         if (clockStr !== undefined) matchClock[mm.id] = clockStr;
       }
@@ -1662,6 +1664,21 @@ function loadScores(){
   'A_3': {score:[1, 1],ht:[1, 0],goals:[{team:'捷克',minute:"6'",isHome:true,type:'goal',player:"Michal Sadílek"},{team:'南非',minute:"83'",isHome:false,type:'penalty_scored',player:"Teboho Mokoena"}]},
   'B_2': {score:[6, 0],ht:[3, 0],goals:[{team:'加拿大',minute:"16'",isHome:true,type:'goal',player:"Cyle Larin"},{team:'加拿大',minute:"29'",isHome:true,type:'goal',player:"Jonathan David"},{team:'加拿大',minute:"45+3'",isHome:true,type:'goal',player:"Jonathan David"},{team:'加拿大',minute:"64'",isHome:true,type:'goal',player:"Nathan Saliba"},{team:'卡塔尔',minute:"75'",isHome:false,type:'own_goal',player:"Mohamed Al Mannai"},{team:'加拿大',minute:"90+2'",isHome:true,type:'goal',player:"Jonathan David"}]},
   'B_3': {score:[4, 1],ht:[0, 0],goals:[{team:'瑞士',minute:"74'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'瑞士',minute:"84'",isHome:true,type:'goal',player:"Rubén Vargas"},{team:'瑞士',minute:"90'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'波黑',minute:"90+3'",isHome:false,type:'goal',player:"Ermin Mahmic"},{team:'瑞士',minute:"90+7'",isHome:true,type:'penalty_scored',player:"Granit Xhaka"}]},
+  // MD2 第二批 6月20日（北京时间）C/D组
+  'C_2': {score:[3, 0],ht:[3, 0],goals:[{team:'巴西',minute:"23'",isHome:true,type:'goal',player:"Matheus Cunha"},{team:'巴西',minute:"36'",isHome:true,type:'goal',player:"Matheus Cunha"},{team:'巴西',minute:"45+3'",isHome:true,type:'goal',player:"Vinícius Júnior"}]},
+  'C_3': {score:[0, 1],ht:[0, 1],goals:[{team:'摩洛哥',minute:"2'",isHome:false,type:'goal',player:"Ismael Saibari"}]},
+  'D_2': {score:[2, 0],ht:[2, 0],goals:[{team:'美国',minute:"11'",isHome:true,type:'own_goal',player:"Cameron Burgess"},{team:'美国',minute:"43'",isHome:true,type:'goal',player:"Alex Freeman"}]},
+  'D_3': {score:[0, 1],ht:[0, 1],goals:[{team:'巴拉圭',minute:"2'",isHome:false,type:'goal',player:"Matías Galarza"}]},
+  // MD2 第三批 6月21日（北京时间）E/F组
+  'E_2': {score:[2, 1],ht:[0, 1],goals:[{team:'科特迪瓦',minute:"30'",isHome:false,type:'goal',player:"Franck Kessié"},{team:'德国',minute:"68'",isHome:true,type:'goal',player:"Deniz Undav"},{team:'德国',minute:"90+4'",isHome:true,type:'goal',player:"Deniz Undav"}]},
+  'E_3': {score:[0, 0],ht:[0, 0]},
+  'F_2': {score:[5, 1],ht:[2, 0],goals:[{team:'荷兰',minute:"5'",isHome:true,type:'goal',player:"Brian Brobbey"},{team:'荷兰',minute:"17'",isHome:true,type:'goal',player:"Brian Brobbey"},{team:'荷兰',minute:"47'",isHome:true,type:'goal',player:"Cody Gakpo"},{team:'荷兰',minute:"54'",isHome:true,type:'goal',player:"Cody Gakpo"},{team:'瑞典',minute:"59'",isHome:false,type:'goal',player:"Anthony Elanga"},{team:'荷兰',minute:"89'",isHome:true,type:'goal',player:"Crysencio Summerville"}]},
+  'F_3': {score:[0, 4],ht:[0, 2],goals:[{team:'日本',minute:"4'",isHome:false,type:'goal',player:"Daichi Kamada"},{team:'日本',minute:"31'",isHome:false,type:'goal',player:"Ayase Ueda"},{team:'日本',minute:"69'",isHome:false,type:'goal',player:"Junya Ito"},{team:'日本',minute:"83'",isHome:false,type:'goal',player:"Ayase Ueda"}]},
+  // MD2 第四批 6月22日（北京时间）G/H组
+  'G_2': {score:[0, 0],ht:[0, 0]},
+  'G_3': {score:[1, 3],ht:[1, 0],goals:[{team:'新西兰',minute:"15'",isHome:true,type:'goal',player:"Finn Surman"},{team:'埃及',minute:"58'",isHome:false,type:'goal',player:"Mostafa Zico"},{team:'埃及',minute:"67'",isHome:false,type:'goal',player:"Mohamed Salah"},{team:'埃及',minute:"82'",isHome:false,type:'goal',player:"Trézéguet"}]},
+  'H_2': {score:[4, 0],ht:[3, 0],goals:[{team:'西班牙',minute:"10'",isHome:true,type:'goal',player:"Lamine Yamal"},{team:'西班牙',minute:"21'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"24'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"49'",isHome:true,type:'own_goal',player:"Hassan Al-Tambakti"}]},
+  'H_3': {score:[2, 2],ht:[2, 1],goals:[{team:'佛得角',minute:"21'",isHome:false,type:'goal',player:"Kevin Pina"},{team:'乌拉圭',minute:"44'",isHome:true,type:'goal',player:"Maxi Araújo"},{team:'乌拉圭',minute:"45+6'",isHome:true,type:'goal',player:"Agustín Canobbio"},{team:'佛得角',minute:"61'",isHome:false,type:'goal',player:"Hélio Varela"}]},
   };
   // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
   const calcHalftimeFromGoals = (goals) => {
@@ -1711,7 +1728,70 @@ function saveScores() {
     localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
   } catch(e) {}
 }
+// 从 SCF 加载自动持久化的完赛赛果（跨浏览器/设备共享）
+async function loadCompletedFromServer() {
+  try {
+    const resp = await fetch(SCF_COMPLETED_URL);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (!data || typeof data !== 'object') return;
+    let merged = 0;
+    for (const [mid, res] of Object.entries(data)) {
+      if (res.score) scores[mid] = res.score;
+      if (res.ht) halftimeScores[mid] = res.ht;
+      matchStatus[mid] = 'FINISHED';
+      matchClock[mid] = '完场';
+      if (res.goals && res.goals.length > 0) {
+        // 找到 match 的 key
+        for (const ms of Object.values(GROUP_MATCHES)) {
+          for (const m of ms) {
+            if (m.id === mid) {
+              goalEvents[m.home + '_' + m.away] = res.goals;
+              break;
+            }
+          }
+        }
+      }
+      merged++;
+    }
+    if (merged > 0) {
+      saveScores();
+      if (currentTab === 'standings') renderStandings();
+      if (currentTab === 'matches') renderMatches();
+    }
+  } catch(e) {}
+}
+// 自动推送完赛赛果到 SCF（当 ESPN 返回 FINISHED 时）
+function autoPersistCompleted(mid) {
+  const ns = scores[mid];
+  if (!ns || ns[0] === null) return;
+  // 找到 match 信息
+  let match = null;
+  for (const ms of Object.values(GROUP_MATCHES)) {
+    for (const m of ms) {
+      if (m.id === mid) { match = m; break; }
+    }
+    if (match) break;
+  }
+  if (!match) return;
+  const key = match.home + '_' + match.away;
+  const ge = goalEvents[key] || [];
+  const body = {};
+  body[mid] = {
+    score: ns,
+    ht: halftimeScores[mid] || [0, 0],
+    goals: ge
+  };
+  try {
+    fetch(SCF_COMPLETED_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+  } catch(e) {}
+}
 loadScores();
+loadCompletedFromServer();
 
 // ========== KNOCKOUT SYSTEM — 用户自定义对阵 ==========
 // 上半区: QF_U1 + QF_U2 → SF_U
