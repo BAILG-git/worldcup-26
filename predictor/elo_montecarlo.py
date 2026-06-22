@@ -54,8 +54,9 @@ GROUPS = {
 }
 
 # [home_idx, away_idx, match_idx_in_group]
+# FIFA 标准配对: MD1 1v2&3v4, MD2 1v3&4v2, MD3 4v1&2v3 (与前端 genGroupMatches 完全对齐)
 MATCH_TEMPLATE = [
-    (0, 1, 0), (2, 3, 1), (0, 2, 2), (1, 3, 3), (0, 3, 4), (1, 2, 5)
+    (0, 1, 0), (2, 3, 1), (0, 2, 2), (3, 1, 3), (3, 0, 4), (1, 2, 5)
 ]
 
 # 比赛日期（北京时间 UTC+8，格式 YYYY-MM-DD）
