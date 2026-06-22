@@ -219,11 +219,9 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .sub-q4 .bslot{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.35)}
 .sub-q4 .bslot.filled{background:rgba(139,92,246,.22);border-color:rgba(139,92,246,.6)}
 
-/* SF column: between halves and finals */
-.sf-column{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 6px;flex:0 0 auto}
-.sf-title{font-size:11px;font-weight:bold;color:var(--muted);margin-bottom:6px;text-align:center}
-.sf-slots{display:flex;flex-direction:column;gap:4px}
-.sf-slots .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 14px;text-align:center;background:var(--card);min-width:80px}
+/* SF col: 4th column inside each sub-block's rounds-row */
+.r-col.sf-col{flex:0 0 auto;border-color:transparent!important;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:4px}
+.sf-col .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 14px;text-align:center;background:var(--card);min-width:80px}
 
 /* rounds row: R32 → R16 → QF */
 .rounds-row{display:flex;flex-direction:row;align-items:stretch;flex:1}
@@ -2890,6 +2888,7 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'R32_73'},{id:'R32_79'},{id:'R32_77'},{id:'R32_76'}],'r32','up')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'R16_U1A'},{id:'R16_U1B'}],'r16','up')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'QF_U1'}],'qf','up')}</div>
+        <div class="r-col sf-col">${buildSfSlot('SF_U')}</div>
       </div>
     </div>
     <div class="sub-block sub-q2">
@@ -2898,14 +2897,9 @@ function renderBracket(){
         <div class="r-col slots">${buildRoundSlots([{id:'R32_80'},{id:'R32_81'},{id:'R32_83'},{id:'R32_84'}],'r32','up')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'R16_U2A'},{id:'R16_U2B'}],'r16','up')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'QF_U2'}],'qf','up')}</div>
+        <div class="r-col sf-col">${buildSfSlot('SF_U')}</div>
       </div>
     </div>
-  </div>`;
-
-  // ===== SF Upper: 上半区半决赛（在半区和决赛之间）=====
-  html+=`<div class="sf-column sf-upper">
-    <div class="sf-title">⚡ Semi-Final</div>
-    <div class="sf-slots">${buildSfSlot('SF_U')}</div>
   </div>`;
 
   // ===== CENTER: Finals =====
@@ -2924,17 +2918,12 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== SF Lower: 下半区半决赛（在决赛和下半区之间）=====
-  html+=`<div class="sf-column sf-lower">
-    <div class="sf-title">⚡ Semi-Final</div>
-    <div class="sf-slots">${buildSfSlot('SF_L')}</div>
-  </div>`;
-
   // ===== RIGHT: 下半区 =====
   html+=`<div class="bracket-half lower">
     <div class="sub-block sub-q3">
       <div class="sub-block-header">下半区 1/4</div>
       <div class="rounds-row row-q3">
+        <div class="r-col sf-col">${buildSfSlot('SF_L')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'QF_L1'}],'qf','down')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'R16_L1A'},{id:'R16_L1B'}],'r16','down')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'R32_74'},{id:'R32_82'},{id:'R32_75'},{id:'R32_78'}],'r32','down')}</div>
@@ -2943,9 +2932,10 @@ function renderBracket(){
     <div class="sub-block sub-q4">
       <div class="sub-block-header">下半区 2/4</div>
       <div class="rounds-row row-q4">
+        <div class="r-col sf-col">${buildSfSlot('SF_L')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'QF_L2'}],'qf','down')}</div>
         <div class="r-col slots">${buildRoundSlots([{id:'R16_L2A'},{id:'R16_L2B'}],'r16','down')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32','down')}</div>
+        <div class="r-col slots">${buildRoundSlots([{id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32','down')}</div></div>
       </div>
     </div>
   </div>`;
