@@ -1113,8 +1113,7 @@ async function fetchAllSources() {
     console.log(`[fetchAllSources] ESPN OK=${espnOk}, events=${espnEventsCount}`);
     window._espnLoaded = true;
     fetchInjuriesIfNeeded();
-    renderMatches();
-    fillBracket();
+    silentRefresh();
     if (espnOk) {
       updateStatus('live');
       startPolling();
@@ -1126,8 +1125,7 @@ async function fetchAllSources() {
   } catch(e) {
     console.warn('fetchAllSources异常:', e);
     updateStatus('error', 'ESPN不可用');
-    renderMatches();
-    fillBracket();
+    silentRefresh();
   }
 }
 
@@ -1470,7 +1468,7 @@ async function fetchFastcastDetail(eventId, homeTeam, awayTeam) {
               halftimeScores[mm.id] = htFromHalftimeEvent;
               console.log(`Fastcast[${eventId}] → updated ${mm.id}: HT=${htFromHalftimeEvent[0]}-${htFromHalftimeEvent[1]}`);
               saveScores();
-              refreshAll();
+              silentRefresh();
               break;
             }
           }
@@ -1573,7 +1571,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
     }
   }
   if (koUpdated) updated = true;
-  if (updated) { refreshAll(); }
+  if (updated) { saveScores(); silentRefresh(); }
 }
 
 // 有直播时10秒，无直播时30秒
@@ -3105,6 +3103,169 @@ function renderBest3rd(){
 
 function refreshAll(){renderStandings();renderMatches();renderBest3rd();fillBracket();checkGroupComplete();}
 
+// ========== 无感刷新 ==========
+let _dataFingerprint = '';
+function _getDataFingerprint() {
+  const parts = [];
+  for (const ms of Object.values(GROUP_MATCHES)) {
+    for (const m of ms) {
+      const s = scores[m.id];
+      parts.push(m.id + ':' + (s ? s.join(',') : '--') + '|' + (matchStatus[m.id]||''));
+    }
+  }
+  return parts.join(';');
+}
+
+function silentRefresh() {
+  const fp = _getDataFingerprint();
+  if (fp === _dataFingerprint) return;
+  _dataFingerprint = fp;
+
+  if (currentTab === 'standings') silentPatchStandings();
+  if (currentTab === 'matches') silentPatchMatches();
+  // bracket 变化才刷新，不频繁重建
+  checkGroupComplete();
+}
+
+// 静默更新积分榜（原地改表格数值，不重建DOM）
+function silentPatchStandings() {
+  const standings = calcStandings();
+  const cards = document.querySelectorAll('#tab-groups .group-card');
+  cards.forEach(card => {
+    const header = card.querySelector('.group-header span');
+    if (!header) return;
+    const g = header.textContent.replace(' 组', '').trim();
+    const rows = standings[g];
+    if (!rows) return;
+    const trs = card.querySelectorAll('tbody tr');
+    rows.forEach((r, i) => {
+      const tr = trs[i];
+      if (!tr) return;
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 10) return;
+      // 更新各列：P=3, W=4, D=5, L=6, GF=7, GA=8, GD=9, Pts=10
+      tds[3].textContent = r.mp;
+      tds[4].textContent = r.w;
+      tds[5].textContent = r.d;
+      tds[6].textContent = r.l;
+      tds[7].textContent = r.gf;
+      tds[8].textContent = r.ga;
+      tds[9].textContent = (r.gd >= 0 ? '+' : '') + r.gd;
+      tds[10].querySelector('b').textContent = r.pts;
+      // 更新行样式（晋级/淘汰）
+      tr.className = '';
+      if (i < 2) { tr.className = 'top2'; tds[0].className = 'rank-dot pos-2'; }
+      else if (i === 2) { tr.className = 'third'; tds[0].className = 'rank-dot pos-3'; }
+      else { tr.className = 'elim'; tds[0].className = 'rank-dot pos-4'; }
+    });
+  });
+  renderBest3rd(); // 最佳第三需要重算
+}
+
+// 静默更新比赛卡片（原地改DOM，不重建）
+function silentPatchMatches(forceRebuild) {
+  const cont = document.getElementById('tab-matches');
+  const cards = cont.querySelectorAll('.match-card');
+  if (!cards.length || forceRebuild) { renderMatches(); return; }
+
+  const now = new Date();
+  const tdyStr = `${now.getMonth()+1}月${now.getDate()}日`;
+  const tom = new Date(now); tom.setDate(now.getDate()+1);
+  const tomStr = `${tom.getMonth()+1}月${tom.getDate()}日`;
+
+  let needRebuild = false;
+  cards.forEach(card => {
+    const mid = card.dataset.mid;
+    if (!mid) return;
+    // 找到对应的 match 数据
+    const m = _matchMap[mid];
+    if (!m) return;
+
+    const s = scores[mid];
+    const st = matchStatus[mid] || 'SCHEDULED';
+    const clock = matchClock[mid] || '';
+
+    // === 更新状态徽章 ===
+    const statusEl = card.querySelector('.mc-status');
+    if (statusEl) {
+      const newLabel = st === 'LIVE' ? '直播中' : st === 'FINISHED' ? '完场' : '未开始';
+      const newCls = 'mc-status ' + (st === 'LIVE' ? 'live' : st === 'FINISHED' ? 'finished' : 'upcoming');
+      if (statusEl.textContent !== newLabel || statusEl.className !== newCls) {
+        statusEl.textContent = newLabel;
+        statusEl.className = newCls;
+      }
+    }
+
+    // === 更新时钟 ===
+    let clockEl = card.querySelector('.mc-clock');
+    if (st === 'LIVE' && clock) {
+      if (!clockEl) {
+        clockEl = document.createElement('span');
+        clockEl.className = 'mc-clock';
+        const head = card.querySelector('.mc-head');
+        if (head) head.appendChild(clockEl);
+      }
+      if (clockEl.textContent !== clock) clockEl.textContent = clock;
+    } else if (clockEl && st !== 'LIVE') {
+      clockEl.remove();
+    }
+
+    // === 更新比分 ===
+    const dvals = card.querySelectorAll('.mc-detail .dval');
+    if (s && s[0] !== null) {
+      const ht = halftimeScores[mid];
+      if (dvals[0]) dvals[0].textContent = ht ? `${ht[0]}-${ht[1]}` : '- -';
+      if (dvals[1]) {
+        dvals[1].textContent = `${s[0]}-${s[1]}`;
+        if (st === 'FINISHED') dvals[1].classList.add('score-clickable');
+        else dvals[1].classList.remove('score-clickable');
+      }
+      // 更新 "最终"/"实时" 标签
+      const ditemLabels = card.querySelectorAll('.mc-detail .ditem');
+      if (ditemLabels.length >= 2) {
+        const labelNode = ditemLabels[1].childNodes[0];
+        if (labelNode) labelNode.textContent = st === 'FINISHED' ? '最终' : '实时';
+      }
+    }
+
+    // === 更新颜色标记 ===
+    const isUpset = upsetMatches.includes(mid);
+    card.classList.remove('card-today', 'card-tomorrow');
+    if (!isUpset) {
+      if (st === 'LIVE' || m.date === tdyStr) card.classList.add('card-today');
+      else if (m.date === tomStr && predictions[mid] && isPredVisible(m.date)) card.classList.add('card-tomorrow');
+    }
+
+    // === 更新预测验证 ===
+    if (st === 'FINISHED' && s && predictions[mid]) {
+      let verifyEl = card.querySelector('.mc-verify');
+      if (!verifyEl) {
+        verifyEl = document.createElement('div');
+        verifyEl.className = 'mc-verify';
+        const body = card.querySelector('.mc-body');
+        if (body) body.appendChild(verifyEl);
+      }
+      const p = predictions[mid];
+      const scoreOk = p.score === `${s[0]}-${s[1]}` || p.scoreC === `${s[0]}-${s[1]}`;
+      const actualWdl = s[0] > s[1] ? '主胜' : s[0] < s[1] ? '客胜' : '平局';
+      const wdlOk = p.wdl === actualWdl;
+      const goalsOk = p.goalsNum === s[0] + s[1];
+      verifyEl.innerHTML = `<span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span>`;
+    }
+  });
+
+  // 检测是否有新的LIVE比赛出现或消失（这种情况需要重建）
+  const visibleLive = cont.querySelectorAll('.match-card .mc-status.live').length;
+  const actualLive = Object.values(matchStatus).filter(s => s === 'LIVE').length;
+  if (visibleLive !== actualLive) needRebuild = true;
+
+  if (needRebuild) {
+    const scrollTop = cont.scrollTop;
+    renderMatches();
+    cont.scrollTop = scrollTop;
+  }
+}
+
 // ========== TABS ==========
 let currentTab='groups';
 function switchTab(tab){
@@ -3113,6 +3274,9 @@ function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).style.display=tab==='bracket'?'flex':'block';
   event.target.classList.add('active');
+  // 切到 tab 时全量刷新保证数据最新
+  if(tab==='standings') renderStandings();
+  if(tab==='matches') renderMatches();
   if(tab==='bracket') renderBracket();
   if(tab==='best3rd') renderBest3rd();
 }
