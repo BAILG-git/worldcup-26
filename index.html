@@ -206,10 +206,16 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .gs-span2{grid-row:span 2}
 .gs-span4{grid-row:span 4}
 .gs-span8{grid-row:span 8}
-.g-q1{border:2px solid rgba(46,160,67,.5);background:rgba(46,160,67,.06)}
-.g-q2{border:2px solid rgba(217,119,6,.5);background:rgba(217,119,6,.06)}
-.g-q3{border:2px solid rgba(31,111,235,.5);background:rgba(31,111,235,.06)}
-.g-q4{border:2px solid rgba(139,92,246,.5);background:rgba(139,92,246,.06)}
+/* Left half — Blue series: deeper as rounds progress inward */
+.g-lr32{border:2px solid rgba(25,118,210,.25);background:rgba(227,242,253,.4)}
+.g-lr16{border:2px solid rgba(25,118,210,.35);background:rgba(187,222,251,.45)}
+.g-lqf{border:2px solid rgba(25,118,210,.5);background:rgba(100,181,246,.35)}
+.g-lsf{border:2px solid rgba(25,118,210,.65);background:rgba(25,118,210,.25)}
+/* Right half — Green series: deeper as rounds progress inward */
+.g-rr32{border:2px solid rgba(56,142,60,.25);background:rgba(232,245,233,.4)}
+.g-rr16{border:2px solid rgba(56,142,60,.35);background:rgba(200,230,201,.45)}
+.g-rqf{border:2px solid rgba(56,142,60,.5);background:rgba(129,199,132,.35)}
+.g-rsf{border:2px solid rgba(56,142,60,.65);background:rgba(56,142,60,.25)}
 .col-head{
   text-align:center;font-size:10px;font-weight:bold;
   color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
@@ -258,15 +264,18 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   gap:16px;flex:0 0 auto;padding:0 12px;z-index:2;
 }
 .final-box{
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:8px 12px;text-align:center;min-width:100px;
+  background:rgba(22,27,34,.95);border:2px solid rgba(240,192,64,.3);border-radius:10px;
+  padding:10px 14px;text-align:center;min-width:110px;
 }
-.final-box .f-title{font-size:12px;font-weight:bold;margin-bottom:4px;color:var(--gold)}
-.final-box.champion{border-color:var(--gold);border-width:2px;background:linear-gradient(135deg,rgba(240,192,64,.1),rgba(240,192,64,.02))}
-.final-box.champion .f-title{color:var(--gold)}
-.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px}
+.final-box .f-title{font-size:13px;font-weight:bold;margin-bottom:6px;color:var(--gold)}
+.final-box.champion{border-color:var(--gold);border-width:3px;background:linear-gradient(135deg,rgba(240,192,64,.18),rgba(240,192,64,.04),rgba(22,27,34,.95))}
+.final-box.champion .f-title{color:var(--gold);font-size:14px}
+.final-box.third{border-color:rgba(192,192,192,.5);background:linear-gradient(135deg,rgba(192,192,192,.1),rgba(22,27,34,.95))}
+.final-box.third .f-title{color:var(--muted)}
+.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px;background:rgba(22,27,34,.9);border-color:rgba(240,192,64,.2)}
 .final-box .bslot .team{font-size:11px;font-weight:bold}
 .final-box .bslot .desc{font-size:9px}
+.final-box.third .bslot{border-color:rgba(192,192,192,.3)}
 
 /* Responsive: allow horizontal scroll on small screens */
 @media(max-width:1200px){
@@ -2920,31 +2929,31 @@ function renderBracket(){
   // ===== UPPER HALF =====
   html+=`<div class="bracket-side side-upper">`;
   // R32: 8 matches, 1 row each
-  html+=`<div class="bracket-col col-r32"><div class="col-head">Round of 32</div>
-    <div class="g-slot g-q1">${bs('R32_73',h('R32_73'),'home',hb('R32_73'))}${bs('R32_73',a('R32_73'),'away',ab('R32_73'))}</div>
-    <div class="g-slot g-q1">${bs('R32_79',h('R32_79'),'home',hb('R32_79'))}${bs('R32_79',a('R32_79'),'away',ab('R32_79'))}</div>
-    <div class="g-slot g-q1">${bs('R32_77',h('R32_77'),'home',hb('R32_77'))}${bs('R32_77',a('R32_77'),'away',ab('R32_77'))}</div>
-    <div class="g-slot g-q1">${bs('R32_76',h('R32_76'),'home',hb('R32_76'))}${bs('R32_76',a('R32_76'),'away',ab('R32_76'))}</div>
-    <div class="g-slot g-q2">${bs('R32_80',h('R32_80'),'home',hb('R32_80'))}${bs('R32_80',a('R32_80'),'away',ab('R32_80'))}</div>
-    <div class="g-slot g-q2">${bs('R32_81',h('R32_81'),'home',hb('R32_81'))}${bs('R32_81',a('R32_81'),'away',ab('R32_81'))}</div>
-    <div class="g-slot g-q2">${bs('R32_83',h('R32_83'),'home',hb('R32_83'))}${bs('R32_83',a('R32_83'),'away',ab('R32_83'))}</div>
-    <div class="g-slot g-q2">${bs('R32_84',h('R32_84'),'home',hb('R32_84'))}${bs('R32_84',a('R32_84'),'away',ab('R32_84'))}</div>
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
+    <div class="g-slot g-lr32">${bs('R32_73',h('R32_73'),'home',hb('R32_73'))}${bs('R32_73',a('R32_73'),'away',ab('R32_73'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_79',h('R32_79'),'home',hb('R32_79'))}${bs('R32_79',a('R32_79'),'away',ab('R32_79'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_77',h('R32_77'),'home',hb('R32_77'))}${bs('R32_77',a('R32_77'),'away',ab('R32_77'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_76',h('R32_76'),'home',hb('R32_76'))}${bs('R32_76',a('R32_76'),'away',ab('R32_76'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_80',h('R32_80'),'home',hb('R32_80'))}${bs('R32_80',a('R32_80'),'away',ab('R32_80'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_81',h('R32_81'),'home',hb('R32_81'))}${bs('R32_81',a('R32_81'),'away',ab('R32_81'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_83',h('R32_83'),'home',hb('R32_83'))}${bs('R32_83',a('R32_83'),'away',ab('R32_83'))}</div>
+    <div class="g-slot g-lr32">${bs('R32_84',h('R32_84'),'home',hb('R32_84'))}${bs('R32_84',a('R32_84'),'away',ab('R32_84'))}</div>
   </div>`;
   // R16: 4 matches, span 2 rows each
-  html+=`<div class="bracket-col col-r16"><div class="col-head">Round of 16</div>
-    <div class="g-slot gs-span2 g-q1">${bs('R16_U1A',h('R16_U1A'),'home',hb('R16_U1A'))}${bs('R16_U1A',a('R16_U1A'),'away',ab('R16_U1A'))}</div>
-    <div class="g-slot gs-span2 g-q1">${bs('R16_U1B',h('R16_U1B'),'home',hb('R16_U1B'))}${bs('R16_U1B',a('R16_U1B'),'away',ab('R16_U1B'))}</div>
-    <div class="g-slot gs-span2 g-q2">${bs('R16_U2A',h('R16_U2A'),'home',hb('R16_U2A'))}${bs('R16_U2A',a('R16_U2A'),'away',ab('R16_U2A'))}</div>
-    <div class="g-slot gs-span2 g-q2">${bs('R16_U2B',h('R16_U2B'),'home',hb('R16_U2B'))}${bs('R16_U2B',a('R16_U2B'),'away',ab('R16_U2B'))}</div>
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
+    <div class="g-slot gs-span2 g-lr16">${bs('R16_U1A',h('R16_U1A'),'home',hb('R16_U1A'))}${bs('R16_U1A',a('R16_U1A'),'away',ab('R16_U1A'))}</div>
+    <div class="g-slot gs-span2 g-lr16">${bs('R16_U1B',h('R16_U1B'),'home',hb('R16_U1B'))}${bs('R16_U1B',a('R16_U1B'),'away',ab('R16_U1B'))}</div>
+    <div class="g-slot gs-span2 g-lr16">${bs('R16_U2A',h('R16_U2A'),'home',hb('R16_U2A'))}${bs('R16_U2A',a('R16_U2A'),'away',ab('R16_U2A'))}</div>
+    <div class="g-slot gs-span2 g-lr16">${bs('R16_U2B',h('R16_U2B'),'home',hb('R16_U2B'))}${bs('R16_U2B',a('R16_U2B'),'away',ab('R16_U2B'))}</div>
   </div>`;
   // QF: 2 matches, span 4 rows each
-  html+=`<div class="bracket-col col-qf"><div class="col-head">Quarter-Finals</div>
-    <div class="g-slot gs-span4 g-q1">${bs('QF_U1',h('QF_U1'),'home',hb('QF_U1'))}${bs('QF_U1',a('QF_U1'),'away',ab('QF_U1'))}</div>
-    <div class="g-slot gs-span4 g-q2">${bs('QF_U2',h('QF_U2'),'home',hb('QF_U2'))}${bs('QF_U2',a('QF_U2'),'away',ab('QF_U2'))}</div>
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
+    <div class="g-slot gs-span4 g-lqf">${bs('QF_U1',h('QF_U1'),'home',hb('QF_U1'))}${bs('QF_U1',a('QF_U1'),'away',ab('QF_U1'))}</div>
+    <div class="g-slot gs-span4 g-lqf">${bs('QF_U2',h('QF_U2'),'home',hb('QF_U2'))}${bs('QF_U2',a('QF_U2'),'away',ab('QF_U2'))}</div>
   </div>`;
   // SF: 1 match, span 8 rows
-  html+=`<div class="bracket-col col-sf"><div class="col-head">Semi-Final</div>
-    <div class="g-slot gs-span8">${buildSfSlot('SF_U')}</div>
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>
+    <div class="g-slot gs-span8 g-lsf">${buildSfSlot('SF_U')}</div>
   </div>`;
   html+=`</div>`; // side-upper
 
@@ -2952,36 +2961,36 @@ function renderBracket(){
   const finalData=sd('FINAL');
   const thirdData=sd('THIRD');
   html+=`<div class="bracket-center">
-    <div class="final-box${thirdData.home?' filled':''}"><div class="f-title">3rd Place</div>${bs('_3H',thirdData.home,'home')}${bs('_3A',thirdData.away,'away')}</div>
-    <div class="final-box champion${finalData.home?' filled':''}"><div class="f-title">Final</div>${bs('_FH',finalData.home,'home')}${bs('_FA',finalData.away,'away')}</div>
+    <div class="final-box third${thirdData.home?' filled':''}"><div class="f-title">左右半区败方季殿军赛</div>${bs('_3H',thirdData.home,'home')}${bs('_3A',thirdData.away,'away')}</div>
+    <div class="final-box champion${finalData.home?' filled':''}"><div class="f-title">左右半区胜方冠亚军赛</div>${bs('_FH',finalData.home,'home')}${bs('_FA',finalData.away,'away')}</div>
   </div>`;
 
   // ===== LOWER HALF =====
   html+=`<div class="bracket-side side-lower">`;
   // SF
-  html+=`<div class="bracket-col col-sf"><div class="col-head">Semi-Final</div><div class="g-slot gs-span8">${buildSfSlot('SF_L')}</div></div>`;
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div><div class="g-slot gs-span8 g-rsf">${buildSfSlot('SF_L')}</div></div>`;
   // QF
-  html+=`<div class="bracket-col col-qf"><div class="col-head">Quarter-Finals</div>
-    <div class="g-slot gs-span4 g-q3">${bs('QF_L1',h('QF_L1'),'home',hb('QF_L1'))}${bs('QF_L1',a('QF_L1'),'away',ab('QF_L1'))}</div>
-    <div class="g-slot gs-span4 g-q4">${bs('QF_L2',h('QF_L2'),'home',hb('QF_L2'))}${bs('QF_L2',a('QF_L2'),'away',ab('QF_L2'))}</div>
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
+    <div class="g-slot gs-span4 g-rqf">${bs('QF_L1',h('QF_L1'),'home',hb('QF_L1'))}${bs('QF_L1',a('QF_L1'),'away',ab('QF_L1'))}</div>
+    <div class="g-slot gs-span4 g-rqf">${bs('QF_L2',h('QF_L2'),'home',hb('QF_L2'))}${bs('QF_L2',a('QF_L2'),'away',ab('QF_L2'))}</div>
   </div>`;
   // R16
-  html+=`<div class="bracket-col col-r16"><div class="col-head">Round of 16</div>
-    <div class="g-slot gs-span2 g-q3">${bs('R16_L1A',h('R16_L1A'),'home',hb('R16_L1A'))}${bs('R16_L1A',a('R16_L1A'),'away',ab('R16_L1A'))}</div>
-    <div class="g-slot gs-span2 g-q3">${bs('R16_L1B',h('R16_L1B'),'home',hb('R16_L1B'))}${bs('R16_L1B',a('R16_L1B'),'away',ab('R16_L1B'))}</div>
-    <div class="g-slot gs-span2 g-q4">${bs('R16_L2A',h('R16_L2A'),'home',hb('R16_L2A'))}${bs('R16_L2A',a('R16_L2A'),'away',ab('R16_L2A'))}</div>
-    <div class="g-slot gs-span2 g-q4">${bs('R16_L2B',h('R16_L2B'),'home',hb('R16_L2B'))}${bs('R16_L2B',a('R16_L2B'),'away',ab('R16_L2B'))}</div>
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
+    <div class="g-slot gs-span2 g-rr16">${bs('R16_L1A',h('R16_L1A'),'home',hb('R16_L1A'))}${bs('R16_L1A',a('R16_L1A'),'away',ab('R16_L1A'))}</div>
+    <div class="g-slot gs-span2 g-rr16">${bs('R16_L1B',h('R16_L1B'),'home',hb('R16_L1B'))}${bs('R16_L1B',a('R16_L1B'),'away',ab('R16_L1B'))}</div>
+    <div class="g-slot gs-span2 g-rr16">${bs('R16_L2A',h('R16_L2A'),'home',hb('R16_L2A'))}${bs('R16_L2A',a('R16_L2A'),'away',ab('R16_L2A'))}</div>
+    <div class="g-slot gs-span2 g-rr16">${bs('R16_L2B',h('R16_L2B'),'home',hb('R16_L2B'))}${bs('R16_L2B',a('R16_L2B'),'away',ab('R16_L2B'))}</div>
   </div>`;
   // R32
-  html+=`<div class="bracket-col col-r32"><div class="col-head">Round of 32</div>
-    <div class="g-slot g-q3">${bs('R32_74',h('R32_74'),'home',hb('R32_74'))}${bs('R32_74',a('R32_74'),'away',ab('R32_74'))}</div>
-    <div class="g-slot g-q3">${bs('R32_82',h('R32_82'),'home',hb('R32_82'))}${bs('R32_82',a('R32_82'),'away',ab('R32_82'))}</div>
-    <div class="g-slot g-q3">${bs('R32_75',h('R32_75'),'home',hb('R32_75'))}${bs('R32_75',a('R32_75'),'away',ab('R32_75'))}</div>
-    <div class="g-slot g-q3">${bs('R32_78',h('R32_78'),'home',hb('R32_78'))}${bs('R32_78',a('R32_78'),'away',ab('R32_78'))}</div>
-    <div class="g-slot g-q4">${bs('R32_87',h('R32_87'),'home',hb('R32_87'))}${bs('R32_87',a('R32_87'),'away',ab('R32_87'))}</div>
-    <div class="g-slot g-q4">${bs('R32_88',h('R32_88'),'home',hb('R32_88'))}${bs('R32_88',a('R32_88'),'away',ab('R32_88'))}</div>
-    <div class="g-slot g-q4">${bs('R32_86',h('R32_86'),'home',hb('R32_86'))}${bs('R32_86',a('R32_86'),'away',ab('R32_86'))}</div>
-    <div class="g-slot g-q4">${bs('R32_85',h('R32_85'),'home',hb('R32_85'))}${bs('R32_85',a('R32_85'),'away',ab('R32_85'))}</div>
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
+    <div class="g-slot g-rr32">${bs('R32_74',h('R32_74'),'home',hb('R32_74'))}${bs('R32_74',a('R32_74'),'away',ab('R32_74'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_82',h('R32_82'),'home',hb('R32_82'))}${bs('R32_82',a('R32_82'),'away',ab('R32_82'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_75',h('R32_75'),'home',hb('R32_75'))}${bs('R32_75',a('R32_75'),'away',ab('R32_75'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_78',h('R32_78'),'home',hb('R32_78'))}${bs('R32_78',a('R32_78'),'away',ab('R32_78'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_87',h('R32_87'),'home',hb('R32_87'))}${bs('R32_87',a('R32_87'),'away',ab('R32_87'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_88',h('R32_88'),'home',hb('R32_88'))}${bs('R32_88',a('R32_88'),'away',ab('R32_88'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_86',h('R32_86'),'home',hb('R32_86'))}${bs('R32_86',a('R32_86'),'away',ab('R32_86'))}</div>
+    <div class="g-slot g-rr32">${bs('R32_85',h('R32_85'),'home',hb('R32_85'))}${bs('R32_85',a('R32_85'),'away',ab('R32_85'))}</div>
   </div>`;
   html+=`</div>`; // side-lower
 
