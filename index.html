@@ -175,67 +175,74 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .bracket-canvas{position:absolute;top:0;left:0;width:max-content;transform-origin:0 0;will-change:transform}
 .bracket-canvas .tree-bracket{overflow:visible!important;width:auto!important}
 
-/* ========== TREE BRACKET – Classic knockout with centered winners ========== */
+/* ========== TREE BRACKET – Classic knockout: left→center←right ========== */
 .tree-bracket{
-  display:flex;flex-direction:row;align-items:stretch;justify-content:center;
-  gap:0;padding:20px 10px;min-width:1100px;overflow-x:auto;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
+  justify-content:center;gap:0;padding:20px 10px;
+  min-width:1200px;height:100%;
 }
 .bracket-side{
   display:flex;flex-direction:row;align-items:stretch;
-  flex:1 1 0;min-width:0;
+  flex:0 0 auto; /* don't shrink */
 }
-/* Each round column — CSS Grid: 8 equal rows */
+/* Each round column — CSS Grid: 16 slots (8 match-pair rows × 2 for spacing) */
+/* R32=8 pairs(1row each), R16=4 pairs(2rows), QF=2 pairs(4rows), SF=1 pair(8rows) */
 .bracket-col{
-  display:grid;grid-template-rows:repeat(8,1fr);align-items:center;
-  flex:1 1 0;min-width:90px;padding:0 3px;position:relative;
+  display:grid;
+  grid-template-rows:repeat(8,1fr);
+  align-items:center;
+  width:110px;padding:0 4px;position:relative;
 }
 .col-head{
-  text-align:center;font-size:11px;font-weight:bold;
-  color:var(--text);grid-row:1/-1;line-height:1.2;padding:2px 0;
+  grid-row:1/-1;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:bold;color:var(--text);
+  line-height:1.2;width:20px;
 }
-/* Row spans: R32=1, R16=2, QF=4, SF=8 */
+/* Row spans: R32=1, R16=2, QF=4, SF=8 — auto-placement centers winner over children */
 .gs-1{grid-row:span 1}
 .gs-2{grid-row:span 2}
 .gs-4{grid-row:span 4}
 .gs-8{grid-row:span 8}
 
-/* Match pair container: holds home+away bslots */
+/* Match pair: ONE card holding home + away bslots, centered in its grid area */
 .match-pair{
-  border-radius:6px;padding:2px;margin:1px 0;
-  border:1.5px solid transparent;background:transparent;display:flex;flex-direction:column;gap:1px;
+  border-radius:7px;padding:3px;margin:1px 0;
+  border:1.5px solid transparent;display:flex;flex-direction:column;gap:2px;
+  justify-content:center;width:100%;
 }
 
-/* Color zones — upper group GREEN, lower group BLUE within each half */
-.mp-gr32{border-color:rgba(56,142,60,.35);background:rgba(232,245,233,.4)}
-.mp-gr16{border-color:rgba(56,142,60,.45);background:rgba(200,230,201,.45)}
-.mp-gqf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.35)}
-.mp-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.25)}
+/* Color zones — upper GREEN, lower BLUE within each half */
+.mp-gr32{border-color:rgba(56,142,60,.35);background:rgba(232,245,233,.35)}
+.mp-gr16{border-color:rgba(56,142,60,.45);background:rgba(200,230,201,.40)}
+.mp-gqf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.30)}
+.mp-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.22)}
 
-.mp-br32{border-color:rgba(25,118,210,.35);background:rgba(227,242,253,.4)}
-.mp-br16{border-color:rgba(25,118,210,.45);background:rgba(187,222,251,.45)}
-.mp-bqf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.35)}
-.mp-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.25)}
+.mp-br32{border-color:rgba(25,118,210,.35);background:rgba(227,242,253,.35)}
+.mp-br16{border-color:rgba(25,118,210,.45);background:rgba(187,222,251,.40)}
+.mp-bqf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.30)}
+.mp-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.22)}
 
-/* Connector lines: horizontal line from right edge of match-pair */
+/* Connector lines */
 .side-upper .match-pair{position:relative}
 .side-upper .match-pair::after{
-  content:'';position:absolute;right:-12px;top:50%;
-  width:12px;height:0;border-top:1.5px solid rgba(255,255,255,.15);z-index:0;
+  content:'';position:absolute;right:-10px;top:50%;
+  width:10px;height:0;border-top:1.5px solid rgba(255,255,255,.12);z-index:0;
 }
 .side-lower .match-pair{position:relative}
 .side-lower .match-pair::after{
-  content:'';position:absolute;left:-12px;top:50%;
-  width:12px;height:0;border-top:1.5px solid rgba(255,255,255,.15);z-index:0;
+  content:'';position:absolute;left:-10px;top:50%;
+  width:10px;height:0;border-top:1.5px solid rgba(255,255,255,.12);z-index:0;
 }
 
 /* Bracket slot base */
 .bslot{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  margin:0 auto;padding:3px 6px;
+  padding:3px 6px;
   border:1px dashed var(--border);border-radius:5px;
   font-size:11px;text-align:center;
   background:rgba(22,27,34,.92);
-  transition:.15s;height:100%;min-height:28px;min-width:65px;max-width:100px;
+  min-height:26px;width:94%;margin:0 auto;
   overflow:hidden;white-space:nowrap;position:relative;z-index:1;
 }
 .bslot .flag{font-size:14px;margin-bottom:1px}
@@ -248,7 +255,7 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 /* Center: Finals */
 .bracket-center{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:18px;flex:0 0 auto;padding:0 14px;z-index:2;min-width:130px;
+  gap:20px;flex:0 0 auto;padding:0 16px;z-index:2;min-width:140px;
 }
 .final-box{
   background:rgba(22,27,34,.95);border:2px solid rgba(240,192,64,.3);border-radius:10px;
@@ -264,14 +271,14 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .final-box .bslot .desc{font-size:9px}
 
 @media(max-width:1200px){
-  .tree-bracket{min-width:900px}
-  .bracket-col{min-width:75px}
+  .tree-bracket{min-width:1000px}
+  .bracket-col{width:90px}
 }
 @media(max-width:768px){
-  .tree-bracket{min-width:700px;padding:10px 0}
-  .bracket-col{min-width:55px;padding:0 2px}
+  .tree-bracket{min-width:800px;padding:10px 0}
+  .bracket-col{width:70px;padding:0 2px}
   .col-head{font-size:9px}
-  .bslot{padding:2px 4px;min-height:24px;min-width:50px}
+  .bslot{padding:2px 4px;min-height:22px}
   .bslot .team{font-size:10px}
 }
 
