@@ -1456,6 +1456,8 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   for (const ms of Object.values(GROUP_MATCHES))
     for (const mm of ms) {
       if (mm.home === h && mm.away === a) {
+        // 已完赛的比赛不再被 ESPN 轮询覆盖（保护 COMPLETED_RESULTS 硬编码数据）
+        if (matchStatus[mm.id] === 'FINISHED') continue;
         const prev = scores[mm.id];
         if (ns && (!prev || prev[0] !== ns[0] || prev[1] !== ns[1])) updated = true;
         if (matchStatus[mm.id] !== st) updated = true;
@@ -1638,19 +1640,18 @@ function loadScores(){
   };
 
   for (const [mid, res] of Object.entries(COMPLETED_RESULTS)) {
-    if (!scores[mid] || scores[mid][0] === null) {
-      scores[mid] = res.score;
-      matchStatus[mid] = 'FINISHED';
-      matchClock[mid] = '完场';
-    }
-    // 强制从进球事件重新计算半场比分（覆盖可能被 ESPN 轮询污染的错误值）
+    // 硬编码赛果是最终真相，无条件覆盖（ESPN 超出窗口后就拉不到了）
+    scores[mid] = res.score;
+    matchStatus[mid] = 'FINISHED';
+    matchClock[mid] = '完场';
+    // 半场比分：优先从进球事件反推（最可靠）
     if (res.goals && res.goals.length > 0) {
       halftimeScores[mid] = calcHalftimeFromGoals(res.goals);
-    } else if (res.ht && !halftimeScores[mid]) {
+    } else if (res.ht) {
       halftimeScores[mid] = res.ht;
     }
+    // 进球事件：无条件覆盖（硬编码有球员名，ESPN 过期后缺失）
     if (res.goals && res.goals.length > 0) {
-      // 找到 match 的 home/away 以构建 goalEvents key
       let key = null;
       for (const ms of Object.values(GROUP_MATCHES)) {
         for (const m of ms) {
@@ -1658,7 +1659,7 @@ function loadScores(){
         }
         if (key) break;
       }
-      if (key && (!goalEvents[key] || goalEvents[key].length < res.goals.length)) {
+      if (key) {
         goalEvents[key] = res.goals;
       }
     }
