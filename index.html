@@ -3123,7 +3123,7 @@ function silentRefresh() {
 
   if (currentTab === 'standings') silentPatchStandings();
   if (currentTab === 'matches') silentPatchMatches();
-  // bracket 变化才刷新，不频繁重建
+  fillBracket(); // 对阵图数据随积分变化实时落位，renderBracket 仅在当前 tab 可见时执行
   checkGroupComplete();
 }
 
