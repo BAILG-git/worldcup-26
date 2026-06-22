@@ -173,84 +173,96 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .bracket-viewport:active{cursor:grabbing}
 .bracket-viewport.grabbing{cursor:grabbing}
 .bracket-canvas{position:absolute;top:0;left:0;width:max-content;transform-origin:0 0;will-change:transform}
-.bracket-canvas .full-bracket{overflow:visible!important;width:auto!important}
+.bracket-canvas .tree-bracket{overflow:visible!important;width:auto!important}
 
-/* ========== FULL BRACKET ========== */
-.full-bracket{display:flex;flex-direction:row;align-items:stretch;justify-content:center;gap:0;overflow-x:auto;padding:10px 0;width:100%}
-.bracket-half{display:flex;flex-direction:column;flex:1 1 0;min-width:380px}
-.bracket-half .half-header{text-align:center;padding:6px 10px;font-weight:bold;font-size:14px;border-radius:8px 8px 0 0;margin-bottom:4px}
-.bracket-half.upper .half-header{color:var(--up);background:rgba(46,160,67,.1);border:1px solid rgba(46,160,67,.3)}
-.bracket-half.lower .half-header{color:var(--down);background:rgba(31,111,235,.1);border:1px solid rgba(31,111,235,.3)}
-.half-groups{text-align:center;font-size:12px;color:var(--muted);margin-bottom:6px}
+/* ========== TREE BRACKET ========== */
+.tree-bracket{
+  display:flex;flex-direction:row;align-items:stretch;justify-content:center;
+  gap:0;padding:20px 0;min-width:1100px;
+}
+/* Each side: a vertical stack of round columns */
+.bracket-side{
+  display:flex;flex-direction:row;align-items:stretch;
+  flex:1 1 0;min-width:0;
+}
+.bracket-side.side-upper{justify-content:flex-end}  /* columns pack toward center */
+.bracket-side.side-lower{justify-content:flex-start} /* columns pack toward center */
 
-/* Sub-blocks: Q-Zone */
-.sub-block{margin:4px 0;border-radius:8px;padding:4px;overflow:hidden}
-.sub-block-header{text-align:center;font-size:10px;font-weight:bold;padding:3px 6px;border-radius:5px;margin-bottom:3px;letter-spacing:.3px}
-.sub-block .rounds-row{flex:0 0 auto}
-.sub-block .r-col{border-color:transparent}
+/* Each round column */
+.bracket-col{
+  display:flex;flex-direction:column;justify-content:space-around;
+  flex:1 1 0;min-width:100px;padding:0 2px;position:relative;
+}
+.col-head{
+  text-align:center;font-size:10px;font-weight:bold;
+  color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
+}
 
-/* Q-zone colors */
-.sub-q1{border:2px solid rgba(46,160,67,.55);background:rgba(46,160,67,.08)}
-.sub-q1 .sub-block-header{color:#2ea03a;background:rgba(46,160,67,.25);font-size:11px;padding:4px 8px}
-.sub-q2{border:2px solid rgba(217,119,6,.55);background:rgba(217,119,6,.08)}
-.sub-q2 .sub-block-header{color:#d97706;background:rgba(217,119,6,.25);font-size:11px;padding:4px 8px}
-.sub-q3{border:2px solid rgba(31,111,235,.55);background:rgba(31,111,235,.08)}
-.sub-q3 .sub-block-header{color:#1e6feb;background:rgba(31,111,235,.25);font-size:11px;padding:4px 8px}
-.sub-q4{border:2px solid rgba(139,92,246,.55);background:rgba(139,92,246,.08)}
-.sub-q4 .sub-block-header{color:#8b5cf6;background:rgba(139,92,246,.25);font-size:11px;padding:4px 8px}
-.q1-color{color:#2ea03a}
-.q2-color{color:#d97706}
-.q3-color{color:#1e6feb}
-.q4-color{color:#8b5cf6}
+/* Connector lines between columns – using borders on narrow pseudo-columns */
+/* We use a wrapper to add connecting lines via ::before / ::after on each side */
+.bracket-side.side-upper .bracket-col:not(:last-child)::after{
+  content:'';position:absolute;right:-12px;top:50%;
+  width:12px;height:0;border-top:1px solid var(--border);
+  z-index:0;
+}
+.bracket-side.side-lower .bracket-col:not(:last-child)::after{
+  content:'';position:absolute;left:-12px;top:50%;
+  width:12px;height:0;border-top:1px solid var(--border);
+  z-index:0;
+}
 
-/* rounds-row color accents */
-.row-q1{background:rgba(46,160,67,.12);border-radius:4px}
-.row-q2{background:rgba(217,119,6,.12);border-radius:4px}
-.row-q3{background:rgba(31,111,235,.12);border-radius:4px}
-.row-q4{background:rgba(139,92,246,.12);border-radius:4px}
+/* Vertical connector: from a slot in col N to the merge point */
+/* Use a small inline SVG or a border-left on a wrapper – simplified: use border on slot wrappers */
+.bracket-col .slot-wrapper{
+  display:flex;flex-direction:column;justify-content:center;
+  flex:1;position:relative;
+}
 
-/* bslot per Q-zone fill */
-.sub-q1 .bslot{background:rgba(46,160,67,.12);border-color:rgba(46,160,67,.35)}
-.sub-q1 .bslot.filled{background:rgba(46,160,67,.22);border-color:rgba(46,160,67,.6)}
-.sub-q2 .bslot{background:rgba(217,119,6,.12);border-color:rgba(217,119,6,.35)}
-.sub-q2 .bslot.filled{background:rgba(217,119,6,.22);border-color:rgba(217,119,6,.6)}
-.sub-q3 .bslot{background:rgba(31,111,235,.12);border-color:rgba(31,111,235,.35)}
-.sub-q3 .bslot.filled{background:rgba(31,111,235,.22);border-color:rgba(31,111,235,.6)}
-.sub-q4 .bslot{background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.35)}
-.sub-q4 .bslot.filled{background:rgba(139,92,246,.22);border-color:rgba(139,92,246,.6)}
-
-/* SF zone: at bottom of each half (QF1+QF2 merge → SF) */
-.sf-zone{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 0;margin-top:4px}
-.sf-zone .sf-label{font-size:11px;font-weight:bold;color:var(--muted);white-space:nowrap}
-.sf-zone .sf-slots{display:flex;flex-direction:column;gap:3px}
-.sf-zone .bslot{border-radius:8px;border:1px dashed var(--border);padding:10px 14px;text-align:center;background:var(--card);min-width:80px}
-
-/* rounds row: R32 → R16 → QF */
-.rounds-row{display:flex;flex-direction:row;align-items:stretch;flex:1}
-.r-col{display:flex;flex-direction:column;flex:1 1 0;justify-content:space-around}
-.r-col.slots{border-left:1px solid var(--border);border-right:1px solid var(--border)}
-.r-arrow{display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;min-width:16px;font-size:18px;flex:0 0 16px}
-
-/* Bracket slot */
-.bslot{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:3px 4px;
-  padding:4px 8px;border:1px dashed var(--border);border-radius:6px;font-size:11px;text-align:center;
-  background:rgba(22,27,34,.8);transition:.15s;min-height:30px;overflow:hidden;white-space:nowrap}
-.bslot .flag{font-size:16px}
-.bslot .team{font-weight:bold;color:var(--text);font-size:13px}
-.bslot .desc{color:var(--muted);font-size:10px}
-.bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.06)}
+/* Bracket slot – base (keep existing .bslot styles, just ensure block layout) */
+.bslot{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  margin:3px auto;padding:5px 8px;
+  border:1px dashed var(--border);border-radius:6px;
+  font-size:11px;text-align:center;
+  background:rgba(22,27,34,.9);
+  transition:.15s;min-height:32px;min-width:70px;max-width:110px;
+  overflow:hidden;white-space:nowrap;position:relative;z-index:1;
+}
+.bslot .flag{font-size:15px;margin-bottom:1px}
+.bslot .team{font-weight:bold;color:var(--text);font-size:12px;line-height:1.2}
+.bslot .desc{color:var(--muted);font-size:9px}
+.bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.08)}
 .bslot.filled .slot-row{display:flex;align-items:center;gap:2px;justify-content:center}
 .bslot.champion{border-color:var(--gold);background:linear-gradient(135deg,rgba(240,192,64,.12),rgba(240,192,64,.02))}
 
-/* Finals center */
-.finals-center{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;flex:0 0 auto;padding:0 6px}
-.final-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center;min-width:120px}
-.final-box .f-title{font-size:13px;font-weight:bold;margin-bottom:4px}
+/* Center: Finals */
+.bracket-center{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  gap:16px;flex:0 0 auto;padding:0 12px;z-index:2;
+}
+.final-box{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:8px 12px;text-align:center;min-width:100px;
+}
+.final-box .f-title{font-size:12px;font-weight:bold;margin-bottom:4px;color:var(--gold)}
 .final-box.champion{border-color:var(--gold);border-width:2px;background:linear-gradient(135deg,rgba(240,192,64,.1),rgba(240,192,64,.02))}
 .final-box.champion .f-title{color:var(--gold)}
-.final-box .bslot{margin:2px 0;padding:4px 6px;min-width:80px}
+.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px}
 .final-box .bslot .team{font-size:11px;font-weight:bold}
 .final-box .bslot .desc{font-size:9px}
+
+/* Responsive: allow horizontal scroll on small screens */
+@media(max-width:1200px){
+  .tree-bracket{min-width:900px}
+  .bracket-col{min-width:80px}
+}
+@media(max-width:768px){
+  .tree-bracket{min-width:700px;padding:10px 0}
+  .bracket-col{min-width:60px;padding:0 1px}
+  .col-head{font-size:8px}
+  .bslot{font-size:9px;padding:3px 4px;min-height:24px;min-width:50px}
+  .bslot .team{font-size:10px}
+}
 
 /* best 3rd table */
 .best3rd-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
@@ -2865,79 +2877,86 @@ function predictMatch(m, oddsData){
 }
 
 // ========== RENDER: BRACKET ==========
-// 四分之一大区: ①=ABC, ②=DIK, ③=EFG, ④=HJL
-// 上半区=①+②, 下半区=③+④
-// 16场R32 = 8×WvT + 4×RvR + 4×WvR
+// Tree-style horizontal bracket: rounds as columns, converging to center
+// Left→Center←Right: R32 → R16 → QF → SF → Final ← SF ← QF ← R16 ← R32
 
 function renderBracket(){
   const cont=document.getElementById('tab-bracket');
   let html='<div class="bracket-zoom-bar">';
-  html+='<button onclick="bracketZoom(-0.2)" title="缩小">-</button>';
+  html+='<button onclick="bracketZoom(-0.2)" title="Zoom Out">-</button>';
   html+='<span class="zoom-label" id="zoomLabel">100%</span>';
-  html+='<button onclick="bracketZoom(0.2)" title="放大">+</button>';
-  html+='<button onclick="bracketReset()" title="重置">&#8634;</button>';
-  html+='<span style="font-size:10px;color:var(--muted);margin-left:8px">滚轮缩放 · 拖拽平移</span>';
+  html+='<button onclick="bracketZoom(0.2)" title="Zoom In">+</button>';
+  html+='<button onclick="bracketReset()" title="Reset">&#8634;</button>';
+  html+='<span style="font-size:10px;color:var(--muted);margin-left:8px">Scroll to zoom &middot; Drag to pan</span>';
   html+='</div>';
   html+='<div class="bracket-viewport" id="bracketViewport">';
   html+='<div class="bracket-canvas" id="bracketCanvas">';
-  html+='<div class="full-bracket">';
+  html+='<div class="tree-bracket">';
 
-  // ===== LEFT: 上半区 =====
-  html+=`<div class="bracket-half upper">
-    <div class="sub-block sub-q1">
-      <div class="sub-block-header">上半区 1/4</div>
-      <div class="rounds-row row-q1">
-        <div class="r-col slots">${buildRoundSlots([{id:'R32_73'},{id:'R32_79'},{id:'R32_77'},{id:'R32_76'}],'r32','up')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R16_U1A'},{id:'R16_U1B'}],'r16','up')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'QF_U1'}],'qf','up')}</div>
-      </div>
+  // ===== LEFT SIDE: Upper Half (flows rightward toward center) =====
+  html+=`<div class="bracket-side side-upper">
+    <!-- Round of 32 -->
+    <div class="bracket-col col-r32">
+      <div class="col-head">Round of 32</div>
+      ${buildRoundSlots([{id:'R32_73'},{id:'R32_79'},{id:'R32_77'},{id:'R32_76'},
+                          {id:'R32_80'},{id:'R32_81'},{id:'R32_83'},{id:'R32_84'}],'r32')}
     </div>
-    <div class="sub-block sub-q2">
-      <div class="sub-block-header">上半区 2/4</div>
-      <div class="rounds-row row-q2">
-        <div class="r-col slots">${buildRoundSlots([{id:'R32_80'},{id:'R32_81'},{id:'R32_83'},{id:'R32_84'}],'r32','up')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R16_U2A'},{id:'R16_U2B'}],'r16','up')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'QF_U2'}],'qf','up')}</div>
-      </div>
+    <!-- Round of 16 -->
+    <div class="bracket-col col-r16">
+      <div class="col-head">Round of 16</div>
+      ${buildRoundSlots([{id:'R16_U1A'},{id:'R16_U1B'},{id:'R16_U2A'},{id:'R16_U2B'}],'r16')}
     </div>
-    <div class="sf-zone"><div class="sf-label">⚡ Semi-Final</div><div class="sf-slots">${buildSfSlot('SF_U')}</div></div>
+    <!-- Quarter-Finals -->
+    <div class="bracket-col col-qf">
+      <div class="col-head">Quarter-Finals</div>
+      ${buildRoundSlots([{id:'QF_U1'},{id:'QF_U2'}],'qf')}
+    </div>
+    <!-- Semi-Final -->
+    <div class="bracket-col col-sf">
+      <div class="col-head">Semi-Final</div>
+      ${buildSfSlot('SF_U')}
+    </div>
   </div>`;
 
   // ===== CENTER: Finals =====
   const finalData=koSlot['FINAL']||{};
   const thirdData=koSlot['THIRD']||{};
-  html+=`<div class="finals-center">
-    <div class="final-box${thirdData.home?' filled':''}">
-      <div class="f-title">季军赛</div>
+  html+=`<div class="bracket-center">
+    <div class="final-box${finalData.home?' filled':''}">
+      <div class="f-title">3rd Place</div>
       <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
       <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
     <div class="final-box champion${finalData.home?' filled':''}">
-      <div class="f-title">决赛</div>
+      <div class="f-title">Final</div>
       <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
       <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
   </div>`;
 
-  // ===== RIGHT: 下半区 =====
-  html+=`<div class="bracket-half lower">
-    <div class="sub-block sub-q3">
-      <div class="sub-block-header">下半区 1/4</div>
-      <div class="rounds-row row-q3">
-        <div class="r-col slots">${buildRoundSlots([{id:'QF_L1'}],'qf','down')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R16_L1A'},{id:'R16_L1B'}],'r16','down')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R32_74'},{id:'R32_82'},{id:'R32_75'},{id:'R32_78'}],'r32','down')}</div>
-      </div>
+  // ===== RIGHT SIDE: Lower Half (flows leftward from center) =====
+  html+=`<div class="bracket-side side-lower">
+    <!-- Semi-Final -->
+    <div class="bracket-col col-sf">
+      <div class="col-head">Semi-Final</div>
+      ${buildSfSlot('SF_L')}
     </div>
-    <div class="sub-block sub-q4">
-      <div class="sub-block-header">下半区 2/4</div>
-      <div class="rounds-row row-q4">
-        <div class="r-col slots">${buildRoundSlots([{id:'QF_L2'}],'qf','down')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R16_L2A'},{id:'R16_L2B'}],'r16','down')}</div>
-        <div class="r-col slots">${buildRoundSlots([{id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32','down')}</div>
-      </div>
+    <!-- Quarter-Finals -->
+    <div class="bracket-col col-qf">
+      <div class="col-head">Quarter-Finals</div>
+      ${buildRoundSlots([{id:'QF_L1'},{id:'QF_L2'}],'qf')}
     </div>
-    <div class="sf-zone"><div class="sf-slots">${buildSfSlot('SF_L')}</div><div class="sf-label">⚡ Semi-Final</div></div>
+    <!-- Round of 16 -->
+    <div class="bracket-col col-r16">
+      <div class="col-head">Round of 16</div>
+      ${buildRoundSlots([{id:'R16_L1A'},{id:'R16_L1B'},{id:'R16_L2A'},{id:'R16_L2B'}],'r16')}
+    </div>
+    <!-- Round of 32 -->
+    <div class="bracket-col col-r32">
+      <div class="col-head">Round of 32</div>
+      ${buildRoundSlots([{id:'R32_74'},{id:'R32_82'},{id:'R32_75'},{id:'R32_78'},
+                          {id:'R32_87'},{id:'R32_88'},{id:'R32_86'},{id:'R32_85'}],'r32')}
+    </div>
   </div>`;
 
   html+='</div></div></div>';
