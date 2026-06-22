@@ -316,6 +316,35 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .btn-confirm:hover{background:#d4a62e}
 .btn-cancel{background:rgba(125,133,144,.2);color:var(--muted)}
 .btn-cancel:hover{background:rgba(125,133,144,.35)}
+/* 最佳第三选择占位（落位图） */
+.bslot.b3-slot{cursor:pointer;border-style:dashed;border-color:rgba(240,192,64,.5);background:rgba(240,192,64,.06);transition:.15s}
+.bslot.b3-slot:hover{border-color:rgba(240,192,64,.8);background:rgba(240,192,64,.15)}
+.bslot.b3-slot.filled{border-style:solid;border-color:rgba(46,160,67,.5);background:rgba(46,160,67,.08)}
+.bslot.b3-slot .b3-desc{font-size:9px;color:var(--muted)}
+.bslot.b3-slot.filled .b3-desc{color:var(--green)}
+/* 最佳第三选择弹窗 */
+.b3-picker-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1001;animation:fadeIn .2s}
+.b3-picker-box{background:#1a1f2e;border:1px solid var(--border);border-radius:12px;padding:0;min-width:360px;max-width:480px;max-height:80vh;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.b3-picker-hd{padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.b3-picker-hd h3{margin:0;font-size:16px;color:var(--gold)}
+.b3-picker-hd .b3-close{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.b3-picker-hd .b3-close:hover{border-color:var(--red);color:var(--red)}
+.b3-picker-body{overflow-y:auto;padding:8px 0;flex:1}
+.b3-team-row{display:flex;align-items:center;padding:8px 18px;gap:10px;cursor:pointer;transition:.12s;border-bottom:1px solid rgba(48,54,61,.2)}
+.b3-team-row:hover{background:rgba(240,192,64,.06)}
+.b3-team-row.used{opacity:.35;cursor:not-allowed}
+.b3-team-row.used:hover{background:transparent}
+.b3-team-row .b3-rank{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0}
+.b3-team-row .b3-rank.qual{background:rgba(46,160,67,.2);color:var(--green)}
+.b3-team-row .b3-rank.miss{background:rgba(248,81,73,.15);color:var(--red)}
+.b3-team-row .b3-info{flex:1;min-width:0}
+.b3-team-row .b3-info .b3-team-name{font-size:13px;font-weight:bold}
+.b3-team-row .b3-info .b3-group{font-size:10px;color:var(--muted)}
+.b3-team-row .b3-stats{font-size:11px;color:var(--muted);text-align:right;flex-shrink:0;white-space:nowrap}
+.b3-team-row .b3-pick-btn{padding:4px 12px;border:1px solid var(--gold);border-radius:5px;background:transparent;color:var(--gold);cursor:pointer;font-size:11px;flex-shrink:0;transition:.12s}
+.b3-team-row .b3-pick-btn:hover{background:var(--gold);color:#0d1117}
+.b3-team-row.used .b3-pick-btn{border-color:var(--muted);color:var(--muted);cursor:not-allowed}
+.b3-team-row.used .b3-pick-btn:hover{background:transparent;color:var(--muted)}
 /* 管理密码弹窗 */
 .admin-modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000;animation:fadeIn .2s}
 .admin-modal-box{background:#1a1f2e;border:1px solid var(--border);border-radius:12px;padding:24px;min-width:300px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5)}
@@ -386,6 +415,16 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
       <button class="btn-cancel" onclick="closeAdminModal()">取消</button>
       <button class="btn-confirm" onclick="verifyAdmin()">确认</button>
     </div>
+  </div>
+</div>
+<!-- 最佳第三选择弹窗 -->
+<div class="b3-picker-overlay" id="b3Picker" style="display:none" onclick="if(event.target===this)closeB3Picker()">
+  <div class="b3-picker-box">
+    <div class="b3-picker-hd">
+      <h3 id="b3PickerTitle">选择最佳第三</h3>
+      <button class="b3-close" onclick="closeB3Picker()">✕</button>
+    </div>
+    <div class="b3-picker-body" id="b3PickerBody"></div>
   </div>
 </div>
 
@@ -1732,6 +1771,22 @@ let koWinner = {};
 // slot display data: { "R32_1": {home:"巴西", away:"德国"}, ... }
 let koSlot = {};
 
+// 最佳第三用户选择: { "R32_73": "乌拉圭", ... }
+let b3Selections = {};
+function loadB3Selections() {
+  try {
+    const raw = localStorage.getItem('wc2026_b3sel');
+    if (raw) b3Selections = JSON.parse(raw);
+  } catch(e) { b3Selections = {}; }
+  return b3Selections;
+}
+function saveB3Selections() {
+  try {
+    localStorage.setItem('wc2026_b3sel', JSON.stringify(b3Selections));
+  } catch(e) {}
+}
+loadB3Selections();
+
 // 计算晋级队伍: 返回 { "1A":"墨西哥", "2A":"南非", "3A":"韩国", ... }
 function computeQualifiers() {
   const s = calcStandings();
@@ -1816,15 +1871,75 @@ function assignThirds(q, defs) {
   return used;
 }
 
-// 填充B32槽位（小组排名占位：A1=小组第1出线，B2=小组第2出线，3rd=最佳第3名）
+// 填充B32槽位（实时从积分榜落位，3rd=点击选择最佳第三）
 function fillBracket() {
+  const standings = calcStandings();
+  const b3s = loadB3Selections();
   koSlot = {};
-  const fmt = s => s === '3rd' ? s : s[1] + s[0]; // "1E" → "E1"
   for (const d of B32_DEF) {
-    koSlot[d.id] = { home: fmt(d.h), away: fmt(d.a) };
+    const resolveTeam = (code) => {
+      if (code === '3rd') {
+        // 检查用户是否已为该槽位选择了最佳第三
+        return b3s[d.id] || '3rd';
+      }
+      // 解析 "1E" → group E index 0; "2A" → group A index 1
+      const pos = parseInt(code[0]) - 1; // 0 or 1
+      const grp = code[1];
+      const groupRows = standings[grp];
+      if (groupRows && groupRows[pos]) return groupRows[pos].team;
+      return code; // 无数据时保留占位符
+    };
+    koSlot[d.id] = { home: resolveTeam(d.h), away: resolveTeam(d.a) };
   }
   // 不传播晋级——等真实比分数据后再调用 propagateKnockout()
   if (currentTab === 'bracket') renderBracket();
+}
+
+// ========== 最佳第三选择弹窗 ==========
+let _b3PendingSlot = null;
+function openB3Picker(slotId) {
+  _b3PendingSlot = slotId;
+  const standings = calcStandings();
+  const thirds = calcBestThirds(standings);
+  // 展示对阵信息
+  const slot = B32_DEF.find(d => d.id === slotId);
+  const side = slot ? (slot.a === '3rd' ? 'a' : (slot.h === '3rd' ? 'h' : '?')) : '?';
+  document.getElementById('b3PickerTitle').textContent =
+    side === 'a' ? `选择客队最佳第三 (${slotId})` : `选择主队最佳第三 (${slotId})`;
+  // 已使用的队伍（从所有 b3Selections 中收集，排除当前槽位）
+  let usedTeams = [];
+  for (const [sid, t] of Object.entries(b3Selections)) {
+    if (sid !== slotId) usedTeams.push(t);
+  }
+  // 构建列表
+  let body = '';
+  thirds.forEach((t, i) => {
+    const used = usedTeams.includes(t.team);
+    const cls = (i < 8 ? 'qual' : 'miss') + (used ? ' used' : '');
+    const rankCls = i < 8 ? 'qual' : 'miss';
+    body += `<div class="b3-team-row ${cls}">
+      <div class="b3-rank ${rankCls}">${i + 1}</div>
+      <div class="b3-info">
+        <div class="b3-team-name">${flagImg(t.team)} ${tname(t.team)}</div>
+        <div class="b3-group">${t.group}组 · ${t.pts}pts · GD${t.gd >= 0 ? '+' : ''}${t.gd}</div>
+      </div>
+      <button class="b3-pick-btn"${used ? ' disabled' : ''} data-team="${t.team.replace(/"/g, '&quot;')}" onclick="selectB3Team('${slotId}',this.dataset.team)">
+        ${used ? '已选' : '选择'}
+      </button>
+    </div>`;
+  });
+  document.getElementById('b3PickerBody').innerHTML = body;
+  document.getElementById('b3Picker').style.display = 'flex';
+}
+function closeB3Picker() {
+  document.getElementById('b3Picker').style.display = 'none';
+  _b3PendingSlot = null;
+}
+function selectB3Team(slotId, team) {
+  b3Selections[slotId] = team;
+  saveB3Selections();
+  closeB3Picker();
+  fillBracket(); // 重新落位
 }
 
 // 爆冷标记：告诉我比赛ID（如 B_1），我帮你加/删
@@ -2741,17 +2856,39 @@ function renderBracket(){
   cont.innerHTML=html;
   bracketReset();
   setupBracketPan();
+  // 事件委托：点击 .b3-slot 打开最佳第三选择弹窗
+  cont.querySelectorAll('.b3-slot').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openB3Picker(el.dataset.b3);
+    });
+  });
 }
 
 function buildSfSlot(slotId){
   const data=koSlot[slotId];
   if(!data||!data.home) return '';
   let html='';
-  html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span></div>`;
-  html+=data.away
-    ?`<div class="bslot filled"><span class="slot-row">${flagImg(data.away,15)}<span class="team">${tname(data.away)}</span></span></div>`
-    :'';
+  html+=renderBslot(slotId, data.home, 'home');
+  html+=data.away ? renderBslot(slotId, data.away, 'away') : '';
   return html;
+}
+
+function renderBslot(slotId, team, side) {
+  if (team === '3rd') {
+    // 最佳第三占位符：可点击选择
+    const isFilled = false; // 由 fillBracket 传入时已解析 b3Selections，所以这里 team 就是 "3rd" 就说明未填充
+    const cls = 'bslot b3-slot' + (isFilled ? ' filled' : '');
+    return `<div class="${cls}" data-b3="${slotId}" data-side="${side}" title="点击选择最佳第三">
+      <span class="b3-desc">📋 最佳第三</span>
+    </div>`;
+  }
+  if (team && team !== '3rd') {
+    // 正常队伍填充
+    return `<div class="bslot filled"><span class="slot-row">${flagImg(team, 15)}<span class="team">${tname(team)}</span></span></div>`;
+  }
+  // 空槽位
+  return `<div class="bslot"><span class="desc">-</span></div>`;
 }
 
 function buildRoundSlots(slots, round, half){
@@ -2771,10 +2908,8 @@ function buildRoundSlots(slots, round, half){
     }
     const data=koSlot[slotId];
     if(data&&data.home){
-      html+=`<div class="bslot filled"><span class="slot-row">${flagImg(data.home,15)}<span class="team">${tname(data.home)}</span></span></div>`;
-      html+=data.away
-        ?`<div class="bslot filled"><span class="slot-row">${flagImg(data.away,15)}<span class="team">${tname(data.away)}</span></span></div>`
-        :`<div class="bslot"></div>`;
+      html+=renderBslot(slotId, data.home, 'home');
+      html+=renderBslot(slotId, data.away, 'away');
     }else{
       html+=`<div class="bslot"><span class="desc">-</span></div>`;
       html+=`<div class="bslot"><span class="desc">-</span></div>`;
@@ -2869,7 +3004,7 @@ function renderBest3rd(){
   html+='</table></div>'; cont.innerHTML=html;
 }
 
-function refreshAll(){renderStandings();renderMatches();renderBest3rd();if(currentTab==='bracket')renderBracket();checkGroupComplete();}
+function refreshAll(){renderStandings();renderMatches();renderBest3rd();fillBracket();checkGroupComplete();}
 
 // ========== TABS ==========
 let currentTab='groups';
