@@ -190,64 +190,46 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* Each round column */
 .bracket-col{
-  display:grid;grid-template-rows:repeat(8,1fr);align-items:center;
-  flex:1 1 0;min-width:80px;padding:6px 4px;position:relative;
-  border-right:1px solid rgba(255,255,255,.15);
-}
-.col-head{
-  text-align:center;font-size:12px;font-weight:bold;
-  color:var(--text);margin-bottom:2px;letter-spacing:.3px;
-  grid-column:1/-1;line-height:1.4;
-}
-.g-slot{
-  display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:3px;border-radius:6px;padding:3px 2px;position:relative;
-}
-.g-slot .bslot{margin:0 auto;background:transparent;border:none}
-.gs-span2{grid-row:span 2}
-.gs-span4{grid-row:span 4}
-.gs-span8{grid-row:span 8}
-
-/* Left half — Blue series: full-column bg, deeper as rounds progress inward */
-.bracket-col.g-lr32{background:rgba(227,242,253,.55)}
-.bracket-col.g-lr16{background:rgba(187,222,251,.6)}
-.bracket-col.g-lqf{background:rgba(144,202,249,.55)}
-.bracket-col.g-lsf{background:rgba(100,181,246,.5)}
-.bracket-col.g-l2{background:rgba(66,165,245,.55)}
-
-/* Right half — Green series: full-column bg, deeper as rounds progress inward */
-.bracket-col.g-rr32{background:rgba(232,245,233,.55)}
-.bracket-col.g-rr16{background:rgba(200,230,201,.6)}
-.bracket-col.g-rqf{background:rgba(165,214,167,.55)}
-.bracket-col.g-rsf{background:rgba(129,199,132,.5)}
-.bracket-col.g-r2{background:rgba(102,187,106,.5)}
-
-/* "2" column label style */
-.col-semi-label{
-  font-size:18px;font-weight:bold;color:var(--text);
-  text-align:center;grid-row:1/-1;grid-column:1/-1;
-  display:flex;align-items:center;justify-content:center;
+  display:flex;flex-direction:column;justify-content:space-around;
+  flex:1 1 0;min-width:100px;padding:0 2px;position:relative;
 }
 .col-head{
   text-align:center;font-size:10px;font-weight:bold;
   color:var(--muted);margin-bottom:4px;letter-spacing:.3px;
 }
 
-/* Connector lines between columns – using borders on narrow pseudo-columns */
-/* We use a wrapper to add connecting lines via ::before / ::after on each side */
-.bracket-side.side-upper .bracket-col:not(:last-child)::after{
-  content:'';position:absolute;right:-12px;top:50%;
-  width:12px;height:0;border-top:1px solid var(--border);
-  z-index:0;
+/* Connector lines: drawn with borders on .qz-group pseudo-elements */
+/* Upper side: connector from right edge of qz-group toward center */
+.bracket-side.side-upper .qz-group::after{
+  content:'';position:absolute;right:-14px;top:50%;
+  width:14px;height:0;border-top:1px solid var(--border);z-index:0;
 }
-.bracket-side.side-lower .bracket-col:not(:last-child)::after{
-  content:'';position:absolute;left:-12px;top:50%;
-  width:12px;height:0;border-top:1px solid var(--border);
-  z-index:0;
+/* Lower side: connector from left edge of qz-group toward center */
+.bracket-side.side-lower .qz-group::after{
+  content:'';position:absolute;left:-14px;top:50%;
+  width:14px;height:0;border-top:1px solid var(--border);z-index:0;
 }
 
+/* Q-zone group: color accent border + background */
+.qz-group{
+  border:2px solid transparent;border-radius:8px;
+  padding:3px;margin:4px 0;
+  background:transparent;transition:.15s;
+}
+/* Left half (upper side) — Blue series: deeper toward center */
+.qz-lr32{border-color:rgba(25,118,210,.3);background:rgba(227,242,253,.35)}
+.qz-lr16{border-color:rgba(25,118,210,.4);background:rgba(187,222,251,.4)}
+.qz-luf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.3)}
+.qz-lsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.2)}
+/* Right half (lower side) — Green series: deeper toward center */
+.qz-rr32{border-color:rgba(56,142,60,.3);background:rgba(232,245,233,.35)}
+.qz-rr16{border-color:rgba(56,142,60,.4);background:rgba(200,230,201,.4)}
+.qz-ruf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.3)}
+.qz-rsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.2)}
+/* Make bslots inside qz-group fill width */
+.qz-group .bslot{margin:2px 0;min-width:60px}
+
 /* Vertical connector: from a slot in col N to the merge point */
-/* Use a small inline SVG or a border-left on a wrapper – simplified: use border on slot wrappers */
 .bracket-col .slot-wrapper{
   display:flex;flex-direction:column;justify-content:center;
   flex:1;position:relative;
@@ -284,10 +266,9 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .final-box.champion .f-title{color:var(--gold);font-size:14px}
 .final-box.third{border-color:rgba(192,192,192,.5);background:linear-gradient(135deg,rgba(192,192,192,.1),rgba(22,27,34,.95))}
 .final-box.third .f-title{color:var(--muted)}
-.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px;background:rgba(22,27,34,.9);border-color:rgba(240,192,64,.2)}
+.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:100px}
 .final-box .bslot .team{font-size:11px;font-weight:bold}
 .final-box .bslot .desc{font-size:9px}
-.final-box.third .bslot{border-color:rgba(192,192,192,.3)}
 
 /* Responsive: allow horizontal scroll on small screens */
 @media(max-width:1200px){
@@ -2920,102 +2901,119 @@ function predictMatch(m, oddsData){
 
 function renderBracket(){
   const cont=document.getElementById('tab-bracket');
-  function sd(id){return koSlot[id]||{}}
-  function h(id){return sd(id).home}
-  function a(id){return sd(id).away}
-  function hb(id){return sd(id).homeB3}
-  function ab(id){return sd(id).awayB3}
-  function bs(id,team,side,isB3){
-    if(team==='3rd') return `<div class="bslot b3-slot" data-b3="${id}" data-side="${side}">📋 最佳第三</div>`;
-    if(team&&team!=='3rd'){
-      return `<div class="bslot${isB3?' filled-b3':''} filled"><span class="slot-row">${flagImg(team,15)}<span class="team">${tname(team)}</span>${isB3?'<span class="b3-edit-icon">✎</span>':''}</span></div>`;
-    }
-    return `<div class="bslot"><span class="desc">TBD</span></div>`;
-  }
-
   let html='<div class="bracket-zoom-bar">';
-  html+='<button onclick="bracketZoom(-0.2)">-</button><span class="zoom-label" id="zoomLabel">100%</span>';
-  html+='<button onclick="bracketZoom(0.2)">+</button><button onclick="bracketReset()">↻</button>';
-  html+='</div><div class="bracket-viewport" id="bracketViewport"><div class="bracket-canvas" id="bracketCanvas"><div class="tree-bracket">';
+  html+='<button onclick="bracketZoom(-0.2)" title="Zoom Out">-</button>';
+  html+='<span class="zoom-label" id="zoomLabel">100%</span>';
+  html+='<button onclick="bracketZoom(0.2)" title="Zoom In">+</button>';
+  html+='<button onclick="bracketReset()" title="Reset">&#8634;</button>';
+  html+='<span style="font-size:10px;color:var(--muted);margin-left:8px">Scroll to zoom &middot; Drag to pan</span>';
+  html+='</div>';
+  html+='<div class="bracket-viewport" id="bracketViewport">';
+  html+='<div class="bracket-canvas" id="bracketCanvas">';
+  html+='<div class="tree-bracket">';
 
-  // ===== UPPER HALF =====
+  // ===== LEFT SIDE: Upper Half =====
   html+=`<div class="bracket-side side-upper">`;
-  // R32: 8 matches, 1 row each
-  html+=`<div class="bracket-col col-r32 g-lr32"><div class="col-head">32</div>
-    <div class="g-slot">${bs('R32_73',h('R32_73'),'home',hb('R32_73'))}${bs('R32_73',a('R32_73'),'away',ab('R32_73'))}</div>
-    <div class="g-slot">${bs('R32_79',h('R32_79'),'home',hb('R32_79'))}${bs('R32_79',a('R32_79'),'away',ab('R32_79'))}</div>
-    <div class="g-slot">${bs('R32_77',h('R32_77'),'home',hb('R32_77'))}${bs('R32_77',a('R32_77'),'away',ab('R32_77'))}</div>
-    <div class="g-slot">${bs('R32_76',h('R32_76'),'home',hb('R32_76'))}${bs('R32_76',a('R32_76'),'away',ab('R32_76'))}</div>
-    <div class="g-slot">${bs('R32_80',h('R32_80'),'home',hb('R32_80'))}${bs('R32_80',a('R32_80'),'away',ab('R32_80'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_81',h('R32_81'),'home',hb('R32_81'))}${bs('R32_81',a('R32_81'),'away',ab('R32_81'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_83',h('R32_83'),'home',hb('R32_83'))}${bs('R32_83',a('R32_83'),'away',ab('R32_83'))}</div>
-    <div class="g-slot g-lr32">${bs('R32_84',h('R32_84'),'home',hb('R32_84'))}${bs('R32_84',a('R32_84'),'away',ab('R32_84'))}</div>
-  </div>`;
-  // R16: 4 matches, span 2 rows each
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
-    <div class="g-slot gs-span2 g-lr16">${bs('R16_U1A',h('R16_U1A'),'home',hb('R16_U1A'))}${bs('R16_U1A',a('R16_U1A'),'away',ab('R16_U1A'))}</div>
-    <div class="g-slot gs-span2 g-lr16">${bs('R16_U1B',h('R16_U1B'),'home',hb('R16_U1B'))}${bs('R16_U1B',a('R16_U1B'),'away',ab('R16_U1B'))}</div>
-    <div class="g-slot gs-span2 g-lr16">${bs('R16_U2A',h('R16_U2A'),'home',hb('R16_U2A'))}${bs('R16_U2A',a('R16_U2A'),'away',ab('R16_U2A'))}</div>
-    <div class="g-slot gs-span2 g-lr16">${bs('R16_U2B',h('R16_U2B'),'home',hb('R16_U2B'))}${bs('R16_U2B',a('R16_U2B'),'away',ab('R16_U2B'))}</div>
-  </div>`;
-  // QF: 2 matches, span 4 rows each
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
-    <div class="g-slot gs-span4 g-lqf">${bs('QF_U1',h('QF_U1'),'home',hb('QF_U1'))}${bs('QF_U1',a('QF_U1'),'away',ab('QF_U1'))}</div>
-    <div class="g-slot gs-span4 g-lqf">${bs('QF_U2',h('QF_U2'),'home',hb('QF_U2'))}${bs('QF_U2',a('QF_U2'),'away',ab('QF_U2'))}</div>
-  </div>`;
-  // SF: 1 match, span 8 rows
-  html+=`<div class="bracket-col col-sf g-lsf"><div class="col-head">4</div>
-    <div class="g-slot gs-span8">${buildSfSlot('SF_U')}</div>
-  </div>`;
-  // Semi-final winner ("2"): label only
-  html+=`<div class="bracket-col g-l2"><div class="col-semi-label">2</div></div>`;
-  html+=`</div>`; // side-upper
 
-  // ===== CENTER =====
-  const finalData=sd('FINAL');
-  const thirdData=sd('THIRD');
+  // -- R32 column (8 slots, 4 Q-zones, 2 slots per zone) --
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
+  // Q-zone 1: R32_73, R32_79  → R16_U1A
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_73',(koSlot['R32_73']||{}).home,'home',(koSlot['R32_73']||{}).homeB3)}${renderBslot('R32_73',(koSlot['R32_73']||{}).away,'away',(koSlot['R32_73']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_79',(koSlot['R32_79']||{}).home,'home',(koSlot['R32_79']||{}).homeB3)}${renderBslot('R32_79',(koSlot['R32_79']||{}).away,'away',(koSlot['R32_79']||{}).awayB3)}</div>`;
+  // Q-zone 1: R32_77, R32_76  → R16_U1B
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_77',(koSlot['R32_77']||{}).home,'home',(koSlot['R32_77']||{}).homeB3)}${renderBslot('R32_77',(koSlot['R32_77']||{}).away,'away',(koSlot['R32_77']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_76',(koSlot['R32_76']||{}).home,'home',(koSlot['R32_76']||{}).homeB3)}${renderBslot('R32_76',(koSlot['R32_76']||{}).away,'away',(koSlot['R32_76']||{}).awayB3)}</div>`;
+  // Q-zone 2: R32_80, R32_81  → R16_U2A
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_80',(koSlot['R32_80']||{}).home,'home',(koSlot['R32_80']||{}).homeB3)}${renderBslot('R32_80',(koSlot['R32_80']||{}).away,'away',(koSlot['R32_80']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_81',(koSlot['R32_81']||{}).home,'home',(koSlot['R32_81']||{}).homeB3)}${renderBslot('R32_81',(koSlot['R32_81']||{}).away,'away',(koSlot['R32_81']||{}).awayB3)}</div>`;
+  // Q-zone 2: R32_83, R32_84  → R16_U2B
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_83',(koSlot['R32_83']||{}).home,'home',(koSlot['R32_83']||{}).homeB3)}${renderBslot('R32_83',(koSlot['R32_83']||{}).away,'away',(koSlot['R32_83']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr32">${renderBslot('R32_84',(koSlot['R32_84']||{}).home,'home',(koSlot['R32_84']||{}).homeB3)}${renderBslot('R32_84',(koSlot['R32_84']||{}).away,'away',(koSlot['R32_84']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  // -- R16 column (4 slots, 2 Q-zones) --
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
+  // Q-zone 1: R16_U1A, R16_U1B  → QF_U1
+  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).home,'home',(koSlot['R16_U1A']||{}).homeB3)}${renderBslot('R16_U1A',(koSlot['R16_U1A']||{}).away,'away',(koSlot['R16_U1A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).home,'home',(koSlot['R16_U1B']||{}).homeB3)}${renderBslot('R16_U1B',(koSlot['R16_U1B']||{}).away,'away',(koSlot['R16_U1B']||{}).awayB3)}</div>`;
+  // Q-zone 2: R16_U2A, R16_U2B  → QF_U2
+  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).home,'home',(koSlot['R16_U2A']||{}).homeB3)}${renderBslot('R16_U2A',(koSlot['R16_U2A']||{}).away,'away',(koSlot['R16_U2A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-lr16">${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).home,'home',(koSlot['R16_U2B']||{}).homeB3)}${renderBslot('R16_U2B',(koSlot['R16_U2B']||{}).away,'away',(koSlot['R16_U2B']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  // -- QF column (2 slots, 2 Q-zones) --
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
+  html+=`<div class="qz-group qz-luf">${renderBslot('QF_U1',(koSlot['QF_U1']||{}).home,'home',(koSlot['QF_U1']||{}).homeB3)}${renderBslot('QF_U1',(koSlot['QF_U1']||{}).away,'away',(koSlot['QF_U1']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-luf">${renderBslot('QF_U2',(koSlot['QF_U2']||{}).home,'home',(koSlot['QF_U2']||{}).homeB3)}${renderBslot('QF_U2',(koSlot['QF_U2']||{}).away,'away',(koSlot['QF_U2']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  // -- SF column (1 slot, no zone grouping needed) --
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>${buildSfSlot('SF_U')}</div>`;
+  html+=`</div>`;
+
+  html+=`</div>`; // .side-upper
+
+  // ===== CENTER: Finals =====
+  const finalData=koSlot['FINAL']||{};
+  const thirdData=koSlot['THIRD']||{};
   html+=`<div class="bracket-center">
-    <div class="final-box third${thirdData.home?' filled':''}"><div class="f-title">左右半区败方季殿军赛</div>${bs('_3H',thirdData.home,'home')}${bs('_3A',thirdData.away,'away')}</div>
-    <div class="final-box champion${finalData.home?' filled':''}"><div class="f-title">左右半区胜方冠亚军赛</div>${bs('_FH',finalData.home,'home')}${bs('_FA',finalData.away,'away')}</div>
+    <div class="final-box third${thirdData.home?' filled':''}">
+      <div class="f-title">左右半区败方季殿军赛</div>
+      <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+    </div>
+    <div class="final-box champion${finalData.home?' filled':''}">
+      <div class="f-title">左右半区胜方冠亚军赛</div>
+      <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+    </div>
   </div>`;
 
-  // ===== LOWER HALF =====
+  // ===== RIGHT SIDE: Lower Half =====
   html+=`<div class="bracket-side side-lower">`;
-  // SF
-  html+=`<div class="bracket-col col-sf g-rsf"><div class="col-head">4</div><div class="g-slot gs-span8">${buildSfSlot('SF_L')}</div></div>`;
-  // Semi-final winner ("2"): label only
-  html+=`<div class="bracket-col g-r2"><div class="col-semi-label">2</div></div>`;
-  // QF
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
-    <div class="g-slot gs-span4 g-rqf">${bs('QF_L1',h('QF_L1'),'home',hb('QF_L1'))}${bs('QF_L1',a('QF_L1'),'away',ab('QF_L1'))}</div>
-    <div class="g-slot gs-span4 g-rqf">${bs('QF_L2',h('QF_L2'),'home',hb('QF_L2'))}${bs('QF_L2',a('QF_L2'),'away',ab('QF_L2'))}</div>
-  </div>`;
-  // R16
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
-    <div class="g-slot gs-span2 g-rr16">${bs('R16_L1A',h('R16_L1A'),'home',hb('R16_L1A'))}${bs('R16_L1A',a('R16_L1A'),'away',ab('R16_L1A'))}</div>
-    <div class="g-slot gs-span2 g-rr16">${bs('R16_L1B',h('R16_L1B'),'home',hb('R16_L1B'))}${bs('R16_L1B',a('R16_L1B'),'away',ab('R16_L1B'))}</div>
-    <div class="g-slot gs-span2 g-rr16">${bs('R16_L2A',h('R16_L2A'),'home',hb('R16_L2A'))}${bs('R16_L2A',a('R16_L2A'),'away',ab('R16_L2A'))}</div>
-    <div class="g-slot gs-span2 g-rr16">${bs('R16_L2B',h('R16_L2B'),'home',hb('R16_L2B'))}${bs('R16_L2B',a('R16_L2B'),'away',ab('R16_L2B'))}</div>
-  </div>`;
-  // R32
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
-    <div class="g-slot g-rr32">${bs('R32_74',h('R32_74'),'home',hb('R32_74'))}${bs('R32_74',a('R32_74'),'away',ab('R32_74'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_82',h('R32_82'),'home',hb('R32_82'))}${bs('R32_82',a('R32_82'),'away',ab('R32_82'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_75',h('R32_75'),'home',hb('R32_75'))}${bs('R32_75',a('R32_75'),'away',ab('R32_75'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_78',h('R32_78'),'home',hb('R32_78'))}${bs('R32_78',a('R32_78'),'away',ab('R32_78'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_87',h('R32_87'),'home',hb('R32_87'))}${bs('R32_87',a('R32_87'),'away',ab('R32_87'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_88',h('R32_88'),'home',hb('R32_88'))}${bs('R32_88',a('R32_88'),'away',ab('R32_88'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_86',h('R32_86'),'home',hb('R32_86'))}${bs('R32_86',a('R32_86'),'away',ab('R32_86'))}</div>
-    <div class="g-slot g-rr32">${bs('R32_85',h('R32_85'),'home',hb('R32_85'))}${bs('R32_85',a('R32_85'),'away',ab('R32_85'))}</div>
-  </div>`;
-  html+=`</div>`; // side-lower
+
+  // -- SF column --
+  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div>${buildSfSlot('SF_L')}</div>`;
+  html+=`</div>`;
+
+  // -- QF column --
+  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>`;
+  html+=`<div class="qz-group qz-ruf">${renderBslot('QF_L1',(koSlot['QF_L1']||{}).home,'home',(koSlot['QF_L1']||{}).homeB3)}${renderBslot('QF_L1',(koSlot['QF_L1']||{}).away,'away',(koSlot['QF_L1']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-ruf">${renderBslot('QF_L2',(koSlot['QF_L2']||{}).home,'home',(koSlot['QF_L2']||{}).homeB3)}${renderBslot('QF_L2',(koSlot['QF_L2']||{}).away,'away',(koSlot['QF_L2']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  // -- R16 column --
+  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>`;
+  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).home,'home',(koSlot['R16_L1A']||{}).homeB3)}${renderBslot('R16_L1A',(koSlot['R16_L1A']||{}).away,'away',(koSlot['R16_L1A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).home,'home',(koSlot['R16_L1B']||{}).homeB3)}${renderBslot('R16_L1B',(koSlot['R16_L1B']||{}).away,'away',(koSlot['R16_L1B']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).home,'home',(koSlot['R16_L2A']||{}).homeB3)}${renderBslot('R16_L2A',(koSlot['R16_L2A']||{}).away,'away',(koSlot['R16_L2A']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr16">${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).home,'home',(koSlot['R16_L2B']||{}).homeB3)}${renderBslot('R16_L2B',(koSlot['R16_L2B']||{}).away,'away',(koSlot['R16_L2B']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  // -- R32 column --
+  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_74',(koSlot['R32_74']||{}).home,'home',(koSlot['R32_74']||{}).homeB3)}${renderBslot('R32_74',(koSlot['R32_74']||{}).away,'away',(koSlot['R32_74']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_82',(koSlot['R32_82']||{}).home,'home',(koSlot['R32_82']||{}).homeB3)}${renderBslot('R32_82',(koSlot['R32_82']||{}).away,'away',(koSlot['R32_82']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_75',(koSlot['R32_75']||{}).home,'home',(koSlot['R32_75']||{}).homeB3)}${renderBslot('R32_75',(koSlot['R32_75']||{}).away,'away',(koSlot['R32_75']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_78',(koSlot['R32_78']||{}).home,'home',(koSlot['R32_78']||{}).homeB3)}${renderBslot('R32_78',(koSlot['R32_78']||{}).away,'away',(koSlot['R32_78']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_87',(koSlot['R32_87']||{}).home,'home',(koSlot['R32_87']||{}).homeB3)}${renderBslot('R32_87',(koSlot['R32_87']||{}).away,'away',(koSlot['R32_87']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_88',(koSlot['R32_88']||{}).home,'home',(koSlot['R32_88']||{}).homeB3)}${renderBslot('R32_88',(koSlot['R32_88']||{}).away,'away',(koSlot['R32_88']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_86',(koSlot['R32_86']||{}).home,'home',(koSlot['R32_86']||{}).homeB3)}${renderBslot('R32_86',(koSlot['R32_86']||{}).away,'away',(koSlot['R32_86']||{}).awayB3)}</div>`;
+  html+=`<div class="qz-group qz-rr32">${renderBslot('R32_85',(koSlot['R32_85']||{}).home,'home',(koSlot['R32_85']||{}).homeB3)}${renderBslot('R32_85',(koSlot['R32_85']||{}).away,'away',(koSlot['R32_85']||{}).awayB3)}</div>`;
+  html+=`</div>`;
+
+  html+=`</div>`; // .side-lower
 
   html+='</div></div></div>';
   cont.innerHTML=html;
   bracketReset();
   setupBracketPan();
+  // 事件委托：点击 .b3-slot 打开最佳第三选择弹窗
   cont.querySelectorAll('.b3-slot').forEach(el => {
-    el.addEventListener('click', (e) => { e.stopPropagation(); openB3Picker(el.dataset.b3); });
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openB3Picker(el.dataset.b3);
+    });
   });
 }
 
