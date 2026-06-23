@@ -175,25 +175,35 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .bracket-canvas{position:absolute;top:0;left:0;width:max-content;transform-origin:0 0;will-change:transform}
 .bracket-canvas .tree-bracket{overflow:visible!important;width:auto!important}
 
-/* ========== TREE BRACKET 鈥?缁忓吀娣樻卑璧涘闃靛浘 ========== */
+/* ========== TREE BRACKET ========== */
 .tree-bracket{
   display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
-  justify-content:center;gap:6px;padding:20px 10px;min-width:1300px;
+  justify-content:center;gap:8px;padding:20px 10px;min-width:1300px;
 }
-.bracket-half{display:flex;flex-direction:column;gap:20px;align-self:center}
-.bracket-quad{display:flex;flex-direction:row;align-items:stretch;border-radius:10px;padding:8px 4px}
-.quad-upper{background:rgba(76,175,80,.04)}
-.quad-lower{background:rgba(66,165,245,.04)}
-.bk-col{
-  display:grid;grid-template-rows:repeat(8,1fr);
-  width:100px;padding:0 3px;
+/* 每个大半区 = 1个大Grid(8行×4列) */
+.bracket-half{
+  display:grid;
+  grid-template-rows:repeat(8,1fr);
+  grid-template-columns:repeat(4,100px);
+  gap:0 4px;
+  align-self:stretch;
+  border-radius:12px;
+  padding:4px;
+}
+.bracket-half-left{
+  background:linear-gradient(180deg, rgba(76,175,80,.06) 0%, rgba(76,175,80,.06) 50%, rgba(66,165,245,.06) 50%, rgba(66,165,245,.06) 100%);
+}
+.bracket-half-right{
+  background:linear-gradient(180deg, rgba(76,175,80,.06) 0%, rgba(76,175,80,.06) 50%, rgba(66,165,245,.06) 50%, rgba(66,165,245,.06) 100%);
 }
 .bk-slot{
-  grid-row:span 1;display:flex;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   margin:2px 0;padding:2px 5px;
   border:1px dashed var(--border);border-radius:6px;
-  font-size:11px;min-height:30px;background:rgba(22,27,34,.92);
+  font-size:11px;min-height:0;
+  background:rgba(22,27,34,.92);
 }
+.bk-slot.s1{grid-row:span 1}
 .bk-slot.s2{grid-row:span 2}
 .bk-slot.s4{grid-row:span 4}
 .bk-slot.s8{grid-row:span 8}
@@ -222,11 +232,11 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 @media(max-width:1200px){
   .tree-bracket{min-width:1100px}
-  .bk-col{width:85px}
+  .bracket-half{grid-template-columns:repeat(4,85px)}
 }
 @media(max-width:768px){
   .tree-bracket{min-width:900px;padding:10px 0}
-  .bk-col{width:70px;padding:0 2px}
+  .bracket-half{grid-template-columns:repeat(4,70px)}
   .bk-slot{min-height:24px;padding:2px 3px;font-size:10px}
 }
 
@@ -2960,15 +2970,23 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // ===== 左大半区 =====
+  // ===== 左大半区（1个大Grid: 8行×4列）=====
   html+=`<div class="bracket-half bracket-half-left">`;
-  // 左上小半区（绿）
-  html+=`<div class="bracket-quad quad-upper">`;
-  html+=buildQuadGrid(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
+  // 列1: R32 (8个s1)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  ['R32_73','R32_79','R32_77','R32_76','R32_80','R32_81','R32_83','R32_84'].forEach(id=>{ html+=renderSlotHtml(id,''); });
   html+=`</div>`;
-  // 左下小半区（蓝）
-  html+=`<div class="bracket-quad quad-lower">`;
-  html+=buildQuadGrid(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
+  // 列2: R16 (4个s2)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  ['R16_U1A','R16_U1B','R16_U2A','R16_U2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  html+=`</div>`;
+  // 列3: QF (2个s4)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  html+=renderSlotHtml('QF_U1','winner s4')+renderSlotHtml('QF_U2','winner s4');
+  html+=`</div>`;
+  // 列4: SF (1个s8)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  html+=renderSlotHtml('SF_U','winner s8');
   html+=`</div>`;
   html+=`</div>`;
 
@@ -2986,15 +3004,23 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== 右大半区（镜像）=====
+  // ===== 右大半区镜像（1个大Grid: 8行×4列，列序反转）=====
   html+=`<div class="bracket-half bracket-half-right">`;
-  // 右上小半区（绿）— 镜像
-  html+=`<div class="bracket-quad quad-upper">`;
-  html+=buildQuadGridMirror(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
+  // 列1: SF (靠近决赛区)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  html+=renderSlotHtml('SF_L','winner s8');
   html+=`</div>`;
-  // 右下小半区（蓝）— 镜像
-  html+=`<div class="bracket-quad quad-lower">`;
-  html+=buildQuadGridMirror(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
+  // 列2: QF
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  html+=renderSlotHtml('QF_L1','winner s4')+renderSlotHtml('QF_L2','winner s4');
+  html+=`</div>`;
+  // 列3: R16
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  ['R16_L1A','R16_L1B','R16_L2A','R16_L2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  html+=`</div>`;
+  // 列4: R32 (最外侧)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  ['R32_74','R32_82','R32_75','R32_78','R32_87','R32_88','R32_86','R32_85'].forEach(id=>{ html+=renderSlotHtml(id,''); });
   html+=`</div>`;
   html+=`</div>`;
 
