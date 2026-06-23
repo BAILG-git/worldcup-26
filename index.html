@@ -175,103 +175,37 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .bracket-canvas{position:absolute;top:0;left:0;width:max-content;transform-origin:0 0;will-change:transform}
 .bracket-canvas .tree-bracket{overflow:visible!important;width:auto!important}
 
-/* ========== TREE BRACKET – Classic knockout: left→center←right ========== */
+/* ========== TREE BRACKET 鈥?缁忓吀娣樻卑璧涘闃靛浘 ========== */
 .tree-bracket{
-  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;
-  justify-content:center;gap:0;padding:20px 10px;
-  min-width:1200px;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
+  justify-content:center;gap:6px;padding:20px 10px;min-width:1300px;
 }
-/* 左右两个大半区容器：上下排列两个小半区 */
-.bracket-half{
-  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;
+.bracket-half{display:flex;flex-direction:column;gap:20px;align-self:center}
+.bracket-quad{display:flex;flex-direction:row;align-items:stretch;border-radius:10px;padding:8px 4px}
+.quad-upper{background:rgba(76,175,80,.04)}
+.quad-lower{background:rgba(66,165,245,.04)}
+.bk-col{
+  display:grid;grid-template-rows:repeat(8,1fr);
+  width:100px;padding:0 3px;
 }
-/* 每个小半区是一棵独立的树 */
-.bracket-quad{
-  display:flex;flex-direction:column;align-items:center;
-  padding:8px 6px;border-radius:10px;margin:0 3px;
+.bk-slot{
+  grid-row:span 1;display:flex;align-items:center;justify-content:center;
+  margin:2px 0;padding:2px 5px;
+  border:1px dashed var(--border);border-radius:6px;
+  font-size:11px;min-height:30px;background:rgba(22,27,34,.92);
 }
-/* 小半区标题 */
-.quad-title{
-  font-size:11px;font-weight:bold;margin-bottom:6px;
-  padding:2px 10px;border-radius:4px;
-}
-.quad-upper .quad-title{color:#4caf50;background:rgba(76,175,80,.12)}
-.quad-lower .quad-title{color:#42a5f5;background:rgba(66,165,245,.12)}
+.bk-slot.s2{grid-row:span 2}
+.bk-slot.s4{grid-row:span 4}
+.bk-slot.s8{grid-row:span 8}
+.bk-slot.winner{border:1.5px solid rgba(240,192,64,.25);background:rgba(240,192,64,.06);flex-direction:column}
+.bk-slot .flag{font-size:13px;margin-right:3px}
+.bk-slot .team{font-weight:bold;color:var(--text);font-size:11px;line-height:1.2}
+.bk-slot .desc{color:var(--muted);font-size:9px}
+.bk-slot.filled{border-color:var(--green);border-style:solid}
 
-/* 树结构：嵌套div，晋级卡槽(tree-winner)自动居中在子节点(tree-children)之间 */
-.tree-pair{
-  display:flex;flex-direction:row;
-}
-.tree-children{
-  display:flex;flex-direction:column;justify-content:flex-start;
-  gap:0;
-}
-.tree-winner{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  align-self:stretch;padding:0 6px;
-  min-height:40px;
-}
-.tree-slot{
-  padding:2px 0;
-}
-
-/* R32 单个队伍槽位 */
-.bracket-single{padding:2px 0}
-.bracket-single .bslot{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3px 5px;margin:1px 0;
-  border:1px dashed var(--border);border-radius:5px;
-  font-size:11px;min-height:24px;
-  background:rgba(22,27,34,.92);
-}
-
-/* 晋级胜者卡槽（二进一，只显示一个位置） */
-.bracket-winner{
-  border:1.5px solid rgba(240,192,64,.3);border-radius:7px;
-  padding:4px;margin:1px 0;background:rgba(240,192,64,.06);
-  min-width:85px;text-align:center;
-}
-.bracket-winner .bslot{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3px 5px;margin:0;
-  border:1px dashed var(--border);border-radius:5px;
-  font-size:11px;min-height:26px;
-  background:rgba(22,27,34,.92);
-}
-
-/* R32 单个队伍槽位 */
-.bracket-match .bslot{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3px 5px;margin:1px 0;
-  border:1px dashed var(--border);border-radius:5px;
-  font-size:11px;min-height:24px;
-  background:rgba(22,27,34,.92);
-}
-.bracket-match .bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.08)}
-.bracket-match .bslot .flag{font-size:13px}
-.bracket-match .bslot .team{font-weight:bold;font-size:11px;color:var(--text)}
-.bracket-match .bslot .desc{color:var(--muted);font-size:9px}
-
-/* 连接线（横向） */
-.tree-pair>.tree-winner::before{
-  content:'';display:block;
-  width:8px;height:0;border-top:1.5px solid rgba(255,255,255,.15);
-  position:absolute;left:-8px;top:50%;
-}
-.bracket-half-left .tree-pair{flex-direction:row}
-.bracket-half-left .tree-winner{padding-left:8px}
-.bracket-half-right .tree-pair{flex-direction:row-reverse}
-.bracket-half-right .tree-winner{padding-right:8px}
-
-/* 左大半区：树从左到右展开 */
-.bracket-half-left .bracket-quad{align-items:flex-start}
-/* 右大半区：树从右到左展开（镜像） */
-.bracket-half-right .bracket-quad{align-items:flex-end}
-
-/* Center: Finals */
 .bracket-center{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:20px;flex:0 0 auto;padding:0 16px;z-index:2;min-width:140px;align-self:center;
+  gap:18px;flex:0 0 auto;padding:0 14px;z-index:2;min-width:140px;align-self:center;
 }
 .final-box{
   background:rgba(22,27,34,.95);border:2px solid rgba(240,192,64,.3);border-radius:10px;
@@ -287,15 +221,13 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .final-box .bslot .desc{color:var(--muted);font-size:9px}
 
 @media(max-width:1200px){
-  .tree-bracket{min-width:1000px}
-  .bracket-match{min-width:75px}
+  .tree-bracket{min-width:1100px}
+  .bk-col{width:85px}
 }
 @media(max-width:768px){
-  .tree-bracket{min-width:800px;padding:10px 0}
-  .bracket-quad{padding:4px 3px}
-  .bracket-match{min-width:65px;padding:3px}
-  .bracket-match .bslot{min-height:22px;padding:2px 4px}
-  .bracket-match .bslot .team{font-size:10px}
+  .tree-bracket{min-width:900px;padding:10px 0}
+  .bk-col{width:70px;padding:0 2px}
+  .bk-slot{min-height:24px;padding:2px 3px;font-size:10px}
 }
 
 /* best 3rd table */
@@ -2911,7 +2843,93 @@ function predictMatch(m, oddsData){
 }
 
 // ========== RENDER: BRACKET ==========
-// 经典对阵图：用小半区独立树，嵌套div实现晋级卡槽自动居中
+function renderBracket(){
+  const cont=document.getElementById('tab-bracket');
+  let html='<div class="bracket-zoom-bar">';
+  html+='<button onclick="bracketZoom(-0.2)" title="Zoom Out">-</button>';
+  html+='<span class="zoom-label" id="zoomLabel">100%</span>';
+  html+='<button onclick="bracketZoom(0.2)" title="Zoom In">+</button>';
+  html+='<button onclick="bracketReset()" title="Reset">&#8634;</button>';
+  html+='<span style="font-size:10px;color:var(--muted);margin-left:8px">Scroll to zoom &middot; Drag to pan</span>';
+  html+='</div>';
+  html+='<div class="bracket-viewport" id="bracketViewport">';
+  html+='<div class="bracket-canvas" id="bracketCanvas">';
+  html+='<div class="tree-bracket">';
+
+  // ===== 左大半区 =====
+  html+=`<div class="bracket-half bracket-half-left">`;
+  // 左上小半区（绿）
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildQuadGrid(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
+  html+=`</div>`;
+  // 左下小半区（蓝）
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildQuadGrid(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
+  html+=`</div>`;
+  html+=`</div>`;
+
+  // ===== CENTER: Finals =====
+  const finalData=koSlot['FINAL']||{};
+  const thirdData=koSlot['THIRD']||{};
+  html+=`<div class="bracket-center">
+    <div class="final-box third${thirdData.home?' filled':''}">
+      <div class="f-title">季殿军赛</div>
+      <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+    </div>
+    <div class="final-box champion${finalData.home?' filled':''}">
+      <div class="f-title">冠亚军决赛</div>
+      <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+    </div>
+  </div>`;
+
+  // ===== 右大半区 =====
+  html+=`<div class="bracket-half bracket-half-right">`;
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildQuadGrid(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
+  html+=`</div>`;
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildQuadGrid(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
+  html+=`</div>`;
+  html+=`</div>`;
+
+  html+='</div></div></div>';
+  cont.innerHTML=html;
+  bracketReset();
+  setupBracketPan();
+  cont.querySelectorAll('.b3-slot').forEach(el => {
+    el.addEventListener('click', (e) => { e.stopPropagation(); openB3Picker(el.dataset.b3); });
+  });
+}
+
+// 构建一个小半区的Grid：R32(8s1)->R16(4s2)->QF(2s4)->SF(1s8)
+function buildQuadGrid(r32Ids,r16Ids,qfId,sfId){
+  let h='';
+  h+=`<div class="bk-col">`; // R32
+  r32Ids.forEach(id=>{ h+=renderSlotHtml(id,''); });
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // R16
+  r16Ids.forEach(id=>{ h+=renderSlotHtml(id,'winner s2'); });
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // QF
+  h+=renderSlotHtml(qfId,'winner s4');
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // SF
+  h+=renderSlotHtml(sfId,'winner s8');
+  h+=`</div>`;
+  return h;
+}
+
+function renderSlotHtml(slotId,extraCls){
+  const data=koSlot[slotId]||{};
+  let cls='bk-slot '+extraCls;
+  if(data.home){ cls+=' filled'; }
+  if(data.home){
+    return `<div class="${cls}"><span class="flag">${flagImg(data.home,13)}</span><span class="team">${tname(data.home)}</span></div>`;
+  }
+  return `<div class="${cls}"><span class="desc">TBD</span></div>`;
+}
 
 function renderBracket(){
   const cont=document.getElementById('tab-bracket');
