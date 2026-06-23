@@ -2911,29 +2911,51 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== 右大半区镜像（16行×4列，列序反转）=====
-  html+=`<div class="bracket-half bracket-half-right">`;
-  // 列1: SF (s16 靠近决赛区)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:1">`;
-  html+=renderSlotHtml('SF_L','winner s16');
+  // ===== 右半区：两个小半区上下堆叠（镜像列序：SF内→QF→R16→R32外）=====
+  html+=`<div class="bracket-half bracket-half-right" style="display:flex;flex-direction:column;gap:8px;">`;
+
+  // --- 右上半区 (8行×4列 Grid) ---
+  html+=`<div class="bracket-sub" style="display:grid;grid-template-rows:repeat(8,1fr);grid-template-columns:repeat(4,95px);gap:0 5px;padding:6px 4px;border-radius:12px;background:linear-gradient(180deg,rgba(33,150,243,.08) 0%,rgba(33,150,243,.04) 100%);flex:1;min-height:0)">`;
+  // 列1(内侧): SF
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  html+=renderSlotHtml('SF_L','winner s8');
   html+=`</div>`;
-  // 列2: QF (4个s4)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:2">`;
-  ['QF_L1','QF_L2','QF_U1','QF_U2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
+  // 列2: QF (2个s4)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  ['QF_L1','QF_L2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
   html+=`</div>`;
-  // 列3: R16 (8个s2)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:3">`;
-  ['R16_L1A','R16_L1B','R16_L2A','R16_L2B',
-   'R16_U1A','R16_U1B','R16_U2A','R16_U2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  // 列3: R16 (4个s2)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  ['R16_L1A','R16_L1B','R16_L2A','R16_L2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
   html+=`</div>`;
-  // 列4: R32 (16个s1 最外侧)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:4">`;
-  ['R32_74','R32_82','R32_75','R32_78',
-   'R32_87','R32_88','R32_86','R32_85',
-   'R32_73','R32_79','R32_77','R32_76',
-   'R32_80','R32_81','R32_83','R32_84'].forEach(id=>{ html+=renderSlotHtml(id,''); });
+  // 列4(外侧): R32 (8个s1)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  ['R32_74','R32_82','R32_75','R32_78','R32_87','R32_88','R32_86','R32_85'].forEach(id=>{ html+=renderSlotHtml(id,''); });
   html+=`</div>`;
+  html+=`</div>`; // end 右上半区
+
+  // --- 右下半区 (8行×4列 Grid) ---
+  html+=`<div class="bracket-sub" style="display:grid;grid-template-rows:repeat(8,1fr);grid-template-columns:repeat(4,95px);gap:0 5px;padding:6px 4px;border-radius:12px;background:linear-gradient(180deg,rgba(255,193,7,.06) 0%,rgba(255,193,7,.03) 100%);flex:1;min-height:0)">`;
+  // 列1(内侧): SF
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  // 右下半区的SF — 暂用TBD占位（实际应从数据模型取对应槽位）
+  html+=renderSlotHtml('','winner s8');
   html+=`</div>`;
+  // 列2: QF (2个s4)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  ['QF_U1','QF_U2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
+  html+=`</div>`;
+  // 列3: R16 (4个s2)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  ['R16_U1A','R16_U1B','R16_U2A','R16_U2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  html+=`</div>`;
+  // 列4(外侧): R32 (8个s1)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  ['R32_73','R32_79','R32_77','R32_76','R32_80','R32_81','R32_83','R32_84'].forEach(id=>{ html+=renderSlotHtml(id,''); });
+  html+=`</div>`;
+  html+=`</div>`; // end 右下半区
+
+  html+=`</div>`; // end 右半区
 
   html+='</div></div></div>';
   cont.innerHTML=html;
