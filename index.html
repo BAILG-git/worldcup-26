@@ -180,21 +180,13 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
   justify-content:center;gap:8px;padding:20px 10px;min-width:1300px;
 }
-/* 每个大半区 = 1个大Grid(8行×4列) */
-.bracket-half{
-  display:grid;
-  grid-template-rows:repeat(8,1fr);
-  grid-template-columns:repeat(4,100px);
-  gap:0 4px;
-  align-self:stretch;
-  border-radius:12px;
-  padding:4px;
-}
-.bracket-half-left{
-  background:linear-gradient(180deg, rgba(76,175,80,.06) 0%, rgba(76,175,80,.06) 50%, rgba(66,165,245,.06) 50%, rgba(66,165,245,.06) 100%);
-}
-.bracket-half-right{
-  background:linear-gradient(180deg, rgba(76,175,80,.06) 0%, rgba(76,175,80,.06) 50%, rgba(66,165,245,.06) 50%, rgba(66,165,245,.06) 100%);
+.bracket-half{display:flex;flex-direction:column;gap:6px;align-self:center}
+.bracket-quad{display:flex;flex-direction:row;align-items:stretch;border-radius:10px;padding:6px 4px}
+.quad-upper{background:rgba(76,175,80,.06)}
+.quad-lower{background:rgba(66,165,245,.06)}
+.bk-col{
+  display:grid;grid-template-rows:repeat(8,1fr);
+  width:100px;padding:0 3px;
 }
 .bk-slot{
   display:flex;align-items:center;justify-content:center;
@@ -232,11 +224,11 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 @media(max-width:1200px){
   .tree-bracket{min-width:1100px}
-  .bracket-half{grid-template-columns:repeat(4,85px)}
+  .bk-col{width:85px}
 }
 @media(max-width:768px){
   .tree-bracket{min-width:900px;padding:10px 0}
-  .bracket-half{grid-template-columns:repeat(4,70px)}
+  .bk-col{width:70px;padding:0 2px}
   .bk-slot{min-height:24px;padding:2px 3px;font-size:10px}
 }
 
@@ -2912,38 +2904,31 @@ function renderBracket(){
 }
 
 // 构建一个小半区的Grid：R32(8s1)->R16(4s2)->QF(2s4)->SF(1s8)
-function buildQuadGrid(r32Ids,r16Ids,qfId,sfId){
+// mirrored=true: 列序反转 SF->QF->R16->R32（用于右半区）
+function buildQuadGrid(r32Ids,r16Ids,qfId,sfId,mirrored){
   let h='';
-  h+=`<div class="bk-col">`; // R32
-  r32Ids.forEach(id=>{ h+=renderSlotHtml(id,''); });
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // R16
-  r16Ids.forEach(id=>{ h+=renderSlotHtml(id,'winner s2'); });
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // QF
-  h+=renderSlotHtml(qfId,'winner s4');
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // SF
-  h+=renderSlotHtml(sfId,'winner s8');
-  h+=`</div>`;
-  return h;
-}
-
-// 镜像版：列序反转 SF->QF->R16->R32（用于右半区）
-function buildQuadGridMirror(r32Ids,r16Ids,qfId,sfId){
-  let h='';
-  h+=`<div class="bk-col">`; // SF (靠近决赛区)
-  h+=renderSlotHtml(sfId,'winner s8');
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // QF
-  h+=renderSlotHtml(qfId,'winner s4');
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // R16
-  r16Ids.forEach(id=>{ h+=renderSlotHtml(id,'winner s2'); });
-  h+=`</div>`;
-  h+=`<div class="bk-col">`; // R32 (最外侧)
-  r32Ids.forEach(id=>{ h+=renderSlotHtml(id,''); });
-  h+=`</div>`;
+  const cols = mirrored
+    ? [
+        {key:'sf',  id:sfId,  cls:'winner s8'},
+        {key:'qf',  id:qfId,  cls:'winner s4'},
+        {key:'r16', ids:r16Ids, cls:'winner s2'},
+        {key:'r32', ids:r32Ids, cls:''}
+      ]
+    : [
+        {key:'r32', ids:r32Ids, cls:''},
+        {key:'r16', ids:r16Ids, cls:'winner s2'},
+        {key:'qf',  id:qfId,  cls:'winner s4'},
+        {key:'sf',  id:sfId,  cls:'winner s8'}
+      ];
+  cols.forEach(col=>{
+    h+=`<div class="bk-col">`;
+    if(col.ids){
+      col.ids.forEach(id=>{ h+=renderSlotHtml(id,col.cls); });
+    } else {
+      h+=renderSlotHtml(col.id,col.cls);
+    }
+    h+=`</div>`;
+  });
   return h;
 }
 
@@ -2970,23 +2955,15 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // ===== 左大半区（1个大Grid: 8行×4列）=====
+  // ===== 左大半区 =====
   html+=`<div class="bracket-half bracket-half-left">`;
-  // 列1: R32 (8个s1)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
-  ['R32_73','R32_79','R32_77','R32_76','R32_80','R32_81','R32_83','R32_84'].forEach(id=>{ html+=renderSlotHtml(id,''); });
+  // 左上小半区（绿）
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildQuadGrid(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
   html+=`</div>`;
-  // 列2: R16 (4个s2)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
-  ['R16_U1A','R16_U1B','R16_U2A','R16_U2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
-  html+=`</div>`;
-  // 列3: QF (2个s4)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
-  html+=renderSlotHtml('QF_U1','winner s4')+renderSlotHtml('QF_U2','winner s4');
-  html+=`</div>`;
-  // 列4: SF (1个s8)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
-  html+=renderSlotHtml('SF_U','winner s8');
+  // 左下小半区（蓝）
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildQuadGrid(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
   html+=`</div>`;
   html+=`</div>`;
 
@@ -3004,23 +2981,15 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== 右大半区镜像（1个大Grid: 8行×4列，列序反转）=====
+  // ===== 右大半区镜像 =====
   html+=`<div class="bracket-half bracket-half-right">`;
-  // 列1: SF (靠近决赛区)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
-  html+=renderSlotHtml('SF_L','winner s8');
+  // 右上小半区（绿）— 镜像
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildQuadGrid(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L',true);
   html+=`</div>`;
-  // 列2: QF
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
-  html+=renderSlotHtml('QF_L1','winner s4')+renderSlotHtml('QF_L2','winner s4');
-  html+=`</div>`;
-  // 列3: R16
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
-  ['R16_L1A','R16_L1B','R16_L2A','R16_L2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
-  html+=`</div>`;
-  // 列4: R32 (最外侧)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
-  ['R32_74','R32_82','R32_75','R32_78','R32_87','R32_88','R32_86','R32_85'].forEach(id=>{ html+=renderSlotHtml(id,''); });
+  // 右下小半区（蓝）— 镜像
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildQuadGrid(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L',true);
   html+=`</div>`;
   html+=`</div>`;
 
