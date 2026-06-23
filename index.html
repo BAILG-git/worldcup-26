@@ -177,85 +177,82 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* ========== TREE BRACKET – Classic knockout: left→center←right ========== */
 .tree-bracket{
-  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;
   justify-content:center;gap:0;padding:20px 10px;
-  min-width:1200px;height:100%;
+  min-width:1200px;
 }
-.bracket-side{
-  display:flex;flex-direction:row;align-items:stretch;
-  flex:0 0 auto; /* don't shrink */
+/* 左右两个大半区容器 */
+.bracket-half{
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;
 }
-/* Each round column — CSS Grid: 16 slots (8 match-pair rows × 2 for spacing) */
-/* R32=8 pairs(1row each), R16=4 pairs(2rows), QF=2 pairs(4rows), SF=1 pair(8rows) */
-.bracket-col{
-  display:grid;
-  grid-template-rows:repeat(8,1fr);
-  align-items:center;
-  width:110px;padding:0 4px;position:relative;
+/* 每个小半区是一棵独立的树 */
+.bracket-quad{
+  display:flex;flex-direction:column;align-items:center;
+  padding:8px 6px;border-radius:10px;margin:0 3px;
 }
-.col-head{
-  grid-row:1/-1;
+/* 小半区标题 */
+.quad-title{
+  font-size:11px;font-weight:bold;margin-bottom:6px;
+  padding:2px 10px;border-radius:4px;
+}
+.quad-upper .quad-title{color:#4caf50;background:rgba(76,175,80,.12)}
+.quad-lower .quad-title{color:#42a5f5;background:rgba(66,165,245,.12)}
+
+/* 树结构：嵌套div，晋级卡槽(tree-winner)自动居中在子节点(tree-children)之间 */
+.tree-pair{
+  display:flex;flex-direction:row;align-items:center;
+  min-height:40px;
+}
+.tree-children{
+  display:flex;flex-direction:column;justify-content:center;
+  flex:1;
+}
+.tree-winner{
   display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:bold;color:var(--text);
-  line-height:1.2;width:20px;
+  flex:0 0 auto;padding:0 4px;
 }
-/* Row spans: R32=1, R16=2, QF=4, SF=8 — auto-placement centers winner over children */
-.gs-1{grid-row:span 1}
-.gs-2{grid-row:span 2}
-.gs-4{grid-row:span 4}
-.gs-8{grid-row:span 8}
-
-/* Match pair: ONE card holding home + away bslots, spread vertically in grid area */
-.match-pair{
-  border-radius:7px;padding:3px;margin:1px 0;
-  border:1.5px solid transparent;display:flex;flex-direction:column;
-  justify-content:space-evenly;width:100%;height:100%;
+.tree-slot{
+  padding:2px 0;
 }
 
-/* Color zones — upper GREEN, lower BLUE within each half */
-.mp-gr32{border-color:rgba(56,142,60,.35);background:rgba(232,245,233,.35)}
-.mp-gr16{border-color:rgba(56,142,60,.45);background:rgba(200,230,201,.40)}
-.mp-gqf{border-color:rgba(56,142,60,.55);background:rgba(129,199,132,.30)}
-.mp-gsf{border-color:rgba(56,142,60,.7);background:rgba(56,142,60,.22)}
-
-.mp-br32{border-color:rgba(25,118,210,.35);background:rgba(227,242,253,.35)}
-.mp-br16{border-color:rgba(25,118,210,.45);background:rgba(187,222,251,.40)}
-.mp-bqf{border-color:rgba(25,118,210,.55);background:rgba(100,181,246,.30)}
-.mp-bsf{border-color:rgba(25,118,210,.7);background:rgba(25,118,210,.22)}
-
-/* Connector lines */
-.side-upper .match-pair{position:relative}
-.side-upper .match-pair::after{
-  content:'';position:absolute;right:-10px;top:50%;
-  width:10px;height:0;border-top:1.5px solid rgba(255,255,255,.12);z-index:0;
+/* 比赛卡片：包含两个队伍 */
+.bracket-match{
+  border:1.5px solid rgba(255,255,255,.15);border-radius:7px;
+  padding:4px;margin:1px 0;background:rgba(22,27,34,.9);
+  min-width:85px;text-align:center;
 }
-.side-lower .match-pair{position:relative}
-.side-lower .match-pair::after{
-  content:'';position:absolute;left:-10px;top:50%;
-  width:10px;height:0;border-top:1.5px solid rgba(255,255,255,.12);z-index:0;
-}
-
-/* Bracket slot base */
-.bslot{
+.bracket-match .bslot{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3px 6px;
+  padding:3px 5px;margin:1px 0;
   border:1px dashed var(--border);border-radius:5px;
-  font-size:11px;text-align:center;
+  font-size:11px;min-height:24px;
   background:rgba(22,27,34,.92);
-  min-height:26px;width:94%;margin:0 auto;
-  overflow:hidden;white-space:nowrap;position:relative;z-index:1;
 }
-.bslot .flag{font-size:14px;margin-bottom:1px}
-.bslot .team{font-weight:bold;color:var(--text);font-size:11px;line-height:1.2}
-.bslot .desc{color:var(--muted);font-size:9px}
-.bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.08)}
-.bslot.filled .slot-row{display:flex;align-items:center;gap:2px;justify-content:center}
-.bslot.champion{border-color:var(--gold);background:linear-gradient(135deg,rgba(240,192,64,.12),rgba(240,192,64,.02))}
+.bracket-match .bslot.filled{border-color:var(--green);border-style:solid;background:rgba(63,185,80,.08)}
+.bracket-match .bslot .flag{font-size:13px}
+.bracket-match .bslot .team{font-weight:bold;font-size:11px;color:var(--text)}
+.bracket-match .bslot .desc{color:var(--muted);font-size:9px}
+
+/* 连接线（横向） */
+.tree-pair>.tree-winner::before{
+  content:'';display:block;
+  width:8px;height:0;border-top:1.5px solid rgba(255,255,255,.15);
+  position:absolute;left:-8px;top:50%;
+}
+.bracket-half-left .tree-pair{flex-direction:row}
+.bracket-half-left .tree-winner{padding-left:8px}
+.bracket-half-right .tree-pair{flex-direction:row-reverse}
+.bracket-half-right .tree-winner{padding-right:8px}
+
+/* 左大半区：树从左到右展开 */
+.bracket-half-left .bracket-quad{align-items:flex-start}
+/* 右大半区：树从右到左展开（镜像） */
+.bracket-half-right .bracket-quad{align-items:flex-end}
 
 /* Center: Finals */
 .bracket-center{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  gap:20px;flex:0 0 auto;padding:0 16px;z-index:2;min-width:140px;
+  gap:20px;flex:0 0 auto;padding:0 16px;z-index:2;min-width:140px;align-self:center;
 }
 .final-box{
   background:rgba(22,27,34,.95);border:2px solid rgba(240,192,64,.3);border-radius:10px;
@@ -266,20 +263,20 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .final-box.champion .f-title{color:var(--gold);font-size:14px}
 .final-box.third{border-color:rgba(192,192,192,.5);background:linear-gradient(135deg,rgba(192,192,192,.1),rgba(22,27,34,.95))}
 .final-box.third .f-title{color:var(--muted)}
-.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:110px}
-.final-box .bslot .team{font-size:11px;font-weight:bold}
-.final-box .bslot .desc{font-size:9px}
+.final-box .bslot{margin:3px 0;padding:4px 6px;min-width:80px;max-width:110px;border:1px dashed var(--border);border-radius:5px;font-size:11px;min-height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.final-box .bslot .team{font-weight:bold;font-size:11px}
+.final-box .bslot .desc{color:var(--muted);font-size:9px}
 
 @media(max-width:1200px){
   .tree-bracket{min-width:1000px}
-  .bracket-col{width:90px}
+  .bracket-match{min-width:75px}
 }
 @media(max-width:768px){
   .tree-bracket{min-width:800px;padding:10px 0}
-  .bracket-col{width:70px;padding:0 2px}
-  .col-head{font-size:9px}
-  .bslot{padding:2px 4px;min-height:22px}
-  .bslot .team{font-size:10px}
+  .bracket-quad{padding:4px 3px}
+  .bracket-match{min-width:65px;padding:3px}
+  .bracket-match .bslot{min-height:22px;padding:2px 4px}
+  .bracket-match .bslot .team{font-size:10px}
 }
 
 /* best 3rd table */
@@ -2895,8 +2892,7 @@ function predictMatch(m, oddsData){
 }
 
 // ========== RENDER: BRACKET ==========
-// Tree-style horizontal bracket: rounds as columns, converging to center
-// Left→Center←Right: R32 → R16 → QF → SF → Final ← SF ← QF ← R16 ← R32
+// 经典对阵图：用小半区独立树，嵌套div实现晋级卡槽自动居中
 
 function renderBracket(){
   const cont=document.getElementById('tab-bracket');
@@ -2911,41 +2907,16 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // Helper: render a match pair (home+away bslots)
-  const mp=(id,cls)=>`<div class="match-pair ${cls}">${renderBslot(id,(koSlot[id]||{}).home,'home',(koSlot[id]||{}).homeB3)}${renderBslot(id,(koSlot[id]||{}).away,'away',(koSlot[id]||{}).awayB3)}</div>`;
-
-  // ===== LEFT SIDE: Upper Half =====
-  html+=`<div class="bracket-side side-upper">`;
-
-  // R32 column — 8 matches, each 1 row (GREEN rows 0-3, BLUE rows 4-7)
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_73','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_79','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_77','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_76','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_80','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_81','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_83','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_84','')}</div>
-  </div>`;
-
-  // R16 column — 4 matches, each spans 2 rows
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16</div>
-    <div class="match-pair mp-gr16 gs-2">${mp('R16_U1A','')}</div>
-    <div class="match-pair mp-gr16 gs-2">${mp('R16_U1B','')}</div>
-    <div class="match-pair mp-br16 gs-2">${mp('R16_U2A','')}</div>
-    <div class="match-pair mp-br16 gs-2">${mp('R16_U2B','')}</div>
-  </div>`;
-
-  // -- QF column (2 slots, 2 Q-zones) --
-  // QF column
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8</div>
-    <div class="match-pair mp-gqf gs-4">${mp('QF_U1','')}</div>
-    <div class="match-pair mp-bqf gs-4">${mp('QF_U2','')}</div>
-  </div>`;
-
-  // SF column
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4</div><div class="match-pair mp-gsf gs-8">${buildSfSlot('SF_U')}</div></div>`;
+  // ===== 左大半区（绿色系背景）=====
+  html+=`<div class="bracket-half bracket-half-left">`;
+  // 左上小半区
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildHalfTree(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
+  html+=`</div>`;
+  // 左下小半区
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildHalfTree(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
+  html+=`</div>`;
   html+=`</div>`;
 
   // ===== CENTER: Finals =====
@@ -2964,45 +2935,22 @@ function renderBracket(){
     </div>
   </div>`;
 
-    // ===== RIGHT SIDE: Lower Half =====
-  html+=`<div class="bracket-side side-lower">`;
-
-  // SF column
-  html+=`<div class="bracket-col col-sf"><div class="col-head">4"></div><div class="match-pair mp-bsf gs-8">${buildSfSlot('SF_L')}</div></div>`;
-
-  // QF column
-  html+=`<div class="bracket-col col-qf"><div class="col-head">8"></div>
-    <div class="match-pair mp-gqf gs-4">${mp('QF_L1','')}</div>
-    <div class="match-pair mp-bqf gs-4">${mp('QF_L2','')}</div>
-  </div>`;
-
-  // R16 column
-  html+=`<div class="bracket-col col-r16"><div class="col-head">16"></div>
-    <div class="match-pair mp-gr16 gs-2">${mp('R16_L1A','')}</div>
-    <div class="match-pair mp-gr16 gs-2">${mp('R16_L1B','')}</div>
-    <div class="match-pair mp-br16 gs-2">${mp('R16_L2A','')}</div>
-    <div class="match-pair mp-br16 gs-2">${mp('R16_L2B','')}</div>
-  </div>`;
-
-  // R32 column
-  html+=`<div class="bracket-col col-r32"><div class="col-head">32"></div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_74','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_82','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_75','')}</div>
-    <div class="match-pair mp-gr32 gs-1">${mp('R32_78','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_87','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_88','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_86','')}</div>
-    <div class="match-pair mp-br32 gs-1">${mp('R32_85','')}</div>
-  </div>`;
-
-  html+=`</div>`; // .side-lower
+  // ===== 右大半区（镜像）=====
+  html+=`<div class="bracket-half bracket-half-right">`;
+  // 右上小半区
+  html+=`<div class="bracket-quad quad-upper">`;
+  html+=buildHalfTree(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
+  html+=`</div>`;
+  // 右下小半区
+  html+=`<div class="bracket-quad quad-lower">`;
+  html+=buildHalfTree(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
+  html+=`</div>`;
+  html+=`</div>`;
 
   html+='</div></div></div>';
   cont.innerHTML=html;
   bracketReset();
   setupBracketPan();
-  // 事件委托：点击 .b3-slot 打开最佳第三选择弹窗
   cont.querySelectorAll('.b3-slot').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -3011,16 +2959,59 @@ function renderBracket(){
   });
 }
 
-function buildSfSlot(slotId){
-  const data=koSlot[slotId];
-  if(!data||!data.home) {
-    // 始终渲染占位槽位，不隐藏
-    return `<div class="bslot"><span class="desc">TBD</span></div>
-            <div class="bslot"><span class="desc">TBD</span></div>`;
+// 构建一个小半区的树（4R32→2R16→1QF→1SF）
+// 返回的HTML结构：嵌套div，SF在最内层，自然居中
+function buildHalfTree(r32Ids,r16Ids,qfId,sfId){
+  // 从内到外嵌套：SF 包着 QF，QF 包着 R16，R16 包着 R32
+  // 这样 SF 的 div 高度 = QF 高度，自然居中
+
+  // R32 层（最外层，4场比赛）
+  const r32Html=r32Ids.map(id=>`<div class="tree-slot">${renderMatchCard(id)}</div>`).join('');
+
+  // R16 层（2场比赛，每场包着2场R32）
+  let r16Html='';
+  for(let i=0;i<r16Ids.length;i++){
+    const r16Id=r16Ids[i];
+    const childR32=r32Ids.slice(i*2,i*2+2);
+    const childR32Html=childR32.map(id=>`<div class="tree-slot">${renderMatchCard(id)}</div>`).join('');
+    r16Html+=`<div class="tree-pair">
+      <div class="tree-children">${childR32Html}</div>
+      <div class="tree-winner">${renderMatchCard(r16Id)}</div>
+    </div>`;
   }
-  let html='';
-  html+=renderBslot(slotId, data.home, 'home', data.homeB3);
-  html+=data.away ? renderBslot(slotId, data.away, 'away', data.awayB3) : '<div class="bslot"><span class="desc">TBD</span></div>';
+
+  // QF 层（1场比赛，包着2场R16）
+  const qfHtml=`<div class="tree-pair">
+    <div class="tree-children">${r16Html}</div>
+    <div class="tree-winner">${renderMatchCard(qfId)}</div>
+  </div>`;
+
+  // SF 层（1场比赛，包着1场QF）
+  const sfHtml=`<div class="tree-pair">
+    <div class="tree-children">${qfHtml}</div>
+    <div class="tree-winner">${renderSfCard(sfId)}</div>
+  </div>`;
+
+  return sfHtml;
+}
+
+// 渲染SF卡片（特殊处理，可能包含best-3rd）
+function renderSfCard(slotId){
+  const data=koSlot[slotId]||{};
+  let html=`<div class="bracket-match">`;
+  html+=renderBslot(slotId,data.home,'home',data.homeB3);
+  html+=renderBslot(slotId,data.away,'away',data.awayB3);
+  html+=`</div>`;
+  return html;
+}
+
+// 渲染一场比赛的卡片（包含两个队伍槽位）
+function renderMatchCard(slotId){
+  const data=koSlot[slotId]||{};
+  let html=`<div class="bracket-match">`;
+  html+=renderBslot(slotId,data.home,'home',data.homeB3);
+  html+=renderBslot(slotId,data.away,'away',data.awayB3);
+  html+=`</div>`;
   return html;
 }
 
