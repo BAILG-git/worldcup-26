@@ -206,15 +206,20 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   display:flex;align-items:center;justify-content:center;
   margin:1px 0;padding:2px 5px;
   border:1px dashed var(--border);border-radius:6px;
-  font-size:11px;min-height:24px;height:100%;
+  font-size:11px;
   background:rgba(22,27,34,.92);
 }
-.bk-slot.s1{grid-row:span 1;margin:6px 0}
-.bk-slot.s2{grid-row:span 2}
-.bk-slot.s4{grid-row:span 4}
-.bk-slot.s8{grid-row:span 8}
-.bk-slot.s16{grid-row:span 16}
-.bk-slot.winner{border:1.5px solid rgba(240,192,64,.25);background:rgba(240,192,64,.06);flex-direction:column}
+.bk-slot.s1{margin:6px 0;grid-row:span 1;height:16px;display:flex;align-items:center;justify-content:center}
+/* R32槽位：紧凑显示双方球队 */
+.r32-side{display:inline-flex;align-items:center;gap:1px;font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vs-sm{font-size:9px;color:var(--muted);margin:0 2px;flex-shrink:0}
+.t10{font-size:10px}
+.b3-inline{color:var(--gold);cursor:pointer;font-size:10px;text-decoration:underline}
+.bk-slot.s2{grid-row:span 2;min-height:52px;height:100%}
+.bk-slot.s4{grid-row:span 4;min-height:108px;height:100%}
+.bk-slot.s8{grid-row:span 8;min-height:220px;height:100%}
+/* winner用了flex-direction:column，需用justify-content控制垂直居中 */
+.bk-slot.winner{border:1.5px solid rgba(240,192,64,.25);background:rgba(240,192,64,.06);flex-direction:column;justify-content:center}
 .bk-slot .flag{font-size:13px;margin-right:3px}
 .bk-slot .team{font-weight:bold;color:var(--text);font-size:11px;line-height:1.2}
 .bk-slot .desc{color:var(--muted);font-size:9px}
@@ -2878,7 +2883,7 @@ function renderBracket(){
 
   // --- 左上半区 (8行×4列 Grid) ---
   html+=`<div class="bracket-sub bracket-sub-left-upper">`;
-  // 列1(外侧): R32 (8个s1, 每个占1行)
+  // 列1(外侧): R32 (8个, renderSlotHtml已内置b3支持)
   html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:1">`;
   [['R32_73',1],['R32_79',2],['R32_77',3],['R32_76',4],
    ['R32_80',5],['R32_81',6],['R32_83',7],['R32_84',8]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'',r); });
@@ -2991,62 +2996,46 @@ function renderBracket(){
 }
 
 
-function renderSlotHtml(slotId,extraCls,rowStart){
+function renderSlotHtml(slotId,extraCls,row){
   const data=koSlot[slotId]||{};
+  const b32=B32_DEF.find(x=>x.id===slotId)||{};
+  const isB3=slotId.startsWith('R32_')&&(b32.h==='3rd'||b32.a==='3rd');
   let cls='bk-slot '+extraCls;
-  if(data.home){ cls+=' filled'; }
-  const rowStyle = rowStart ? ` style="grid-row:${rowStart}"` : '';
+  // R32自动加s1类
+  if(slotId.startsWith('R32_')&&!cls.includes('s1')) cls+=' s1';
+  if(isB3) cls+=' b3-slot';
+  const dataAttr=isB3?` data-b3="${slotId}"`:'';
+  // grid-row style: row参数是行号(1-8)，extraCls里的sN是span值
+  let gridStyle='';
+  if(row) gridStyle=`style="grid-row:${row}"`;
+  else if(extraCls){
+    const m=extraCls.match(/s(\d+)/);
+    if(m) gridStyle=`style="grid-row:span ${m[1]}"`;
+  }
+  // R32：显示双方球队 + b3支持
+  if(slotId.startsWith('R32_')){
+    let body='';
+    const mk=(team,isB3Side)=>{
+      if(!team||team==='3rd') return `<span class="b3-inline" data-b3="${slotId}" onclick="openB3Picker('${slotId}')">📋3rd</span>`;
+      return `${flagImg(team,11)}<span class="t10">${tname(team)}</span>`;
+    };
+    const h=b32.h==='3rd'?(data.home||'3rd'):(data.home||'');
+    const a=b32.a==='3rd'?(data.away||'3rd'):(data.away||'');
+    body=`<span class="r32-side">${mk(h,b32.h==='3rd')}</span><span class="vs-sm">vs</span><span class="r32-side">${mk(a,b32.a==='3rd')}</span>`;
+    if(data.home&&data.home!=='3rd'&&data.away&&data.away!=='3rd') cls+=' filled';
+    return `<div class="${cls}"${dataAttr} ${gridStyle}>${body}</div>`;
+  }
+  // R16+：显示胜者
+  if(data.home&&data.home!=='3rd'){ cls+=' filled'; }
+  if(data.home==='3rd'){
+    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="b3-desc">📋 最佳第三</span></div>`;
+  }
   if(data.home){
-    return `<div class="${cls}"${rowStyle}><span class="flag">${flagImg(data.home,13)}</span><span class="team">${tname(data.home)}</span></div>`;
+    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="flag">${flagImg(data.home,13)}</span><span class="team">${tname(data.home)}</span></div>`;
   }
-  return `<div class="${cls}"${rowStyle}><span class="desc">TBD</span></div>`;
+  return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="desc">TBD</span></div>`;
 }
 
-function renderBslot(slotId, team, side, isB3) {
-  if (team === '3rd') {
-    // 最佳第三占位符：可点击选择
-    return `<div class="bslot b3-slot" data-b3="${slotId}" data-side="${side}" title="点击选择最佳第三">
-      <span class="b3-desc">📋 最佳第三</span>
-    </div>`;
-  }
-  if (team && team !== '3rd') {
-    if (isB3) {
-      // 已选的最佳第三：可点击修改/清除
-      return `<div class="bslot filled b3-slot filled-b3" data-b3="${slotId}" data-side="${side}" title="${tname(team)} ← 点击修改或清除">
-        <span class="slot-row">${flagImg(team, 16)}<span class="team">${tname(team)}</span><span class="b3-edit-icon">✎</span></span>
-      </div>`;
-    }
-    return `<div class="bslot filled"><span class="slot-row">${flagImg(team, 16)}<span class="team">${tname(team)}</span></span></div>`;
-  }
-  return `<div class="bslot"><span class="desc">-</span></div>`;
-}
-
-function buildRoundSlots(slots, round, half){
-  let html='';
-  const ROUND_LABELS = {r32:'32强', r16:'16强', qf:'8强', sf:'4强'};
-  slots.forEach((s,i)=>{
-    let slotId;
-    if(round==='r32'){
-      slotId=s.id;
-    }else if(s && typeof s==='object' && s.id){
-      slotId=s.id;
-    }else{
-      const h=half==='up'?'U':'L';
-      const seq=typeof s==='number'?s:i;
-      const prefix=round==='r16'?'R16':round==='qf'?'QF':round==='sf'?'SF':'';
-      slotId=`${prefix}_${h}${seq}`;
-    }
-    const data=koSlot[slotId];
-    if(data&&data.home){
-      html+=renderBslot(slotId, data.home, 'home', data.homeB3);
-      html+=renderBslot(slotId, data.away, 'away', data.awayB3);
-    }else{
-      html+=`<div class="bslot"><span class="desc">-</span></div>`;
-      html+=`<div class="bslot"><span class="desc">-</span></div>`;
-    }
-  });
-  return html;
-}
 
 // ========== BRACKET ZOOM & PAN ==========
 let bScale=1, bPanX=0, bPanY=0;
