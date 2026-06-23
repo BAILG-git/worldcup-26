@@ -2919,6 +2919,24 @@ function buildQuadGrid(r32Ids,r16Ids,qfId,sfId){
   return h;
 }
 
+// 镜像版：列序反转 SF->QF->R16->R32（用于右半区）
+function buildQuadGridMirror(r32Ids,r16Ids,qfId,sfId){
+  let h='';
+  h+=`<div class="bk-col">`; // SF (靠近决赛区)
+  h+=renderSlotHtml(sfId,'winner s8');
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // QF
+  h+=renderSlotHtml(qfId,'winner s4');
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // R16
+  r16Ids.forEach(id=>{ h+=renderSlotHtml(id,'winner s2'); });
+  h+=`</div>`;
+  h+=`<div class="bk-col">`; // R32 (最外侧)
+  r32Ids.forEach(id=>{ h+=renderSlotHtml(id,''); });
+  h+=`</div>`;
+  return h;
+}
+
 function renderSlotHtml(slotId,extraCls){
   const data=koSlot[slotId]||{};
   let cls='bk-slot '+extraCls;
@@ -2970,13 +2988,13 @@ function renderBracket(){
 
   // ===== 右大半区（镜像）=====
   html+=`<div class="bracket-half bracket-half-right">`;
-  // 右上小半区（绿）
+  // 右上小半区（绿）— 镜像
   html+=`<div class="bracket-quad quad-upper">`;
-  html+=buildQuadGrid(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
+  html+=buildQuadGridMirror(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
   html+=`</div>`;
-  // 右下小半区（蓝）
+  // 右下小半区（蓝）— 镜像
   html+=`<div class="bracket-quad quad-lower">`;
-  html+=buildQuadGrid(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
+  html+=buildQuadGridMirror(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
   html+=`</div>`;
   html+=`</div>`;
 
