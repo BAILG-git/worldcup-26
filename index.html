@@ -2942,43 +2942,41 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // ===== 左大半区（绿色系背景）=====
+  // ===== 左大半区 =====
   html+=`<div class="bracket-half bracket-half-left">`;
-  // 左上小半区
+  // 左上小半区（绿）
   html+=`<div class="bracket-quad quad-upper">`;
-  html+=buildHalfTree(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
+  html+=buildQuadGrid(['R32_73','R32_79','R32_77','R32_76'],['R16_U1A','R16_U1B'],'QF_U1','SF_U');
   html+=`</div>`;
-  // 左下小半区
+  // 左下小半区（蓝）
   html+=`<div class="bracket-quad quad-lower">`;
-  html+=buildHalfTree(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
+  html+=buildQuadGrid(['R32_80','R32_81','R32_83','R32_84'],['R16_U2A','R16_U2B'],'QF_U2','SF_U');
   html+=`</div>`;
   html+=`</div>`;
 
-  // ===== CENTER: Finals =====
-  const finalData=koSlot['FINAL']||{};
-  const thirdData=koSlot['THIRD']||{};
+  // ===== CENTER: Finals (单胜者槽) =====
+  const finalWinner=getKoWinner('FINAL');
+  const thirdWinner=getKoWinner('THIRD');
   html+=`<div class="bracket-center">
-    <div class="final-box third${thirdData.home?' filled':''}">
+    <div class="final-box third${thirdWinner?' filled':''}">
       <div class="f-title">季殿军赛</div>
-      <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
-      <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${thirdWinner?' filled':''}">${thirdWinner?'<span class="slot-row">'+flagImg(thirdWinner,15)+' <span class="team">'+tname(thirdWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
-    <div class="final-box champion${finalData.home?' filled':''}">
+    <div class="final-box champion${finalWinner?' filled':''}">
       <div class="f-title">冠亚军决赛</div>
-      <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
-      <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${finalWinner?' filled':''}">${finalWinner?'<span class="slot-row">'+flagImg(finalWinner,15)+' <span class="team">'+tname(finalWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
   </div>`;
 
   // ===== 右大半区（镜像）=====
   html+=`<div class="bracket-half bracket-half-right">`;
-  // 右上小半区
+  // 右上小半区（绿）
   html+=`<div class="bracket-quad quad-upper">`;
-  html+=buildHalfTree(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
+  html+=buildQuadGrid(['R32_74','R32_82','R32_75','R32_78'],['R16_L1A','R16_L1B'],'QF_L1','SF_L');
   html+=`</div>`;
-  // 右下小半区
+  // 右下小半区（蓝）
   html+=`<div class="bracket-quad quad-lower">`;
-  html+=buildHalfTree(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
+  html+=buildQuadGrid(['R32_87','R32_88','R32_86','R32_85'],['R16_L2A','R16_L2B'],'QF_L2','SF_L');
   html+=`</div>`;
   html+=`</div>`;
 
