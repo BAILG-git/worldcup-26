@@ -194,14 +194,6 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   border-radius:12px;padding:6px 4px;
   flex:none;
 }
-/* 左上半区：绿 */
-.bracket-sub-left-upper{background:rgba(76,175,80,.07)}
-/* 左下半区：红 */
-.bracket-sub-left-lower{background:rgba(220,53,69,.06)}
-/* 右上半区：浅蓝 */
-.bracket-sub-right-upper{background:rgba(33,150,243,.08)}
-/* 右下半区：浅黄 */
-.bracket-sub-right-lower{background:rgba(255,193,7,.06)}
 .bk-slot{
   display:flex;align-items:center;justify-content:center;
   margin:1px 0;padding:2px 5px;
@@ -209,8 +201,8 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   font-size:11px;
   background:rgba(22,27,34,.92);
 }
-.bk-slot.s1{margin:6px 0;grid-row:span 1;height:16px;display:flex;align-items:center;justify-content:center}
-/* R32槽位：紧凑显示双方球队 */
+.bk-slot.s1{margin:6px 0;}
+/* R32单队伍槽位：紧凑高度 */
 .r32-side{display:inline-flex;align-items:center;gap:1px;font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vs-sm{font-size:9px;color:var(--muted);margin:0 2px;flex-shrink:0}
 .t10{font-size:10px}
@@ -1793,55 +1785,93 @@ loadScores();
 loadCompletedFromServer();
 
 // ========== KNOCKOUT SYSTEM — 用户自定义对阵 ==========
-// 上半区: QF_U1 + QF_U2 → SF_U
+// 左半区: QF_L1 + QF_L2 → SF_L  右半区: QF_R1 + QF_R2 → SF_R
 // 下半区: QF_L1 + QF_L2 → SF_L
 
+// R32落位表：每个槽位只有一支队伍
+// 左半区 = 用户表格第一列（从上到下，共16槽）
+// 右半区 = 用户表格第二列（从上到下，共16槽）
+// h="3rd" = 最佳小组第三（3X），支持点击选择
+// q = 胜者晋级的下一轮槽位ID
 const B32_DEF = [
-  // ===== 上半区 QF_U1 =====
-  {id:"R32_73",h:"1E",a:"3rd",q:"Q3"}, // E1 vs 3rd
-  {id:"R32_79",h:"1I",a:"3rd",q:"Q2"}, // I1 vs 3rd
-  {id:"R32_77",h:"2A",a:"2B", q:"Q1"}, // A2 vs B2
-  {id:"R32_76",h:"1F",a:"2C", q:"Q3"}, // F1 vs C2
-  // ===== 上半区 QF_U2 =====
-  {id:"R32_80",h:"1D",a:"3rd",q:"Q2"}, // D1 vs 3rd
-  {id:"R32_81",h:"1G",a:"3rd",q:"Q3"}, // G1 vs 3rd
-  {id:"R32_83",h:"2K",a:"2L", q:"Q4"}, // K2 vs L2
-  {id:"R32_84",h:"1H",a:"2J", q:"Q4"}, // H1 vs J2
-  // ===== 下半区 QF_L1 =====
-  {id:"R32_74",h:"1A",a:"3rd",q:"Q1"}, // A1 vs 3rd
-  {id:"R32_82",h:"1L",a:"3rd",q:"Q4"}, // L1 vs 3rd
-  {id:"R32_75",h:"1C",a:"2F", q:"Q1"}, // C1 vs F2
-  {id:"R32_78",h:"2E",a:"2I", q:"X"},  // E2 vs I2
-  // ===== 下半区 QF_L2 =====
-  {id:"R32_87",h:"1B",a:"3rd",q:"Q1"}, // B1 vs 3rd
-  {id:"R32_88",h:"1K",a:"3rd",q:"Q2"}, // K1 vs 3rd
-  {id:"R32_86",h:"1J",a:"2H", q:"Q4"}, // J1 vs H2
-  {id:"R32_85",h:"2D",a:"2G", q:"X"},  // D2 vs G2
+  // ===== 左半区 R32槽位（从上到下，共16槽）=====
+  {id:"R32_L01", h:"1E",  q:"R16_L01"},
+  {id:"R32_L02", h:"3rd", q:"R16_L01"},
+  {id:"R32_L03", h:"1I",  q:"R16_L02"},
+  {id:"R32_L04", h:"3rd", q:"R16_L02"},
+  {id:"R32_L05", h:"2A",  q:"R16_L03"},
+  {id:"R32_L06", h:"2B",  q:"R16_L03"},
+  {id:"R32_L07", h:"1F",  q:"R16_L04"},
+  {id:"R32_L08", h:"2C",  q:"R16_L04"},
+  {id:"R32_L09", h:"2K",  q:"R16_L05"},
+  {id:"R32_L10", h:"2L",  q:"R16_L05"},
+  {id:"R32_L11", h:"1H",  q:"R16_L06"},
+  {id:"R32_L12", h:"2J",  q:"R16_L06"},
+  {id:"R32_L13", h:"1D",  q:"R16_L07"},
+  {id:"R32_L14", h:"3rd", q:"R16_L07"},
+  {id:"R32_L15", h:"1G",  q:"R16_L08"},
+  {id:"R32_L16", h:"3rd", q:"R16_L08"},
+  // ===== 右半区 R32槽位（从上到下，共16槽）=====
+  {id:"R32_R01", h:"1C",  q:"R16_R01"},
+  {id:"R32_R02", h:"2F",  q:"R16_R01"},
+  {id:"R32_R03", h:"2E",  q:"R16_R02"},
+  {id:"R32_R04", h:"2I",  q:"R16_R02"},
+  {id:"R32_R05", h:"1A",  q:"R16_R03"},
+  {id:"R32_R06", h:"3rd", q:"R16_R03"},
+  {id:"R32_R07", h:"1L",  q:"R16_R04"},
+  {id:"R32_R08", h:"3rd", q:"R16_R04"},
+  {id:"R32_R09", h:"1J",  q:"R16_R05"},
+  {id:"R32_R10", h:"2H",  q:"R16_R05"},
+  {id:"R32_R11", h:"2D",  q:"R16_R06"},
+  {id:"R32_R12", h:"2G",  q:"R16_R06"},
+  {id:"R32_R13", h:"1B",  q:"R16_R07"},
+  {id:"R32_R14", h:"3rd", q:"R16_R07"},
+  {id:"R32_R15", h:"1K",  q:"R16_R08"},
+  {id:"R32_R16", h:"3rd", q:"R16_R08"},
 ];
 
-// 晋级树: R32(16场) → R16(8场) → QF(4场) → SF(2场) → FINAL
+// 晋级树: R32(32队,16场) → R16(16队,8场) → QF(8队,4场) → SF(4队,2场) → FINAL(2队,1场)
+// 规则：相邻两个R32槽位的胜者晋级同一个R16槽位
+//       相邻两个R16槽位的胜者晋级同一个QF槽位，以此类推
 const NEXT = {
-  // QF_U1 路径
-  R32_73:"R16_U1A",R32_79:"R16_U1A",
-  R32_77:"R16_U1B",R32_76:"R16_U1B",
-  R16_U1A:"QF_U1",R16_U1B:"QF_U1",
-  // QF_U2 路径
-  R32_80:"R16_U2A",R32_81:"R16_U2A",
-  R32_83:"R16_U2B",R32_84:"R16_U2B",
-  R16_U2A:"QF_U2",R16_U2B:"QF_U2",
-  // QF_L1 路径
-  R32_74:"R16_L1A",R32_82:"R16_L1A",
-  R32_75:"R16_L1B",R32_78:"R16_L1B",
-  R16_L1A:"QF_L1",R16_L1B:"QF_L1",
-  // QF_L2 路径
-  R32_87:"R16_L2A",R32_88:"R16_L2A",
-  R32_86:"R16_L2B",R32_85:"R16_L2B",
-  R16_L2A:"QF_L2",R16_L2B:"QF_L2",
+  // ===== 左半区 =====
+  // R32 → R16（槽1vs槽2胜者进R16_L01，槽3vs槽4胜者进R16_L02...）
+  R32_L01:"R16_L01", R32_L02:"R16_L01",
+  R32_L03:"R16_L02", R32_L04:"R16_L02",
+  R32_L05:"R16_L03", R32_L06:"R16_L03",
+  R32_L07:"R16_L04", R32_L08:"R16_L04",
+  R32_L09:"R16_L05", R32_L10:"R16_L05",
+  R32_L11:"R16_L06", R32_L12:"R16_L06",
+  R32_L13:"R16_L07", R32_L14:"R16_L07",
+  R32_L15:"R16_L08", R32_L16:"R16_L08",
+  // R16 → QF
+  R16_L01:"QF_L01", R16_L02:"QF_L01",
+  R16_L03:"QF_L02", R16_L04:"QF_L02",
+  R16_L05:"QF_L03", R16_L06:"QF_L03",
+  R16_L07:"QF_L04", R16_L08:"QF_L04",
   // QF → SF
-  QF_U1:"SF_U",QF_U2:"SF_U",
-  QF_L1:"SF_L",QF_L2:"SF_L",
+  QF_L01:"SF_L", QF_L02:"SF_L",
+  QF_L03:"SF_L", QF_L04:"SF_L",
+  // ===== 右半区 =====
+  // R32 → R16
+  R32_R01:"R16_R01", R32_R02:"R16_R01",
+  R32_R03:"R16_R02", R32_R04:"R16_R02",
+  R32_R05:"R16_R03", R32_R06:"R16_R03",
+  R32_R07:"R16_R04", R32_R08:"R16_R04",
+  R32_R09:"R16_R05", R32_R10:"R16_R05",
+  R32_R11:"R16_R06", R32_R12:"R16_R06",
+  R32_R13:"R16_R07", R32_R14:"R16_R07",
+  R32_R15:"R16_R08", R32_R16:"R16_R08",
+  // R16 → QF
+  R16_R01:"QF_R01", R16_R02:"QF_R01",
+  R16_R03:"QF_R02", R16_R04:"QF_R02",
+  R16_R05:"QF_R03", R16_R06:"QF_R03",
+  R16_R07:"QF_R04", R16_R08:"QF_R04",
+  // QF → SF
+  QF_R01:"SF_R", QF_R02:"SF_R",
+  QF_R03:"SF_R", QF_R04:"SF_R",
   // SF → FINAL
-  SF_U:"FINAL",SF_L:"FINAL",
+  SF_L:"FINAL", SF_R:"FINAL",
 };
 // knockout scores: { "R32_1": [2,1], "R16_U1": [3,0], ... }
 let koScores = {};
@@ -1850,7 +1880,7 @@ let koWinner = {};
 // slot display data: { "R32_1": {home:"巴西", away:"德国"}, ... }
 let koSlot = {};
 
-// 最佳第三用户选择: { "R32_73": "乌拉圭", ... }
+// 最佳第三用户选择: { "R32_L02": "乌拉圭", ... }
 let b3Selections = {};
 function loadB3Selections() {
   try {
@@ -1932,18 +1962,19 @@ function getThirdForWinner(wGroup, top8) {
 }
 
 function assignThirds(q, defs) {
-  const top8 = q._top8; // 晋级的8个小组字母(已按排名排序)
+  const top8 = q._top8;
   const used = [];
   const usedGroups = new Set();
-  // 收集所有 WvT 槽位（共8个）
-  const wvtSlots = defs.filter(d => d.h === '3rd' || d.a === '3rd');
-  // 逐个分配：每槽找1个不在同Q区的外来第三名
-  for (const d of wvtSlots) {
+  // 收集所有3rd槽位
+  const b3Slots = defs.filter(d => d.h === '3rd');
+  // 逐个分配
+  for (const d of b3Slots) {
     if (usedGroups.size >= 8) break;
-    const wGroup = d.h === '3rd' ? d.a[1] : d.h[1];
+    // 从q字段推断同区组(如 R16_L1A → L)
+    const qZone = (d.q || '')[4] || '';
     const available = top8.filter(g => !usedGroups.has(g));
     if (available.length === 0) break;
-    const thirdGroup = getThirdForWinner(wGroup, available);
+    const thirdGroup = getThirdForWinner(qZone, available);
     used.push({ group: thirdGroup, slotId: d.id });
     usedGroups.add(thirdGroup);
   }
@@ -1967,8 +1998,8 @@ function fillBracket() {
       if (groupRows && groupRows[pos]) return { team: groupRows[pos].team, isB3: false };
       return { team: code, isB3: false };
     };
-    const h = resolveTeam(d.h), a = resolveTeam(d.a);
-    koSlot[d.id] = { home: h.team, away: a.team, homeB3: h.isB3, awayB3: a.isB3 };
+    const h = resolveTeam(d.h);
+    koSlot[d.id] = { home: h.team, homeB3: h.isB3 };
   }
   if (currentTab === 'bracket') renderBracket();
 }
@@ -1979,11 +2010,8 @@ function openB3Picker(slotId) {
   _b3PendingSlot = slotId;
   const standings = calcStandings();
   const thirds = calcBestThirds(standings);
-  const slot = B32_DEF.find(d => d.id === slotId);
-  const side = slot ? (slot.a === '3rd' ? 'a' : (slot.h === '3rd' ? 'h' : '?')) : '?';
   const currentTeam = b3Selections[slotId] || '';
-  document.getElementById('b3PickerTitle').textContent =
-    side === 'a' ? `选择客队最佳第三 (${slotId})` : `选择主队最佳第三 (${slotId})`;
+  document.getElementById('b3PickerTitle').textContent = `选择最佳第三 (${slotId})`;
   let usedTeams = [];
   for (const [sid, t] of Object.entries(b3Selections)) {
     if (sid !== slotId) usedTeams.push(t);
@@ -2061,17 +2089,17 @@ function propagateKnockout() {
   }
   // SF losers → 季军赛
   const sfLosers = {};
-  for (const sfId of ['SF_U', 'SF_L']) {
+  for (const sfId of ['SF_L', 'SF_R']) {
     const s = koScores[sfId];
     const slot = koSlot[sfId];
     if (!s || s[0]===null || !slot) continue;
     if (s[0] < s[1]) sfLosers[sfId] = slot.home;
     else if (s[1] < s[0]) sfLosers[sfId] = slot.away;
   }
-  if (sfLosers.SF_U || sfLosers.SF_L) {
+  if (sfLosers.SF_L || sfLosers.SF_R) {
     koSlot['THIRD'] = koSlot['THIRD'] || {};
-    if (sfLosers.SF_U) koSlot['THIRD'].home = sfLosers.SF_U;
-    if (sfLosers.SF_L) koSlot['THIRD'].away = sfLosers.SF_L;
+    if (sfLosers.SF_L) koSlot['THIRD'].home = sfLosers.SF_L;
+    if (sfLosers.SF_R) koSlot['THIRD'].away = sfLosers.SF_R;
   }
 }
 
@@ -2878,54 +2906,20 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // ===== 左半区：左上+左下 两个子区（列序：R32外→R16→QF→SF内）=====
+  // ===== 左半区：16个R32落位槽（1列×16行）=====
+  // 从B32_DEF取左半区（id.startsWith('R32_L')），按id排序保证顺序
+  const leftSlots=B32_DEF.filter(d=>d.id.startsWith('R32_L')).sort((a,b)=>a.id.localeCompare(b.id));
   html+=`<div class="bracket-half">`;
-
-  // --- 左上半区 (8行×4列 Grid) ---
-  html+=`<div class="bracket-sub bracket-sub-left-upper">`;
-  // 列1(外侧): R32 (8个, renderSlotHtml已内置b3支持)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:1">`;
-  [['R32_73',1],['R32_79',2],['R32_77',3],['R32_76',4],
-   ['R32_80',5],['R32_81',6],['R32_83',7],['R32_84',8]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'',r); });
+  html+=`<div class="bracket-sub">`;
+  html+=`<div style="display:grid;grid-template-rows:repeat(16,28px);grid-column:1">`;
+  leftSlots.forEach((d,idx)=>{
+    html+=renderSlotHtml(d.id,'',idx+1);
+  });
   html+=`</div>`;
-  // 列2: R16 (4个s2, 各占2行: 1-2,3-4,5-6,7-8)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:2">`;
-  [['R16_U1A',1],['R16_U1B',3],['R16_U2A',5],['R16_U2B',7]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s2',r); });
-  html+=`</div>`;
-  // 列3: QF (2个s4, 各占4行: 1-4,5-8)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:3">`;
-  [['QF_U1',1],['QF_U2',5]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s4',r); });
-  html+=`</div>`;
-  // 列4(内侧): SF (s8 占全8行, 从第1行开始)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:4">`;
-  html+=renderSlotHtml('SF_U','winner s8',1);
-  html+=`</div>`;
-  html+=`</div>`; // end 左上半区
-
-  // --- 左下半区 (8行×4列 Grid) ---
-  html+=`<div class="bracket-sub bracket-sub-left-lower">`;
-  // 列1(外侧): R32
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:1">`;
-  [['R32_74',1],['R32_82',2],['R32_75',3],['R32_78',4],
-   ['R32_87',5],['R32_88',6],['R32_86',7],['R32_85',8]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'',r); });
-  html+=`</div>`;
-  // 列2: R16
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:2">`;
-  [['R16_L1A',1],['R16_L1B',3],['R16_L2A',5],['R16_L2B',7]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s2',r); });
-  html+=`</div>`;
-  // 列3: QF
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:3">`;
-  [['QF_L1',1],['QF_L2',5]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s4',r); });
-  html+=`</div>`;
-  // 列4(内侧): SF
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:4">`;
-  html+=renderSlotHtml('SF_U','winner s8',1);
-  html+=`</div>`;
-  html+=`</div>`; // end 左下半区
-
+  html+=`</div>`; // end bracket-sub
   html+=`</div>`; // end 左半区
 
-  // ===== CENTER: Finals (single winner slot each) =====
+  // ===== CENTER: Finals =====
   const finalWinner=getKoWinner('FINAL');
   const thirdWinner=getKoWinner('THIRD');
   html+=`<div class="bracket-center">
@@ -2939,51 +2933,16 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== 右半区：右上+右下 两个子区（镜像列序：SF内→QF→R16→R32外）=====
+  // ===== 右半区：16个R32落位槽（1列×16行）=====
+  const rightSlots=B32_DEF.filter(d=>d.id.startsWith('R32_R')).sort((a,b)=>a.id.localeCompare(b.id));
   html+=`<div class="bracket-half">`;
-
-  // --- 右上半区 (镜像：SF→QF→R16→R32) ---
-  html+=`<div class="bracket-sub bracket-sub-right-upper">`;
-  // 列1(内侧): SF (s8 全高)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:1">`;
-  html+=renderSlotHtml('SF_L','winner s8',1);
+  html+=`<div class="bracket-sub">`;
+  html+=`<div style="display:grid;grid-template-rows:repeat(16,28px);grid-column:1">`;
+  rightSlots.forEach((d,idx)=>{
+    html+=renderSlotHtml(d.id,'',idx+1);
+  });
   html+=`</div>`;
-  // 列2: QF (2个s4)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:2">`;
-  [['QF_L1',1],['QF_L2',5]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s4',r); });
-  html+=`</div>`;
-  // 列3: R16 (4个s2)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:3">`;
-  [['R16_L1A',1],['R16_L1B',3],['R16_L2A',5],['R16_L2B',7]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s2',r); });
-  html+=`</div>`;
-  // 列4(外侧): R32 (8个s1)
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:4">`;
-  [['R32_74',1],['R32_82',2],['R32_75',3],['R32_78',4],
-   ['R32_87',5],['R32_88',6],['R32_86',7],['R32_85',8]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'',r); });
-  html+=`</div>`;
-  html+=`</div>`; // end 右上半区
-
-  // --- 右下半区 (镜像：SF→QF→R16→R32) ---
-  html+=`<div class="bracket-sub bracket-sub-right-lower">`;
-  // 列1(内侧): SF
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:1">`;
-  html+=renderSlotHtml('SF_L','winner s8',1);
-  html+=`</div>`;
-  // 列2: QF
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:2">`;
-  [['QF_U1',1],['QF_U2',5]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s4',r); });
-  html+=`</div>`;
-  // 列3: R16
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:3">`;
-  [['R16_U1A',1],['R16_U1B',3],['R16_U2A',5],['R16_U2B',7]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'winner s2',r); });
-  html+=`</div>`;
-  // 列4(外侧): R32
-  html+=`<div style="display:grid;grid-template-rows:repeat(8,28px);grid-column:4">`;
-  [['R32_73',1],['R32_79',2],['R32_77',3],['R32_76',4],
-   ['R32_80',5],['R32_81',6],['R32_83',7],['R32_84',8]].forEach(([id,r])=>{ html+=renderSlotHtml(id,'',r); });
-  html+=`</div>`;
-  html+=`</div>`; // end 右下半区
-
+  html+=`</div>`; // end bracket-sub
   html+=`</div>`; // end 右半区
 
   html+='</div></div></div>';
@@ -2999,33 +2958,37 @@ function renderBracket(){
 function renderSlotHtml(slotId,extraCls,row){
   const data=koSlot[slotId]||{};
   const b32=B32_DEF.find(x=>x.id===slotId)||{};
-  const isB3=slotId.startsWith('R32_')&&(b32.h==='3rd'||b32.a==='3rd');
+  // isB3Def: 这个R32槽位是否是3X（最佳第三占位）
+  const isB3Def=slotId.startsWith('R32_')&&b32.h==='3rd';
+  // team: 这个槽位当前显示的队伍（从koSlot读取，R32槽位存在data.home里）
+  const team=data.home||'';
+  // needsB3: 这个槽位需要用户点击选择最佳第三
+  const needsB3=(!team||team==='3rd')&&isB3Def;
   let cls='bk-slot '+extraCls;
-  // R32自动加s1类
+  // R32自动加s1类（单队伍紧凑样式）
   if(slotId.startsWith('R32_')&&!cls.includes('s1')) cls+=' s1';
-  if(isB3) cls+=' b3-slot';
-  const dataAttr=isB3?` data-b3="${slotId}"`:'';
-  // grid-row style: row参数是行号(1-8)，extraCls里的sN是span值
+  // 只有真正需要最佳第三选择时才加b3-slot类
+  if(needsB3) cls+=' b3-slot';
+  const dataAttr=needsB3?` data-b3="${slotId}"`:'';
+  // grid-row style
   let gridStyle='';
   if(row) gridStyle=`style="grid-row:${row}"`;
   else if(extraCls){
     const m=extraCls.match(/s(\d+)/);
     if(m) gridStyle=`style="grid-row:span ${m[1]}"`;
   }
-  // R32：显示双方球队 + b3支持
+  // R32槽位：只显示一个队伍（单队伍落位）
   if(slotId.startsWith('R32_')){
-    let body='';
-    const mk=(team,isB3Side)=>{
-      if(!team||team==='3rd') return `<span class="b3-inline" data-b3="${slotId}" onclick="openB3Picker('${slotId}')">📋3rd</span>`;
-      return `${flagImg(team,11)}<span class="t10">${tname(team)}</span>`;
-    };
-    const h=b32.h==='3rd'?(data.home||'3rd'):(data.home||'');
-    const a=b32.a==='3rd'?(data.away||'3rd'):(data.away||'');
-    body=`<span class="r32-side">${mk(h,b32.h==='3rd')}</span><span class="vs-sm">vs</span><span class="r32-side">${mk(a,b32.a==='3rd')}</span>`;
-    if(data.home&&data.home!=='3rd'&&data.away&&data.away!=='3rd') cls+=' filled';
-    return `<div class="${cls}"${dataAttr} ${gridStyle}>${body}</div>`;
+    if(team&&team!=='3rd'){ cls+=' filled'; }
+    if(team==='3rd'||(!team&&isB3Def)){
+      return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="b3-desc">📋 最佳第三</span></div>`;
+    }
+    if(team){
+      return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="flag">${flagImg(team,13)}</span><span class="team">${tname(team)}</span></div>`;
+    }
+    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="desc">TBD</span></div>`;
   }
-  // R16+：显示胜者
+  // R16+晋级槽：显示胜者（存在data.home里）
   if(data.home&&data.home!=='3rd'){ cls+=' filled'; }
   if(data.home==='3rd'){
     return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="b3-desc">📋 最佳第三</span></div>`;
