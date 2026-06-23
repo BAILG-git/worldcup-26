@@ -200,16 +200,16 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* 树结构：嵌套div，晋级卡槽(tree-winner)自动居中在子节点(tree-children)之间 */
 .tree-pair{
-  display:flex;flex-direction:row;align-items:center;
-  min-height:40px;
+  display:flex;flex-direction:row;
 }
 .tree-children{
-  display:flex;flex-direction:column;justify-content:center;
-  flex:1;
+  display:flex;flex-direction:column;justify-content:flex-start;
+  gap:0;
 }
 .tree-winner{
-  display:flex;align-items:center;justify-content:center;
-  flex:0 0 auto;padding:0 4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  align-self:stretch;padding:0 6px;
+  min-height:40px;
 }
 .tree-slot{
   padding:2px 0;
