@@ -177,31 +177,31 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 /* ========== TREE BRACKET ========== */
 .tree-bracket{
-  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;
   justify-content:center;gap:10px;padding:20px 10px;min-width:1400px;
 }
-/* 每个大半区 = 1个大Grid(16行×4列)，上半区绿/下半区红 */
+/* 每个大半区 = 两个子区上下堆叠（flex列） */
 .bracket-half{
+  display:flex;flex-direction:column;gap:6px;
+  flex:none;align-self:flex-start;
+}
+/* 子区 = 8行×4列 Grid */
+.bracket-sub{
   display:grid;
-  grid-template-rows:repeat(16,1fr);
+  grid-template-rows:repeat(8,1fr);
   grid-template-columns:repeat(4,95px);
   gap:0 5px;
-  align-self:stretch;
-  border-radius:12px;
-  padding:6px 4px;
+  border-radius:12px;padding:6px 4px;
+  flex:none;
 }
-/* 左大半区：上8行绿 下8行红 */
-.bracket-half-left{
-  background:linear-gradient(180deg,
-    rgba(76,175,80,.07) 0%, rgba(76,175,80,.07) 50%,
-    rgba(220,53,69,.06) 50%, rgba(220,53,69,.06) 100%);
-}
-/* 右大半区：上8行浅蓝 下8行浅黄 */
-.bracket-half-right{
-  background:linear-gradient(180deg,
-    rgba(33,150,243,.08) 0%, rgba(33,150,243,.08) 50%,
-    rgba(255,193,7,.06) 50%, rgba(255,193,7,.06) 100%);
-}
+/* 左上半区：绿 */
+.bracket-sub-left-upper{background:rgba(76,175,80,.07)}
+/* 左下半区：红 */
+.bracket-sub-left-lower{background:rgba(220,53,69,.06)}
+/* 右上半区：浅蓝 */
+.bracket-sub-right-upper{background:rgba(33,150,243,.08)}
+/* 右下半区：浅黄 */
+.bracket-sub-right-lower{background:rgba(255,193,7,.06)}
 .bk-slot{
   display:flex;align-items:center;justify-content:center;
   margin:2px 0;padding:2px 5px;
@@ -2873,29 +2873,50 @@ function renderBracket(){
   html+='<div class="bracket-canvas" id="bracketCanvas">';
   html+='<div class="tree-bracket">';
 
-  // ===== 左大半区（16行×4列 Grid）=====
-  html+=`<div class="bracket-half bracket-half-left">`;
-  // 列1: R32 (16个s1)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:1">`;
-  ['R32_73','R32_79','R32_77','R32_76',
-   'R32_80','R32_81','R32_83','R32_84',
-   'R32_74','R32_82','R32_75','R32_78',
-   'R32_87','R32_88','R32_86','R32_85'].forEach(id=>{ html+=renderSlotHtml(id,''); });
+  // ===== 左半区：左上+左下 两个子区（列序：R32外→R16→QF→SF内）=====
+  html+=`<div class="bracket-half">`;
+
+  // --- 左上半区 (8行×4列 Grid) ---
+  html+=`<div class="bracket-sub bracket-sub-left-upper">`;
+  // 列1(外侧): R32 (8个s1)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  ['R32_73','R32_79','R32_77','R32_76','R32_80','R32_81','R32_83','R32_84'].forEach(id=>{ html+=renderSlotHtml(id,''); });
   html+=`</div>`;
-  // 列2: R16 (8个s2)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:2">`;
-  ['R16_U1A','R16_U1B','R16_U2A','R16_U2B',
-   'R16_L1A','R16_L1B','R16_L2A','R16_L2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  // 列2: R16 (4个s2)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  ['R16_U1A','R16_U1B','R16_U2A','R16_U2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
   html+=`</div>`;
-  // 列3: QF (4个s4)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:3">`;
-  ['QF_U1','QF_U2','QF_L1','QF_L2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
+  // 列3: QF (2个s4)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  ['QF_U1','QF_U2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
   html+=`</div>`;
-  // 列4: SF (s16 跨全高居中)
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,1fr);grid-column:4">`;
-  html+=renderSlotHtml('SF_U','winner s16');
+  // 列4(内侧): SF (s8 跨全高)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  html+=renderSlotHtml('SF_U','winner s8');
   html+=`</div>`;
+  html+=`</div>`; // end 左上半区
+
+  // --- 左下半区 (8行×4列 Grid) ---
+  html+=`<div class="bracket-sub bracket-sub-left-lower">`;
+  // 列1(外侧): R32 (8个s1)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
+  ['R32_74','R32_82','R32_75','R32_78','R32_87','R32_88','R32_86','R32_85'].forEach(id=>{ html+=renderSlotHtml(id,''); });
   html+=`</div>`;
+  // 列2: R16 (4个s2)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
+  ['R16_L1A','R16_L1B','R16_L2A','R16_L2B'].forEach(id=>{ html+=renderSlotHtml(id,'winner s2'); });
+  html+=`</div>`;
+  // 列3: QF (2个s4)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:3">`;
+  ['QF_L1','QF_L2'].forEach(id=>{ html+=renderSlotHtml(id,'winner s4'); });
+  html+=`</div>`;
+  // 列4(内侧): SF (s8 跨全高，左下半区也指向SF_U)
+  html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:4">`;
+  html+=renderSlotHtml('SF_U','winner s8');
+  html+=`</div>`;
+  html+=`</div>`; // end 左下半区
+
+  html+=`</div>`; // end 左半区
 
   // ===== CENTER: Finals (single winner slot each) =====
   const finalWinner=getKoWinner('FINAL');
@@ -2911,11 +2932,11 @@ function renderBracket(){
     </div>
   </div>`;
 
-  // ===== 右半区：两个小半区上下堆叠（镜像列序：SF内→QF→R16→R32外）=====
-  html+=`<div class="bracket-half bracket-half-right" style="display:flex;flex-direction:column;gap:8px;">`;
+  // ===== 右半区：右上+右下 两个子区（镜像列序：SF内→QF→R16→R32外）=====
+  html+=`<div class="bracket-half">`;
 
-  // --- 右上半区 (8行×4列 Grid) ---
-  html+=`<div class="bracket-sub" style="display:grid;grid-template-rows:repeat(8,1fr);grid-template-columns:repeat(4,95px);gap:0 5px;padding:6px 4px;border-radius:12px;background:linear-gradient(180deg,rgba(33,150,243,.08) 0%,rgba(33,150,243,.04) 100%);flex:1;min-height:0)">`;
+  // --- 右上半区 (镜像：SF→QF→R16→R32) ---
+  html+=`<div class="bracket-sub bracket-sub-right-upper">`;
   // 列1(内侧): SF
   html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
   html+=renderSlotHtml('SF_L','winner s8');
@@ -2934,12 +2955,11 @@ function renderBracket(){
   html+=`</div>`;
   html+=`</div>`; // end 右上半区
 
-  // --- 右下半区 (8行×4列 Grid) ---
-  html+=`<div class="bracket-sub" style="display:grid;grid-template-rows:repeat(8,1fr);grid-template-columns:repeat(4,95px);gap:0 5px;padding:6px 4px;border-radius:12px;background:linear-gradient(180deg,rgba(255,193,7,.06) 0%,rgba(255,193,7,.03) 100%);flex:1;min-height:0)">`;
-  // 列1(内侧): SF
+  // --- 右下半区 (镜像：SF→QF→R16→R32) ---
+  html+=`<div class="bracket-sub bracket-sub-right-lower">`;
+  // 列1(内侧): SF — 右下半区也指向SF_L（与右上共用同一晋级位）
   html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:1">`;
-  // 右下半区的SF — 暂用TBD占位（实际应从数据模型取对应槽位）
-  html+=renderSlotHtml('','winner s8');
+  html+=renderSlotHtml('SF_L','winner s8');
   html+=`</div>`;
   // 列2: QF (2个s4)
   html+=`<div style="display:grid;grid-template-rows:repeat(8,1fr);grid-column:2">`;
