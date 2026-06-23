@@ -2868,19 +2868,17 @@ function renderBracket(){
   html+=`</div>`;
   html+=`</div>`;
 
-  // ===== CENTER: Finals =====
-  const finalData=koSlot['FINAL']||{};
-  const thirdData=koSlot['THIRD']||{};
+  // ===== CENTER: Finals (single winner slot each) =====
+  const finalWinner=getKoWinner('FINAL');
+  const thirdWinner=getKoWinner('THIRD');
   html+=`<div class="bracket-center">
-    <div class="final-box third${thirdData.home?' filled':''}">
+    <div class="final-box third${thirdWinner?' filled':''}">
       <div class="f-title">季殿军赛</div>
-      <div class="bslot${thirdData.home?' filled':''}">${thirdData.home?'<span class="slot-row">'+flagImg(thirdData.home,15)+' <span class="team">'+tname(thirdData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
-      <div class="bslot${thirdData.away?' filled':''}">${thirdData.away?'<span class="slot-row">'+flagImg(thirdData.away,15)+' <span class="team">'+tname(thirdData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${thirdWinner?' filled':''}">${thirdWinner?'<span class="slot-row">'+flagImg(thirdWinner,15)+' <span class="team">'+tname(thirdWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
-    <div class="final-box champion${finalData.home?' filled':''}">
+    <div class="final-box champion${finalWinner?' filled':''}">
       <div class="f-title">冠亚军决赛</div>
-      <div class="bslot${finalData.home?' filled':''}">${finalData.home?'<span class="slot-row">'+flagImg(finalData.home,15)+' <span class="team">'+tname(finalData.home)+'</span></span>':'<span class="desc">TBD</span>'}</div>
-      <div class="bslot${finalData.away?' filled':''}">${finalData.away?'<span class="slot-row">'+flagImg(finalData.away,15)+' <span class="team">'+tname(finalData.away)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="bslot${finalWinner?' filled':''}">${finalWinner?'<span class="slot-row">'+flagImg(finalWinner,15)+' <span class="team">'+tname(finalWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
   </div>`;
 
