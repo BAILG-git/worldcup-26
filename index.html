@@ -225,12 +225,21 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   background:rgba(22,27,34,.92);
 }
 
-/* 比赛卡片：包含两个队伍（R16/QF/SF） */
-.bracket-match{
-  border:1.5px solid rgba(255,255,255,.15);border-radius:7px;
-  padding:4px;margin:1px 0;background:rgba(22,27,34,.9);
+/* 晋级胜者卡槽（二进一，只显示一个位置） */
+.bracket-winner{
+  border:1.5px solid rgba(240,192,64,.3);border-radius:7px;
+  padding:4px;margin:1px 0;background:rgba(240,192,64,.06);
   min-width:85px;text-align:center;
 }
+.bracket-winner .bslot{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:3px 5px;margin:0;
+  border:1px dashed var(--border);border-radius:5px;
+  font-size:11px;min-height:26px;
+  background:rgba(22,27,34,.92);
+}
+
+/* R32 单个队伍槽位 */
 .bracket-match .bslot{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:3px 5px;margin:1px 0;
@@ -2969,14 +2978,11 @@ function renderBracket(){
   });
 }
 
-// 构建一个小半区的树（4场R32 → 2场R16 → 1场QF → 1场SF）
-// R32层：8个独立队伍槽位（单个bslot）
-// R16层：4场比赛卡片（含2个bslot），居中在2个R32之间
-// 以此类推...
+// 构建一个小半区的树（8R32单槽 → 4R16胜者 → 2QF胜者 → 1SF胜者）
 function buildHalfTree(r32Ids,r16Ids,qfId,sfId){
   // 从内到外嵌套
 
-  // === R16 层（2场比赛，每场包着2个R32单槽）===
+  // === R16 层（4个胜者槽，每个居中在2个R32之间）===
   let r16Html='';
   for(let i=0;i<r16Ids.length;i++){
     const r16Id=r16Ids[i];
@@ -2984,20 +2990,20 @@ function buildHalfTree(r32Ids,r16Ids,qfId,sfId){
     const childR32Html=childR32.map(id=>`<div class="tree-slot">${renderSingleSlot(id)}</div>`).join('');
     r16Html+=`<div class="tree-pair">
       <div class="tree-children">${childR32Html}</div>
-      <div class="tree-winner">${renderMatchCard(r16Id)}</div>
+      <div class="tree-winner">${renderWinnerSlot(r16Id)}</div>
     </div>`;
   }
 
-  // === QF 层（1场比赛，包着2场R16）===
+  // === QF 层（2个胜者槽，居中在2个R16之间）===
   const qfHtml=`<div class="tree-pair">
     <div class="tree-children">${r16Html}</div>
-    <div class="tree-winner">${renderMatchCard(qfId)}</div>
+    <div class="tree-winner">${renderWinnerSlot(qfId)}</div>
   </div>`;
 
-  // === SF 层（1场比赛，包着1场QF）===
+  // === SF 层（1个胜者槽，居中在2个QF之间）===
   const sfHtml=`<div class="tree-pair">
     <div class="tree-children">${qfHtml}</div>
-    <div class="tree-winner">${renderSfCard(sfId)}</div>
+    <div class="tree-winner">${renderWinnerSlot(sfId)}</div>
   </div>`;
 
   return sfHtml;
@@ -3012,22 +3018,17 @@ function renderSingleSlot(slotId){
   return `<div class="bracket-single"><div class="bslot"><span class="desc">TBD</span></div></div>`;
 }
 
-// 渲染SF卡片（特殊处理，可能包含best-3rd）
-function renderSfCard(slotId){
+// 渲染晋级卡槽（二进一，只显示一个胜者位置）
+function renderWinnerSlot(slotId){
   const data=koSlot[slotId]||{};
-  let html=`<div class="bracket-match">`;
-  html+=renderBslot(slotId,data.home,'home',data.homeB3);
-  html+=renderBslot(slotId,data.away,'away',data.awayB3);
-  html+=`</div>`;
-  return html;
-}
-
-// 渲染一场比赛的卡片（包含两个队伍槽位）
-function renderMatchCard(slotId){
-  const data=koSlot[slotId]||{};
-  let html=`<div class="bracket-match">`;
-  html+=renderBslot(slotId,data.home,'home',data.homeB3);
-  html+=renderBslot(slotId,data.away,'away',data.awayB3);
+  let html=`<div class="bracket-winner">`;
+  if(data.home){
+    // 已有胜者，显示胜者
+    html+=renderBslot(slotId,data.home,'home',data.homeB3);
+  }else{
+    // 无胜者，显示TBD
+    html+=`<div class="bslot"><span class="desc">TBD</span></div>`;
+  }
   html+=`</div>`;
   return html;
 }
