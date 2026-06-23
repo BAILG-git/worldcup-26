@@ -215,7 +215,17 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   padding:2px 0;
 }
 
-/* 比赛卡片：包含两个队伍 */
+/* R32 单个队伍槽位 */
+.bracket-single{padding:2px 0}
+.bracket-single .bslot{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:3px 5px;margin:1px 0;
+  border:1px dashed var(--border);border-radius:5px;
+  font-size:11px;min-height:24px;
+  background:rgba(22,27,34,.92);
+}
+
+/* 比赛卡片：包含两个队伍（R16/QF/SF） */
 .bracket-match{
   border:1.5px solid rgba(255,255,255,.15);border-radius:7px;
   padding:4px;margin:1px 0;background:rgba(22,27,34,.9);
@@ -2959,40 +2969,47 @@ function renderBracket(){
   });
 }
 
-// 构建一个小半区的树（4R32→2R16→1QF→1SF）
-// 返回的HTML结构：嵌套div，SF在最内层，自然居中
+// 构建一个小半区的树（4场R32 → 2场R16 → 1场QF → 1场SF）
+// R32层：8个独立队伍槽位（单个bslot）
+// R16层：4场比赛卡片（含2个bslot），居中在2个R32之间
+// 以此类推...
 function buildHalfTree(r32Ids,r16Ids,qfId,sfId){
-  // 从内到外嵌套：SF 包着 QF，QF 包着 R16，R16 包着 R32
-  // 这样 SF 的 div 高度 = QF 高度，自然居中
+  // 从内到外嵌套
 
-  // R32 层（最外层，4场比赛）
-  const r32Html=r32Ids.map(id=>`<div class="tree-slot">${renderMatchCard(id)}</div>`).join('');
-
-  // R16 层（2场比赛，每场包着2场R32）
+  // === R16 层（2场比赛，每场包着2个R32单槽）===
   let r16Html='';
   for(let i=0;i<r16Ids.length;i++){
     const r16Id=r16Ids[i];
     const childR32=r32Ids.slice(i*2,i*2+2);
-    const childR32Html=childR32.map(id=>`<div class="tree-slot">${renderMatchCard(id)}</div>`).join('');
+    const childR32Html=childR32.map(id=>`<div class="tree-slot">${renderSingleSlot(id)}</div>`).join('');
     r16Html+=`<div class="tree-pair">
       <div class="tree-children">${childR32Html}</div>
       <div class="tree-winner">${renderMatchCard(r16Id)}</div>
     </div>`;
   }
 
-  // QF 层（1场比赛，包着2场R16）
+  // === QF 层（1场比赛，包着2场R16）===
   const qfHtml=`<div class="tree-pair">
     <div class="tree-children">${r16Html}</div>
     <div class="tree-winner">${renderMatchCard(qfId)}</div>
   </div>`;
 
-  // SF 层（1场比赛，包着1场QF）
+  // === SF 层（1场比赛，包着1场QF）===
   const sfHtml=`<div class="tree-pair">
     <div class="tree-children">${qfHtml}</div>
     <div class="tree-winner">${renderSfCard(sfId)}</div>
   </div>`;
 
   return sfHtml;
+}
+
+// 渲染R32层的单个队伍槽位（只有一个队伍）
+function renderSingleSlot(slotId){
+  const data=koSlot[slotId]||{};
+  if(data.home){
+    return `<div class="bracket-single">${renderBslot(slotId,data.home,'home',data.homeB3)}</div>`;
+  }
+  return `<div class="bracket-single"><div class="bslot"><span class="desc">TBD</span></div></div>`;
 }
 
 // 渲染SF卡片（特殊处理，可能包含best-3rd）
