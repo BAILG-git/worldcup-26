@@ -1568,12 +1568,15 @@ function getPollingInterval() {
 }
 function startPolling() {
   stopPolling();
-  pollingTimer = setInterval(() => {
+  function pollOnce() {
     fetchAllSources().then(() => {
       // 动态调整下一轮间隔（有直播10s，无直播30s）
-      startPolling();
+      pollingTimer = setTimeout(pollOnce, getPollingInterval());
+    }).catch(() => {
+      pollingTimer = setTimeout(pollOnce, getPollingInterval());
     });
-  }, getPollingInterval());
+  }
+  pollOnce();
 }
 function stopPolling() { if (pollingTimer) { clearInterval(pollingTimer); clearTimeout(pollingTimer); pollingTimer = null; } }
 function updateStatus(state, msg) {
@@ -1661,15 +1664,15 @@ function loadScores(){
   'H_2': {score:[4, 0],ht:[3, 0],goals:[{team:'西班牙',minute:"10'",isHome:true,type:'goal',player:"Lamine Yamal"},{team:'西班牙',minute:"21'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"24'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"49'",isHome:true,type:'own_goal',player:"Hassan Al-Tambakti"}]},
   'H_3': {score:[2, 2],ht:[2, 1],goals:[{team:'佛得角',minute:"21'",isHome:false,type:'goal',player:"Kevin Pina"},{team:'乌拉圭',minute:"44'",isHome:true,type:'goal',player:"Maxi Araújo"},{team:'乌拉圭',minute:"45+6'",isHome:true,type:'goal',player:"Agustín Canobbio"},{team:'佛得角',minute:"61'",isHome:false,type:'goal',player:"Hélio Varela"}]},
   // MD2 第六批 6月23日（北京时间）I/J组
-  'I_2': {score:[3, 0],ht:[2, 0],goals:[{team:'法国',minute:"18'",isHome:true,type:'goal',player:"Kylian Mbappé"},{team:'法国',minute:"42'",isHome:true,type:'goal',player:"Ousmane Dembélé"},{team:'法国',minute:"76'",isHome:true,type:'goal',player:"Antoine Griezmann"}]},
-  'I_3': {score:[3, 2],ht:[1, 1],goals:[{team:'挪威',minute:"12'",isHome:true,type:'goal',player:"Erling Haaland"},{team:'塞内加尔',minute:"38'",isHome:false,type:'goal',player:"Sadio Mané"},{team:'挪威',minute:"54'",isHome:true,type:'goal',player:"Martin Ødegaard"},{team:'挪威',minute:"71'",isHome:true,type:'goal',player:"Alexander Sørloth"},{team:'塞内加尔',minute:"88'",isHome:false,type:'goal',player:"Bamba Dieng"}]},
-  'J_2': {score:[2, 0],ht:[1, 0],goals:[{team:'阿根廷',minute:"23'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"67'",isHome:true,type:'goal',player:"Lautaro Martínez"}]},
-  'J_3': {score:[1, 2],ht:[0, 1],goals:[{team:'阿尔及利亚',minute:"31'",isHome:false,type:'goal',player:"Riyad Mahrez"},{team:'约旦',minute:"58'",isHome:true,type:'goal',player:"Ali Olwan"},{team:'阿尔及利亚',minute:"82'",isHome:false,type:'goal',player:"Islam Slimani"}]},
+  'I_2': {score:[3, 0],ht:[1, 0],goals:[{team:'法国',minute:"14'",isHome:true,type:'goal',player:"Kylian Mbappé"},{team:'法国',minute:"54'",isHome:true,type:'goal',player:"Kylian Mbappé"},{team:'法国',minute:"66'",isHome:true,type:'goal',player:"Ousmane Dembélé"}]},
+  'I_3': {score:[3, 2],ht:[1, 1],goals:[{team:'挪威',minute:"43'",isHome:true,type:'goal',player:"Mats Møller Dæhli"},{team:'挪威',minute:"48'",isHome:true,type:'goal',player:"Erling Haaland"},{team:'塞内加尔',minute:"53'",isHome:false,type:'goal',player:"Ismaïla Sarr"},{team:'挪威',minute:"58'",isHome:true,type:'goal',player:"Erling Haaland"},{team:'塞内加尔',minute:"90+3'",isHome:false,type:'goal',player:"Ismaïla Sarr"}]},
+  'J_2': {score:[2, 0],ht:[1, 0],goals:[{team:'阿根廷',minute:"38'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"90+5'",isHome:true,type:'goal',player:"Lionel Messi"}]},
+  'J_3': {score:[2, 1],ht:[0, 1],goals:[{team:'约旦',minute:"36'",isHome:true,type:'goal',player:"Nizar Al-Rashdan"},{team:'阿尔及利亚',minute:"69'",isHome:false,type:'goal',player:"Nadir Benbouali"},{team:'阿尔及利亚',minute:"82'",isHome:false,type:'goal',player:"Amine Gouiri"}]},
   // MD2 第七批 6月24日（北京时间）K/L组
-  'K_2': {score:[5, 0],ht:[3, 0],goals:[{team:'葡萄牙',minute:"8'",isHome:true,type:'goal',player:"Cristiano Ronaldo"},{team:'葡萄牙',minute:"23'",isHome:true,type:'goal',player:"Bruno Fernandes"},{team:'葡萄牙',minute:"41'",isHome:true,type:'goal',player:"João Félix"},{team:'葡萄牙',minute:"63'",isHome:true,type:'goal',player:"Rúben Dias"},{team:'葡萄牙',minute:"89'",isHome:true,type:'goal',player:"Gonçalo Ramos"}]},
+  'K_2': {score:[5, 0],ht:[3, 0],goals:[{team:'葡萄牙',minute:"6'",isHome:true,type:'goal',player:"Cristiano Ronaldo"},{team:'葡萄牙',minute:"17'",isHome:true,type:'goal',player:"Nuno Mendes"},{team:'葡萄牙',minute:"39'",isHome:true,type:'goal',player:"Cristiano Ronaldo"},{team:'乌兹别克斯坦',minute:"60'",isHome:false,type:'own_goal',player:"Abduvoxid Nematov"},{team:'葡萄牙',minute:"87'",isHome:true,type:'goal',player:"Rafael Leão"}]},
   'K_3': {score:[0, 0],ht:[0, 0]},
-  'L_2': {score:[0, 1],ht:[0, 0],goals:[{team:'克罗地亚',minute:"52'",isHome:false,type:'goal',player:"Luka Modrić"}]},
-  'L_3': {score:[1, 0],ht:[1, 0],goals:[{team:'哥伦比亚',minute:"37'",isHome:true,type:'goal',player:"James Rodríguez"}]},
+  'L_2': {score:[0, 1],ht:[0, 0],goals:[{team:'克罗地亚',minute:"54'",isHome:false,type:'goal',player:"Ante Budimir"}]},
+  'L_3': {score:[1, 0],ht:[0, 0],goals:[{team:'哥伦比亚',minute:"76'",isHome:true,type:'goal',player:"Daniel Muñoz"}]},
   };
   // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
   const calcHalftimeFromGoals = (goals) => {
