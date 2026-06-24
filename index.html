@@ -187,11 +187,7 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 }
 /* 子区 = 8行×4列 Grid，固定行高避免1fr无限撑开 */
 .bracket-sub{
-  display:grid;
-  grid-template-rows:repeat(8,28px);
-  grid-template-columns:repeat(4,95px);
-  gap:0 5px;
-  border-radius:12px;padding:6px 4px;
+  padding:6px 4px;
   flex:none;
 }
 .bk-slot{
@@ -201,15 +197,15 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
   font-size:11px;
   background:rgba(22,27,34,.92);
 }
-.bk-slot.s1{margin:6px 0;}
+.bk-slot.s1{height:44px;align-self:center;}
 /* R32单队伍槽位：紧凑高度 */
 .r32-side{display:inline-flex;align-items:center;gap:1px;font-size:10px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vs-sm{font-size:9px;color:var(--muted);margin:0 2px;flex-shrink:0}
 .t10{font-size:10px}
 .b3-inline{color:var(--gold);cursor:pointer;font-size:10px;text-decoration:underline}
-.bk-slot.s2{grid-row:span 2;min-height:52px;height:100%}
-.bk-slot.s4{grid-row:span 4;min-height:108px;height:100%}
-.bk-slot.s8{grid-row:span 8;min-height:220px;height:100%}
+.bk-slot.s2{height:96px;align-self:center;}
+.bk-slot.s4{height:200px;align-self:center;position:relative}
+.bk-slot.s8{height:408px;align-self:center;position:relative}
 /* winner用了flex-direction:column，需用justify-content控制垂直居中 */
 .bk-slot.winner{border:1.5px solid rgba(240,192,64,.25);background:rgba(240,192,64,.06);flex-direction:column;justify-content:center}
 .bk-slot .flag{font-size:13px;margin-right:3px}
@@ -923,8 +919,7 @@ const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles
 
 // ========== CORS 代理（公网部署必须） ==========
 // 本地走 localhost 代理，公网走腾讯云 SCF（国内直连）
-const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '' || location.protocol === 'file:';
-const PROXY_BASE = isLocal ? 'http://localhost:8899/proxy' : 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com';
+const PROXY_BASE = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com';
 const CORS_PROXIES = [
   u => PROXY_BASE + '?url=' + encodeURIComponent(u),
 ];
@@ -1670,6 +1665,16 @@ function loadScores(){
   'G_3': {score:[1, 3],ht:[1, 0],goals:[{team:'新西兰',minute:"15'",isHome:true,type:'goal',player:"Finn Surman"},{team:'埃及',minute:"58'",isHome:false,type:'goal',player:"Mostafa Zico"},{team:'埃及',minute:"67'",isHome:false,type:'goal',player:"Mohamed Salah"},{team:'埃及',minute:"82'",isHome:false,type:'goal',player:"Trézéguet"}]},
   'H_2': {score:[4, 0],ht:[3, 0],goals:[{team:'西班牙',minute:"10'",isHome:true,type:'goal',player:"Lamine Yamal"},{team:'西班牙',minute:"21'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"24'",isHome:true,type:'goal',player:"Mikel Oyarzabal"},{team:'西班牙',minute:"49'",isHome:true,type:'own_goal',player:"Hassan Al-Tambakti"}]},
   'H_3': {score:[2, 2],ht:[2, 1],goals:[{team:'佛得角',minute:"21'",isHome:false,type:'goal',player:"Kevin Pina"},{team:'乌拉圭',minute:"44'",isHome:true,type:'goal',player:"Maxi Araújo"},{team:'乌拉圭',minute:"45+6'",isHome:true,type:'goal',player:"Agustín Canobbio"},{team:'佛得角',minute:"61'",isHome:false,type:'goal',player:"Hélio Varela"}]},
+  // MD2 第六批 6月23日（北京时间）I/J组
+  'I_2': {score:[3, 0],ht:[2, 0],goals:[{team:'法国',minute:"18'",isHome:true,type:'goal',player:"Kylian Mbappé"},{team:'法国',minute:"42'",isHome:true,type:'goal',player:"Ousmane Dembélé"},{team:'法国',minute:"76'",isHome:true,type:'goal',player:"Antoine Griezmann"}]},
+  'I_3': {score:[3, 2],ht:[1, 1],goals:[{team:'挪威',minute:"12'",isHome:true,type:'goal',player:"Erling Haaland"},{team:'塞内加尔',minute:"38'",isHome:false,type:'goal',player:"Sadio Mané"},{team:'挪威',minute:"54'",isHome:true,type:'goal',player:"Martin Ødegaard"},{team:'挪威',minute:"71'",isHome:true,type:'goal',player:"Alexander Sørloth"},{team:'塞内加尔',minute:"88'",isHome:false,type:'goal',player:"Bamba Dieng"}]},
+  'J_2': {score:[2, 0],ht:[1, 0],goals:[{team:'阿根廷',minute:"23'",isHome:true,type:'goal',player:"Lionel Messi"},{team:'阿根廷',minute:"67'",isHome:true,type:'goal',player:"Lautaro Martínez"}]},
+  'J_3': {score:[1, 2],ht:[0, 1],goals:[{team:'阿尔及利亚',minute:"31'",isHome:false,type:'goal',player:"Riyad Mahrez"},{team:'约旦',minute:"58'",isHome:true,type:'goal',player:"Ali Olwan"},{team:'阿尔及利亚',minute:"82'",isHome:false,type:'goal',player:"Islam Slimani"}]},
+  // MD2 第七批 6月24日（北京时间）K/L组
+  'K_2': {score:[5, 0],ht:[3, 0],goals:[{team:'葡萄牙',minute:"8'",isHome:true,type:'goal',player:"Cristiano Ronaldo"},{team:'葡萄牙',minute:"23'",isHome:true,type:'goal',player:"Bruno Fernandes"},{team:'葡萄牙',minute:"41'",isHome:true,type:'goal',player:"João Félix"},{team:'葡萄牙',minute:"63'",isHome:true,type:'goal',player:"Rúben Dias"},{team:'葡萄牙',minute:"89'",isHome:true,type:'goal',player:"Gonçalo Ramos"}]},
+  'K_3': {score:[0, 0],ht:[0, 0]},
+  'L_2': {score:[0, 1],ht:[0, 0],goals:[{team:'克罗地亚',minute:"52'",isHome:false,type:'goal',player:"Luka Modrić"}]},
+  'L_3': {score:[1, 0],ht:[1, 0],goals:[{team:'哥伦比亚',minute:"37'",isHome:true,type:'goal',player:"James Rodríguez"}]},
   };
   // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
   const calcHalftimeFromGoals = (goals) => {
@@ -2900,103 +2905,142 @@ function renderBracket(){
   html+='<span class="zoom-label" id="zoomLabel">100%</span>';
   html+='<button onclick="bracketZoom(0.2)" title="Zoom In">+</button>';
   html+='<button onclick="bracketReset()" title="Reset">&#8634;</button>';
-  html+='<span style="font-size:10px;color:var(--muted);margin-left:8px">Scroll to zoom &middot; Drag to pan</span>';
   html+='</div>';
   html+='<div class="bracket-viewport" id="bracketViewport">';
   html+='<div class="bracket-canvas" id="bracketCanvas">';
-  html+='<div class="tree-bracket">';
+  // 3列布局：左半区 | 决赛区 | 右半区
+  html+='<div class="tree-bracket" style="display:flex;flex-direction:row;align-items:flex-start;gap:10px;padding:12px">';
 
-  // ===== 左半区：16个R32落位槽（1列×16行）=====
-  // 从B32_DEF取左半区（id.startsWith('R32_L')），按id排序保证顺序
-  const leftSlots=B32_DEF.filter(d=>d.id.startsWith('R32_L')).sort((a,b)=>a.id.localeCompare(b.id));
-  html+=`<div class="bracket-half">`;
-  html+=`<div class="bracket-sub">`;
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,28px);grid-column:1">`;
-  leftSlots.forEach((d,idx)=>{
-    html+=renderSlotHtml(d.id,'',idx+1);
-  });
+  // ===== 左列：左半区的两个象限（上下堆叠）=====
+  html+=`<div style="display:flex;flex-direction:column;gap:10px;flex:none">`;
+  html+=renderQuarter('L', true, '上半区 1/4', 'rgba(63,185,80,.12)', 'rgba(88,166,255,.08)');
+  html+=renderQuarter('L', false, '上半区 2/4', 'rgba(240,192,64,.12)', 'rgba(210,168,255,.08)');
   html+=`</div>`;
-  html+=`</div>`; // end bracket-sub
-  html+=`</div>`; // end 左半区
 
-  // ===== CENTER: Finals =====
+  // ===== 中列：决赛/季军赛 =====
   const finalWinner=getKoWinner('FINAL');
   const thirdWinner=getKoWinner('THIRD');
-  html+=`<div class="bracket-center">
+  html+=`<div class="bracket-center" style="min-height:520px">
     <div class="final-box third${thirdWinner?' filled':''}">
-      <div class="f-title">季殿军赛</div>
-      <div class="bslot${thirdWinner?' filled':''}">${thirdWinner?'<span class="slot-row">'+flagImg(thirdWinner,15)+' <span class="team">'+tname(thirdWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="f-title">季军赛</div>
+      <div class="bslot">${thirdWinner?'<span class="slot-row">'+flagImg(thirdWinner,15)+' <span class="team">'+tname(thirdWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
     <div class="final-box champion${finalWinner?' filled':''}">
-      <div class="f-title">冠亚军决赛</div>
-      <div class="bslot${finalWinner?' filled':''}">${finalWinner?'<span class="slot-row">'+flagImg(finalWinner,15)+' <span class="team">'+tname(finalWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
+      <div class="f-title">决赛</div>
+      <div class="bslot">${finalWinner?'<span class="slot-row">'+flagImg(finalWinner,15)+' <span class="team">'+tname(finalWinner)+'</span></span>':'<span class="desc">TBD</span>'}</div>
     </div>
   </div>`;
 
-  // ===== 右半区：16个R32落位槽（1列×16行）=====
-  const rightSlots=B32_DEF.filter(d=>d.id.startsWith('R32_R')).sort((a,b)=>a.id.localeCompare(b.id));
-  html+=`<div class="bracket-half">`;
-  html+=`<div class="bracket-sub">`;
-  html+=`<div style="display:grid;grid-template-rows:repeat(16,28px);grid-column:1">`;
-  rightSlots.forEach((d,idx)=>{
-    html+=renderSlotHtml(d.id,'',idx+1);
-  });
+  // ===== 右列：右半区的两个象限（上下堆叠）=====
+  html+=`<div style="display:flex;flex-direction:column;gap:10px;flex:none">`;
+  html+=renderQuarter('R', true, '下半区 1/4', 'rgba(88,166,255,.12)', 'rgba(210,168,255,.08)');
+  html+=renderQuarter('R', false, '下半区 2/4', 'rgba(240,192,64,.12)', 'rgba(210,168,255,.08)');
   html+=`</div>`;
-  html+=`</div>`; // end bracket-sub
-  html+=`</div>`; // end 右半区
 
-  html+='</div></div></div>';
+  html+='</div>'; // tree-bracket
+  html+='</div></div>'; // canvas, viewport
   cont.innerHTML=html;
   bracketReset();
   setupBracketPan();
+  // B3 槽位点击注册
   cont.querySelectorAll('.b3-slot').forEach(el => {
     el.addEventListener('click', (e) => { e.stopPropagation(); openB3Picker(el.dataset.b3); });
   });
 }
 
+// 渲染一个象限（8行 × 4列）
+// side='L'|'R', upper=true|false
+function renderQuarter(side, upper, label, color1, color2){
+  const prefix = 'R32_'+side;
+  const startIdx = upper ? 0 : 8;
+  const r32Slots = B32_DEF.filter(d=>d.id.startsWith(prefix)).sort((a,b)=>a.id.localeCompare(b.id)).slice(startIdx, startIdx+8);
+  const r16Base = 'R16_'+side;
+  const qfBase = 'QF_'+side;
+  const sfSlot = 'SF_'+side;
 
-function renderSlotHtml(slotId,extraCls,row){
+  const r16Start = upper ? 1 : 5;
+  const r16Slots = [];
+  for(let i=r16Start;i<r16Start+4;i++) r16Slots.push(r16Base+String(i).padStart(2,'0'));
+
+  const qfStart = upper ? 1 : 3;
+  const qfSlots = [];
+  for(let i=qfStart;i<qfStart+2;i++) qfSlots.push(qfBase+String(i).padStart(2,'0'));
+
+  const rev = side === 'R';
+  let h='';
+  h+=`<div class="bracket-quarter" style="border:2px solid ${upper?(side==='L'?'#3fb950':'#58a6ff'):(side==='L'?'#f0c040':'#d2a8ff')};border-radius:8px;overflow:hidden">`;
+  h+=`<div class="q-header" style="text-align:center;padding:6px;font-weight:bold;font-size:13px;color:${upper?(side==='L'?'#3fb950':'#58a6ff'):(side==='L'?'#f0c040':'#d2a8ff')};background:rgba(255,255,255,.05)}">${label}</div>`;
+  h+=`<div style="display:grid;grid-template-rows:repeat(8,52px);grid-template-columns:160px 144px 124px 112px;gap:0 4px;padding:6px 6px;position:relative">`;
+
+  // 背景色块：每象限2个小半区（各4行）
+  h+=`<div style="grid-column:1/-1;grid-row:1/span 4;background:${color1};border-radius:5px;margin:1px 0"></div>`;
+  h+=`<div style="grid-column:1/-1;grid-row:5/span 4;background:${color2};border-radius:5px;margin:1px 0"></div>`;
+
+  const c1 = rev ? [sfSlot] : r32Slots;
+  const c2 = rev ? qfSlots : r16Slots;
+  const c3 = rev ? r16Slots : qfSlots;
+  const c4 = rev ? r32Slots : [sfSlot];
+
+  c1.forEach((d,i)=>{
+    const s = rev ? 's8' : 's1';
+    const sp = rev ? 8 : 1;
+    const row = rev ? 1 : i+1;
+    h+=`<div style="grid-column:1;grid-row:${row}/span ${sp};position:relative;z-index:1">${typeof d==='string'?renderSlotHtml(d,s):renderSlotHtml(d.id,s)}</div>`;
+  });
+  c2.forEach((d,i)=>{
+    const s = rev ? 's4' : 's2';
+    const sp = rev ? 4 : 2;
+    const row = rev ? i*4+1 : i*2+1;
+    h+=`<div style="grid-column:2;grid-row:${row}/span ${sp};position:relative;z-index:1">${typeof d==='string'?renderSlotHtml(d,s):renderSlotHtml(d.id,s)}</div>`;
+  });
+  c3.forEach((d,i)=>{
+    const s = rev ? 's2' : 's4';
+    const sp = rev ? 2 : 4;
+    const row = rev ? i*2+1 : i*4+1;
+    h+=`<div style="grid-column:3;grid-row:${row}/span ${sp};position:relative;z-index:1">${typeof d==='string'?renderSlotHtml(d,s):renderSlotHtml(d.id,s)}</div>`;
+  });
+  c4.forEach((d,i)=>{
+    const s = rev ? 's1' : 's8';
+    const sp = rev ? 1 : 8;
+    const row = rev ? i+1 : 1;
+    h+=`<div style="grid-column:4;grid-row:${row}/span ${sp};position:relative;z-index:1">${typeof d==='string'?renderSlotHtml(d,s):renderSlotHtml(d.id,s)}</div>`;
+  });
+
+  h+='</div></div>'; // grid + quarter
+  return h;
+}
+
+
+function renderSlotHtml(slotId,extraCls){
   const data=koSlot[slotId]||{};
   const b32=B32_DEF.find(x=>x.id===slotId)||{};
-  // isB3Def: 这个R32槽位是否是3X（最佳第三占位）
   const isB3Def=slotId.startsWith('R32_')&&b32.h==='3rd';
-  // team: 这个槽位当前显示的队伍（从koSlot读取，R32槽位存在data.home里）
   const team=data.home||'';
-  // needsB3: 这个槽位需要用户点击选择最佳第三
   const needsB3=(!team||team==='3rd')&&isB3Def;
   let cls='bk-slot '+extraCls;
-  // R32自动加s1类（单队伍紧凑样式）
   if(slotId.startsWith('R32_')&&!cls.includes('s1')) cls+=' s1';
-  // 只有真正需要最佳第三选择时才加b3-slot类
   if(needsB3) cls+=' b3-slot';
   const dataAttr=needsB3?` data-b3="${slotId}"`:'';
-  // grid-row style
-  let gridStyle='';
-  if(row) gridStyle=`style="grid-row:${row}"`;
-  else if(extraCls){
-    const m=extraCls.match(/s(\d+)/);
-    if(m) gridStyle=`style="grid-row:span ${m[1]}"`;
-  }
   // R32槽位：只显示一个队伍（单队伍落位）
   if(slotId.startsWith('R32_')){
     if(team&&team!=='3rd'){ cls+=' filled'; }
     if(team==='3rd'||(!team&&isB3Def)){
-      return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="b3-desc">📋 最佳第三</span></div>`;
+      return `<div class="${cls}"${dataAttr}><span class="b3-desc">📋 最佳第三</span></div>`;
     }
     if(team){
-      return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="flag">${flagImg(team,13)}</span><span class="team">${tname(team)}</span></div>`;
+      return `<div class="${cls}"${dataAttr}><span class="flag">${flagImg(team,13)}</span><span class="team">${tname(team)}</span></div>`;
     }
-    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="desc">TBD</span></div>`;
+    return `<div class="${cls}"${dataAttr}><span class="desc">TBD</span></div>`;
   }
   // R16+晋级槽：显示胜者（存在data.home里）
   if(data.home&&data.home!=='3rd'){ cls+=' filled'; }
   if(data.home==='3rd'){
-    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="b3-desc">📋 最佳第三</span></div>`;
+    return `<div class="${cls}"${dataAttr}><span class="b3-desc">📋 最佳第三</span></div>`;
   }
   if(data.home){
-    return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="flag">${flagImg(data.home,13)}</span><span class="team">${tname(data.home)}</span></div>`;
+    return `<div class="${cls}"${dataAttr}><span class="flag">${flagImg(data.home,13)}</span><span class="team">${tname(data.home)}</span></div>`;
   }
-  return `<div class="${cls}"${dataAttr} ${gridStyle}><span class="desc">TBD</span></div>`;
+  return `<div class="${cls}"${dataAttr}><span class="desc">TBD</span></div>`;
 }
 
 
