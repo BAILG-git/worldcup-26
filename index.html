@@ -421,15 +421,15 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 
 // ========== 进球事件存储 ==========
 let goalEvents = {};
-let upsetMatches = []; // 从 SCF remote 加载
+let upsetMatches = []; // 从 GitHub Pages 加载
 let _upsetPending = null; // 待标记的 match id
-const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
-const SCF_COMPLETED_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/completed';
+const UPSETS_JSON_URL = 'https://BAILG-git.github.io/worldcup-26/data/upsets.json';
 const ADMIN_PWD = 'blg-admin';
-// 加载远程爆冷标记
+// 加载远程爆冷标记（GitHub Pages JSON）
 async function loadUpsets() {
   try {
-    const resp = await fetch(SCF_UPSETS_URL);
+    const resp = await fetch(UPSETS_JSON_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
     upsetMatches = Object.keys(data).filter(k => data[k] === true);
     console.log('[爆冷] 已加载:', upsetMatches);
@@ -437,24 +437,15 @@ async function loadUpsets() {
     console.warn('[爆冷] 加载失败，使用空列表', e);
   }
 }
-// 保存爆冷标记到远程
+// 保存爆冷标记到本地 + localStorage（后续可通过 GitHub API 同步）
 async function saveUpsets() {
-  const obj = {};
-  upsetMatches.forEach(mid => obj[mid] = true);
+  // 暂时只存 localStorage 和内存，写操作需要手动编辑 data/upsets.json 后 push
   try {
-    const resp = await fetch(SCF_UPSETS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(obj)
-    });
-    const result = await resp.json();
-    if (result.ok) {
-      console.log('[爆冷] 已同步:', upsetMatches);
-    } else {
-      console.warn('[爆冷] 同步失败:', result.error);
-    }
+    localStorage.setItem('wc_upsets', JSON.stringify(upsetMatches));
+    console.log('[爆冷] 已保存到本地:', upsetMatches);
+    alert('爆冷标记已保存到本地浏览器。如需同步到服务器，请联系管理员更新 data/upsets.json');
   } catch(e) {
-    console.warn('[爆冷] 同步异常:', e);
+    console.warn('[爆冷] 保存异常:', e);
   }
 }
 // ========== 事件委托：点击最终比分标记爆冷 + 点击卡片看详情 ==========
@@ -917,29 +908,16 @@ const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.
 // URL格式: fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic/gp-soccer-fifa.world-{eventId}/message/{msgId}/checkpoint
 const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
 
-// ========== CORS 代理（公网部署必须） ==========
-// 本地走 localhost 代理，公网走腾讯云 SCF（国内直连）
-const PROXY_BASE = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com';
-const CORS_PROXIES = [
-  u => PROXY_BASE + '?url=' + encodeURIComponent(u),
-];
-let proxyIdx = 0;
-function corsProxy(url) {
-  return CORS_PROXIES[proxyIdx % CORS_PROXIES.length](url);
-}
-async function corsFetch(url, opts) {
-  // 先尝试当前代理
-  let lastError = null;
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    const pIdx = (proxyIdx + i) % CORS_PROXIES.length;
-    try {
-      const proxiedUrl = CORS_PROXIES[pIdx](url);
-      const resp = await fetch(proxiedUrl, { ...opts });
-      if (resp.ok) { proxyIdx = pIdx; return resp; }
-    } catch(e) { lastError = e; }
-  }
-  throw lastError || new Error('CORS proxy failed');
-}
+// ========== ESPN API 直接调用（不经过 SCF 代理） ==========
+// GitHub Pages 是同源请求，ESPN API 支持 CORS
+const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+// ESPN Fastcast 详情接口（含精确半场比分、Halftime节点、xG等高阶数据）
+// URL格式: fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic/gp-soccer-fifa.world-{eventId}/message/{msgId}/checkpoint
+const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
+
+// ========== 已弃用 SCF CORS 代理 ==========
+// 原来通过腾讯云SCF代理ESPN请求，现已改为直接调用
+// 如果遇到CORS问题，可考虑使用GitHub Actions定时抓取 → 存JSON → 前端读JSON
 
 // ========== API-Football 伤病/停赛实时数据 ==========
 // 免费套餐每天100次请求，每小时刷新一次完全够用
@@ -1071,11 +1049,11 @@ async function fetchAllSources() {
 
     console.log(`[fetchAllSources] ESPN请求: ±3天共${dates.length}天，缓存命中=${dates.length-toFetch.length}，需请求=${toFetch.length}`);
 
-    // 请求未缓存的日期
+    // 请求未缓存的日期（直接调用ESPN API，不经过SCF代理）
     if (toFetch.length > 0) {
       const urls = toFetch.map(d => `${ESPN_API}?dates=${d}`);
       const freshResults = await Promise.allSettled(
-        urls.map((u,i) => corsFetch(u).then(r => {
+        urls.map((u,i) => fetch(u, { headers: { 'Accept': 'application/json' } }).then(r => {
           if (!r.ok) { console.warn('ESPN HTTP', r.status, u); return null; }
           const d = toFetch[i];
           try {
@@ -1402,7 +1380,8 @@ async function fetchFastcastDetail(eventId, homeTeam, awayTeam) {
     const tryId = Math.max(1, 486 + offset); // 486 是已知的有效起始参考值
     const url = `${FASTCAST_BASE}/${topic}/message/${tryId}/checkpoint`;
     try {
-      const resp = await corsFetch(url, {
+      // 直接调用ESPN Fastcast，不经过SCF代理
+      const resp = await fetch(url, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         cache: 'no-cache'
@@ -1722,38 +1701,12 @@ function saveScores() {
     localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
   } catch(e) {}
 }
-// 从 SCF 加载自动持久化的完赛赛果（跨浏览器/设备共享）
+// 已弃用 SCF，完赛赛果直接使用硬编码 COMPLETED_RESULTS 兜底
+// 此函数保留接口但不执行任何操作
 async function loadCompletedFromServer() {
-  try {
-    const resp = await fetch(SCF_COMPLETED_URL);
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (!data || typeof data !== 'object') return;
-    let merged = 0;
-    for (const [mid, res] of Object.entries(data)) {
-      if (res.score) scores[mid] = res.score;
-      if (res.ht) halftimeScores[mid] = res.ht;
-      matchStatus[mid] = 'FINISHED';
-      matchClock[mid] = '完场';
-      if (res.goals && res.goals.length > 0) {
-        // 找到 match 的 key
-        for (const ms of Object.values(GROUP_MATCHES)) {
-          for (const m of ms) {
-            if (m.id === mid) {
-              goalEvents[m.home + '_' + m.away] = res.goals;
-              break;
-            }
-          }
-        }
-      }
-      merged++;
-    }
-    if (merged > 0) {
-      saveScores();
-      if (currentTab === 'standings') renderStandings();
-      if (currentTab === 'matches') renderMatches();
-    }
-  } catch(e) {}
+  // SCF 已弃用，不再从远程加载
+  // 完赛数据由 COMPLETED_RESULTS 硬编码提供
+  console.log('[已完赛] SCF已弃用，使用本地硬编码数据');
 }
 // 自动持久化完赛赛果：写进 COMPLETED_RESULTS + 推送 SCF
 function autoPersistCompleted(mid) {
@@ -1789,26 +1742,16 @@ function autoPersistCompleted(mid) {
   // 持久化到 localStorage
   saveScores();
 
-  // 推送到 SCF（SCF 会自动写 data/completed_results.json 并更新 index.html，全自动无需手动 push）
-  try {
-    const body = {};
-    body[mid] = { score: ns, ht: ht, goals: ge };
-    fetch(SCF_COMPLETED_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body)
-    });
-  } catch(e) {}
+  // SCF 已弃用，不再推送
+  // 完赛赛果需要手动追加到 COMPLETED_RESULTS 硬编码中
+  console.log('[已完赛] SCF已弃用，赛果需手动硬编码');
 
   // 重新渲染（如果有对阵图/赛程标签开着）
   try { if (currentTab === 'matches') renderMatches(); } catch(e) {}
   try { if (currentTab === 'bracket') renderBracket(); } catch(e) {}
 }
 
-// 定时重新拉取 SCF 赛果（每5分钟，捕捉其他设备提交的赛果）
-setInterval(() => {
-  loadCompletedFromServer();
-}, 300000);
+// 定时刷新已禁用（SCF已弃用）
 
 loadScores();
 loadCompletedFromServer();
@@ -2267,52 +2210,17 @@ function getTomorrowStr() {
   return `${t.getMonth() + 1}月${t.getDate()}日`;
 }
 
-const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/predict';
-
-// SCF 预测：异步调用 → 结果写入 predictions 并触发渲染
-// 规则：不依赖本地模型，SCF 返回前预测置空/显示加载中
+// SCF 已弃用，预测数据由 GitHub Pages JSON (predictions.json) 提供
+// 此函数保留接口但不调用 SCF
 function fetchScfPrediction(m) {
-  const params = new URLSearchParams({
-    home: m.home,
-    away: m.away,
-    matchId: m.id || ''
-  });
-  // 先标记为加载中（覆盖旧缓存）
-  const loading = { score: '...', probH: 0, probD: 0, probA: 0, confidence: '计算中', locked: false, predictedAt: '', lambda: {} };
-  if (!predictions[m.id]?.locked || !predictions[m.id]?.score || predictions[m.id].score === '...') {
-    predictions[m.id] = loading;
-    renderAll();
-  }
-  fetch(SCF_PREDICT_URL + '?' + params.toString(), {
-    cache: 'no-store',
-    headers: { 'Accept': 'application/json' }
-  }).then(r => r.json()).then(data => {
-    if (data.error) throw new Error(data.error);
-    data.predictedAt = new Date().toISOString();
-    data.locked = true;
-    // SCF 结果始终写入（覆盖本地/加载中）
-    predictions[m.id] = data;
-    savePredictions();
-    renderAll();
-    console.log('[SCF预测] ' + m.home + ' vs ' + m.away + ': ' + data.score);
-  }).catch(err => {
-    console.warn('[SCF预测] ' + m.home + ' vs ' + m.away + ' 调用失败', err.message);
-    // 失败时降级用本地模型
-    const fallback = predictMatch(m, null);
-    fallback.predictedAt = new Date().toISOString();
-    fallback.locked = true;
-    fallback.confidence = '(离线模式)';
-    predictions[m.id] = fallback;
-    savePredictions();
-    renderAll();
-  });
+  // SCF 已弃用，不再调用
+  // 预测数据由 loadPredictionsFromJSON() 从 GitHub Pages 加载
+  console.log('[预测] SCF已弃用，使用本地/GitHub Pages预测');
 }
 
 function generateDailyPrediction(m) {
-  // 不再使用本地模型，全部走 SCF 异步预测
-  fetchScfPrediction(m);
-  // 返回占位（让调用方不报错）
-  return { score: '...', probH: 0, probD: 0, probA: 0, confidence: '等待预测', locked: false, predictedAt: '', lambda: {} };
+  // 使用本地 Poisson 模型（或远程 JSON）
+  return predictMatch(m, null);
 }
 
 // ========== 预测数据加载（Elo+MonteCarlo 远程JSON） ==========
