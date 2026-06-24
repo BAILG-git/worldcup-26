@@ -518,6 +518,70 @@ def _github_api_custom(url, method, body=None):
     resp = urllib.request.urlopen(req, timeout=15)
     return json.loads(resp.read().decode('utf-8'))
 
+INDEX_HTML_PATH = 'index.html'
+INDEX_HTML_API_URL = f'https://api.github.com/repos/{UPSETS_REPO}/contents/{INDEX_HTML_PATH}'
+
+def update_index_html_completed(new_results):
+    """把新赛果合并进 index.html 的 COMPLETED_RESULTS 对象，自动 commit"""
+    try:
+        import base64, re
+        # 读取当前 index.html
+        current = _github_api_custom(INDEX_HTML_API_URL, 'GET')
+        sha = current.get('sha', '')
+        content = base64.b64decode(current.get('content', '')).decode('utf-8')
+        # 找到 COMPLETED_RESULTS = { 的位置
+        start_marker = 'const COMPLETED_RESULTS = {'
+        start_idx = content.find(start_marker)
+        if start_idx == -1:
+            print('COMPLETED_RESULTS not found in index.html')
+            return
+        # 找到对应的 closing };
+        # 从 start_idx 开始找第一个 };（在对象内）
+        # 简单策略：找到 loadScores 前面的 }; 
+        end_marker = '  };\n'
+        load_scores_idx = content.find('loadScores();', start_idx)
+        # 从 load_scores_idx 往前找第一个 };
+        search_region = content[start_idx:load_scores_idx]
+        last_brace_idx = search_region.rfind('  };')
+        if last_brace_idx == -1:
+            print('Closing }; not found')
+            return
+        insert_idx = start_idx + last_brace_idx
+        # 在 }; 前面插入新条目
+        new_lines = []
+        for mid, data in new_results.items():
+            score = data.get('score', [0, 0])
+            ht = data.get('ht', [0, 0])
+            goals = data.get('goals', [])
+            # 格式化 goals 为 JS 数组
+            goals_js = '[]'
+            if goals:
+                parts = []
+                for g in goals:
+                    team = g.get('team', '').replace("'", "\\'")
+                    minute = g.get('minute', '')
+                    is_home = 'true' if g.get('isHome', False) else 'false'
+                    gtype = g.get('type', 'goal')
+                    player = g.get('player', '').replace("'", "\\'")
+                    parts.append(f"{{team:'{team}',minute:'{minute}',isHome:{is_home},type:'{gtype}',player:'{player}'}}")
+                goals_js = '[' + ','.join(parts) + ']'
+            line = f"  '{mid}': {{score:[{score[0]},{score[1]}],ht:[{ht[0]},{ht[1]}],goals:{goals_js}}},"
+            new_lines.append(line)
+        # 在 }; 前面插入
+        before = content[:insert_idx]
+        after = content[insert_idx:]
+        new_content = before + '\n'.join(new_lines) + '\n' + after
+        # 写回 GitHub
+        commit_body = {
+            'message': 'auto-update COMPLETED_RESULTS via SCF',
+            'content': base64.b64encode(new_content.encode('utf-8')).decode('utf-8'),
+            'sha': sha,
+        }
+        _github_api_custom(INDEX_HTML_API_URL, 'PUT', commit_body)
+        print(f'Updated index.html COMPLETED_RESULTS: {list(new_results.keys())}')
+    except Exception as e:
+        print(f'Failed to update index.html: {e}')
+
 def handle_completed_post(body):
     """合并新完赛赛果（需要 GITHUB_TOKEN）"""
     if not GITHUB_TOKEN:
@@ -535,9 +599,12 @@ def handle_completed_post(body):
         except Exception:
             sha = ''
         # 合并新数据（body 格式: {matchId: {score,ht,goals}, ...}）
+        new_entries = {}
         for mid, data in body.items():
-            existing[mid] = data
-        # 写回 GitHub
+            if mid not in existing:  # 只处理新条目
+                existing[mid] = data
+                new_entries[mid] = data
+        # 写回 GitHub data/completed_results.json
         new_content = json.dumps(existing, ensure_ascii=False, indent=2)
         commit_body = {
             'message': 'auto-persist completed results via SCF',
@@ -546,6 +613,9 @@ def handle_completed_post(body):
         if sha:
             commit_body['sha'] = sha
         _github_api_custom(COMPLETED_API_URL, 'PUT', commit_body)
+        # 同时更新 index.html 的 COMPLETED_RESULTS（全自动，无需手动 push）
+        if new_entries:
+            update_index_html_completed(new_entries)
         return {'ok': True, 'count': len(existing)}
     except Exception as e:
         return {'error': str(e)}

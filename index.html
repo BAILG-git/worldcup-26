@@ -1611,11 +1611,6 @@ function loadScores(){
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
-      if (!data._predVer || data._predVer < 18) {
-        // 升级引擎版本：清空旧预测和旧进球事件（缺球员名），由远程 JSON 重新填充
-        predictions = {};
-        goalEvents = {};
-      }
     }
   } catch(e) { scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {}; }
   // ========== 已完赛赛果硬编码（ESPN超出±3天窗口后兜底） ==========
@@ -1757,10 +1752,13 @@ async function loadCompletedFromServer() {
     }
   } catch(e) {}
 }
-// 自动推送完赛赛果到 SCF（当 ESPN 返回 FINISHED 时）
+// 自动持久化完赛赛果：写进 COMPLETED_RESULTS + 推送 SCF
 function autoPersistCompleted(mid) {
   const ns = scores[mid];
   if (!ns || ns[0] === null) return;
+  // 已经在 COMPLETED_RESULTS 里了就不再重复
+  if (COMPLETED_RESULTS[mid]) return;
+
   // 找到 match 信息
   let match = null;
   for (const ms of Object.values(GROUP_MATCHES)) {
@@ -1770,22 +1768,45 @@ function autoPersistCompleted(mid) {
     if (match) break;
   }
   if (!match) return;
+
   const key = match.home + '_' + match.away;
   const ge = goalEvents[key] || [];
-  const body = {};
-  body[mid] = {
-    score: ns,
-    ht: halftimeScores[mid] || [0, 0],
-    goals: ge
-  };
+  const ht = halftimeScores[mid] || [0, 0];
+
+  // 写进内存中的 COMPLETED_RESULTS
+  COMPLETED_RESULTS[mid] = { score: ns, ht: ht, goals: ge };
+
+  // 同时写进 scores/matchStatus 等（保证当前会话立即生效）
+  scores[mid] = ns;
+  matchStatus[mid] = 'FINISHED';
+  matchClock[mid] = '完场';
+  if (ht) halftimeScores[mid] = ht;
+  if (ge.length) goalEvents[match.home + '_' + match.away] = ge;
+
+  // 持久化到 localStorage
+  saveScores();
+
+  // 推送到 SCF（SCF 会自动写 data/completed_results.json 并更新 index.html，全自动无需手动 push）
   try {
+    const body = {};
+    body[mid] = { score: ns, ht: ht, goals: ge };
     fetch(SCF_COMPLETED_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     });
   } catch(e) {}
+
+  // 重新渲染（如果有对阵图/赛程标签开着）
+  try { if (currentTab === 'matches') renderMatches(); } catch(e) {}
+  try { if (currentTab === 'bracket') renderBracket(); } catch(e) {}
 }
+
+// 定时重新拉取 SCF 赛果（每5分钟，捕捉其他设备提交的赛果）
+setInterval(() => {
+  loadCompletedFromServer();
+}, 300000);
+
 loadScores();
 loadCompletedFromServer();
 
@@ -2327,7 +2348,8 @@ function checkAndPredict() {
       for (const m of ms) {
         const isFinished = matchStatus[m.id] === 'FINISHED' && scores[m.id] && scores[m.id][0] !== null;
         const existing = predictions[m.id];
-        if (existing?.locked && existing?.score) continue;
+        // 已锁死的预测（比赛已结束或用户已确认）不再覆盖
+        if (existing?.locked && existing?.score && existing.score !== '...') continue;
 
         const remote = data.predictions[m.id];
         if (remote) {
