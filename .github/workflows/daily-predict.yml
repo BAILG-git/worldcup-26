@@ -1,0 +1,33 @@
+name: Daily Predictions
+
+on:
+  schedule:
+    - cron: '0 16 * * *'  # 北京时间0时 = UTC 16:00
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Generate predictions
+        run: |
+          cd predictor
+          python fetch_and_predict.py
+          
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data/predictions.json
+          git commit -m "auto: daily predictions update" || echo "No changes to commit"
+          git push
