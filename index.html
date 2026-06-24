@@ -909,15 +909,8 @@ const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.
 const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
 
 // ========== ESPN API 直接调用（不经过 SCF 代理） ==========
-// GitHub Pages 是同源请求，ESPN API 支持 CORS
-const ESPN_API = 'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
-// ESPN Fastcast 详情接口（含精确半场比分、Halftime节点、xG等高阶数据）
-// URL格式: fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic/gp-soccer-fifa.world-{eventId}/message/{msgId}/checkpoint
-const FASTCAST_BASE = 'https://fcast.espncdn.com/FastcastService/pubsub/profiles/12000/topic';
-
-// ========== 已弃用 SCF CORS 代理 ==========
-// 原来通过腾讯云SCF代理ESPN请求，现已改为直接调用
-// 如果遇到CORS问题，可考虑使用GitHub Actions定时抓取 → 存JSON → 前端读JSON
+// GitHub Pages 部署后浏览器端直接调用ESPN API（支持CORS）
+// 如遇CORS问题可改用GitHub Actions定时抓取→存JSON→前端读JSON
 
 // ========== API-Football 伤病/停赛实时数据 ==========
 // 免费套餐每天100次请求，每小时刷新一次完全够用
