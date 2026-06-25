@@ -1043,19 +1043,33 @@ async function fetchAllSources() {
     console.log(`[fetchAllSources] ESPN请求: ±3天共${dates.length}天，缓存命中=${dates.length-toFetch.length}，需请求=${toFetch.length}`);
 
     // 优先从 GitHub Pages JSON 加载（避免CORS问题）
-    try {
-      const resp = await fetch('https://BAILG-git.github.io/worldcup-26/data/matches.json?t=' + Date.now());
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data.events) {
-          processESPN(data);
-          espnOk = true;
-          espnEventsCount = (data.events||[]).length;
-          console.log('[fetchAllSources] 从GitHub Pages JSON加载成功');
+    // 缓存：60s 内不重复请求，减少 CDN 压力
+    const _now = Date.now();
+    if (!window._ghMatchesCache || _now - (window._ghMatchesCache._ts || 0) > 60000) {
+      try {
+        const resp = await fetch('https://BAILG-git.github.io/worldcup-26/data/matches.json?t=' + _now);
+        if (resp.ok) {
+          const data = await resp.json();
+          window._ghMatchesCache = { data, _ts: _now };
+          if (data.events) {
+            processESPN(data);
+            espnOk = true;
+            espnEventsCount = (data.events||[]).length;
+            console.log('[fetchAllSources] 从GitHub Pages JSON加载成功');
+          }
         }
+      } catch(e) {
+        console.warn('[fetchAllSources] GitHub Pages JSON加载失败', e);
       }
-    } catch(e) {
-      console.warn('[fetchAllSources] GitHub Pages JSON加载失败，尝试直接调用ESPN', e);
+    } else {
+      // 用缓存数据
+      const cached = window._ghMatchesCache.data;
+      if (cached && cached.events) {
+        processESPN(cached);
+        espnOk = true;
+        espnEventsCount = (cached.events||[]).length;
+        console.log('[fetchAllSources] 使用GitHub Pages JSON缓存（', Math.round((_now - window._ghMatchesCache._ts)/1000), 's前）');
+      }
     }
 
     // 如果GitHub Pages JSON失败，尝试直接调用ESPN API（可能有CORS限制）
