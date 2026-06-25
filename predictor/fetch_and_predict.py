@@ -116,6 +116,78 @@ def fetch_espn_scores():
     return finished
 
 
+def fetch_espn_all():
+    """从 ESPN 拉取所有比赛数据（包括未开始、进行中、已完赛）"""
+    all_events = []
+    dates_to_check = []
+
+    # 生成日期列表（从开赛到结束+3天）
+    from datetime import datetime, timedelta
+    start = datetime.strptime(WC_START, "%Y%m%d")
+    end = datetime.strptime(WC_END, "%Y%m%d")
+    today = datetime.utcnow()
+    actual_end = min(end, today + timedelta(days=3))  # 多查3天，覆盖未来比赛
+
+    current = start
+    while current <= actual_end:
+        dates_to_check.append(current.strftime("%Y%m%d"))
+        current += timedelta(days=1)
+
+    for date_str in dates_to_check:
+        url = f"{ESPN_URL}?dates={date_str}"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "WorldCupPredictor/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            for event in data.get("events", []):
+                event_id = event.get("id", "")
+                status = event.get("status", {}).get("type", {}).get("name", "")
+
+                competitions = event.get("competitions", [])
+                if len(competitions) < 1:
+                    continue
+
+                comp = competitions[0]
+                competitors = comp.get("competitors", [])
+                if len(competitors) < 2:
+                    continue
+
+                home_team = None
+                away_team = None
+                home_score = None
+                away_score = None
+
+                for c in competitors:
+                    name_en = c.get("team", {}).get("displayName", "")
+                    name_cn = ESPN_NAME_MAP.get(name_en, name_en)
+                    score = c.get("score")
+                    if c.get("homeAway") == "home":
+                        home_team = name_cn
+                        home_score = int(score) if score else None
+                    else:
+                        away_team = name_cn
+                        away_score = int(score) if score else None
+
+                if home_team and away_team:
+                    all_events.append({
+                        "id": event_id,
+                        "home": home_team,
+                        "away": away_team,
+                        "score_h": home_score,
+                        "score_a": away_score,
+                        "status": status,
+                        "is_host": home_team in ["墨西哥", "美国", "加拿大"],
+                        "is_neutral": True,
+                    })
+
+        except Exception as e:
+            print(f"[WARN] ESPN fetch failed for {date_str}: {e}", file=sys.stderr)
+            continue
+
+    return all_events
+
+
 def match_to_group_id(home, away):
     """根据主客队名推算小组赛ID (A_0 ~ L_5)"""
     from elo_montecarlo import GROUPS, MATCH_TEMPLATE
@@ -127,14 +199,34 @@ def match_to_group_id(home, away):
     return None
 
 
+def save_matches_json(events, data_dir):
+    """保存ESPN数据到matches.json，供前端读取"""
+    output = {
+        "generatedAt": datetime.utcnow().isoformat() + "Z",
+        "events": events
+    }
+    path = os.path.join(data_dir, "matches.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+    print(f"       Saved matches.json ({len(events)} events)")
+
+
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)  # worldcup-26/
     data_dir = os.path.join(project_dir, "data")
 
-    # 1. 拉取 ESPN 已完赛数据
-    print("[1/3] Fetching ESPN scores...")
-    finished_raw = fetch_espn_scores()
+    # 0. 拉取 ESPN 所有比赛数据（包括未开始、进行中、已完赛）
+    print("[0/4] Fetching ESPN all matches...")
+    all_events = fetch_espn_all()
+    print(f"       Found {len(all_events)} total events")
+
+    # 保存 matches.json 供前端读取
+    save_matches_json(all_events, data_dir)
+
+    # 1. 筛选已完赛数据
+    print("[1/4] Filtering finished matches...")
+    finished_raw = [e for e in all_events if e.get("status") == "STATUS_FINAL"]
     print(f"       Found {len(finished_raw)} finished matches")
 
     # 映射到 group match ID
@@ -177,12 +269,17 @@ def main():
             seen.add(fm["id"])
 
     # 3. 运行预测
-    print(f"[2/3] Running Elo+MonteCarlo predictions with {len(all_finished)} finished matches...")
+    print(f"[2/4] Running Elo+MonteCarlo predictions with {len(all_finished)} finished matches...")
     sys.path.insert(0, script_dir)
     from elo_montecarlo import run_predictions
     result = run_predictions(finished_matches=all_finished, output_dir=data_dir)
 
-    print(f"[3/3] Done. {len(result['predictions'])} predictions generated.")
+    print(f"[3/4] Done. {len(result['predictions'])} predictions generated.")
+
+    # 4. 再次保存 matches.json（确保最新）
+    print("[4/4] Updating matches.json...")
+    all_events = fetch_espn_all()
+    save_matches_json(all_events, data_dir)
 
 
 if __name__ == "__main__":

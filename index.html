@@ -1042,8 +1042,24 @@ async function fetchAllSources() {
 
     console.log(`[fetchAllSources] ESPN请求: ±3天共${dates.length}天，缓存命中=${dates.length-toFetch.length}，需请求=${toFetch.length}`);
 
-    // 请求未缓存的日期（直接调用ESPN API，不经过SCF代理）
-    if (toFetch.length > 0) {
+    // 优先从 GitHub Pages JSON 加载（避免CORS问题）
+    try {
+      const resp = await fetch('https://BAILG-git.github.io/worldcup-26/data/matches.json?t=' + Date.now());
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.events) {
+          processESPN(data);
+          espnOk = true;
+          espnEventsCount = (data.events||[]).length;
+          console.log('[fetchAllSources] 从GitHub Pages JSON加载成功');
+        }
+      }
+    } catch(e) {
+      console.warn('[fetchAllSources] GitHub Pages JSON加载失败，尝试直接调用ESPN', e);
+    }
+
+    // 如果GitHub Pages JSON失败，尝试直接调用ESPN API（可能有CORS限制）
+    if (!espnOk && toFetch.length > 0) {
       const urls = toFetch.map(d => `${ESPN_API}?dates=${d}`);
       const freshResults = await Promise.allSettled(
         urls.map((u,i) => fetch(u, { headers: { 'Accept': 'application/json' } }).then(r => {
