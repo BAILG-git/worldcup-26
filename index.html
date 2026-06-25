@@ -1009,84 +1009,43 @@ async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-    // 始终只拉 ±3 天的 ESPN 数据（历史比赛数据从 localStorage 恢复）
-    const now = new Date();
-    const dates = [];
-    for (let offset = -3; offset <= 3; offset++) {
-      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
-      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
-    }
-
-    // ===== 缓存逻辑 =====
-    const CACHE_KEY = 'wc2026_espn_cache';
-    const CACHE_TTL = 5 * 60 * 1000; // 5分钟过期
-    const nowTs = Date.now();
-    let cache = {};
-    try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch(e) {}
-
-    // 分离：有缓存且未过期直接用，否则请求
-    const toFetch = [];
-    let espnEventsCount = 0;
-    for (const d of dates) {
-      const key = `espn_${d}`;
-      const cached = cache[key];
-      if (cached && cached.data && (nowTs - (cached._ts||0)) < CACHE_TTL) {
-        processESPN(cached.data);
-        espnOk = true;
-        espnEventsCount += (cached.data.events||[]).length;
-        console.log(`[fetchAllSources] 缓存命中: ${d}`);
-      } else {
-        toFetch.push(d);
-      }
-    }
-
-    console.log(`[fetchAllSources] ESPN请求: ±3天共${dates.length}天，缓存命中=${dates.length-toFetch.length}，需请求=${toFetch.length}`);
-
-    // 优先从 GitHub Pages JSON 加载（避免CORS问题）
-    // 缓存：60s 内不重复请求，减少 CDN 压力
+    // ===== 主数据源：GitHub Pages JSON（精简版，90KB） =====
+    // 只从 GitHub 加载一次，避免重复 processESPN 导致 OOM
     const _now = Date.now();
+    let ghData = null;
+
     if (!window._ghMatchesCache || _now - (window._ghMatchesCache._ts || 0) > 60000) {
       try {
         const resp = await fetch('https://BAILG-git.github.io/worldcup-26/data/matches.json?t=' + _now);
         if (resp.ok) {
-          const data = await resp.json();
-          window._ghMatchesCache = { data, _ts: _now };
-          if (data.events) {
-            processESPN(data);
-            espnOk = true;
-            espnEventsCount = (data.events||[]).length;
-            console.log('[fetchAllSources] 从GitHub Pages JSON加载成功');
-          }
+          ghData = await resp.json();
+          window._ghMatchesCache = { data: ghData, _ts: _now };
+          console.log('[fetchAllSources] GitHub Pages JSON加载成功:', (ghData.events||[]).length, 'events');
         }
       } catch(e) {
         console.warn('[fetchAllSources] GitHub Pages JSON加载失败', e);
       }
     } else {
-      // 用缓存数据
-      const cached = window._ghMatchesCache.data;
-      if (cached && cached.events) {
-        processESPN(cached);
-        espnOk = true;
-        espnEventsCount = (cached.events||[]).length;
-        console.log('[fetchAllSources] 使用GitHub Pages JSON缓存（', Math.round((_now - window._ghMatchesCache._ts)/1000), 's前）');
-      }
+      ghData = window._ghMatchesCache.data;
+      console.log('[fetchAllSources] 使用JSON缓存（', Math.round((_now - window._ghMatchesCache._ts)/1000), 's前）');
     }
 
-    // 如果GitHub Pages JSON失败，尝试直接调用ESPN API（可能有CORS限制）
-    if (!espnOk && toFetch.length > 0) {
-      const urls = toFetch.map(d => `${ESPN_API}?dates=${d}`);
+    // 只处理一次（核心修复：防止多次 processESP N 导致 OOM）
+    if (ghData && ghData.events) {
+      processESPN(ghData);
+      espnOk = true;
+    }
+
+    // GitHub 失败时才尝试 ESPN API 兜底
+    if (!espnOk) {
+      const urls = [''];
+      // ESPN API 兜底：尝试最近1天
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0,10).replace(/-/g,'');
+      urls[0] = `${ESPN_API}?dates=${todayStr}`;
       const freshResults = await Promise.allSettled(
-        urls.map((u,i) => fetch(u, { headers: { 'Accept': 'application/json' } }).then(r => {
+        urls.map(u => fetch(u, { headers: { 'Accept': 'application/json' } }).then(r => {
           if (!r.ok) { console.warn('ESPN HTTP', r.status, u); return null; }
-          const d = toFetch[i];
-          try {
-            r.clone().json().then(data => {
-              if (data) {
-                cache[`espn_${d}`] = { data, _ts: Date.now() };
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-              }
-            });
-          } catch(e) {}
           return r.json();
         }).catch(e => { console.warn('ESPN fetch error', u, e); return null; }))
       );
@@ -1094,12 +1053,11 @@ async function fetchAllSources() {
         if (res.status === 'fulfilled' && res.value) {
           processESPN(res.value);
           espnOk = true;
-          espnEventsCount += (res.value.events||[]).length;
         }
       }
     }
 
-    console.log(`[fetchAllSources] ESPN OK=${espnOk}, events=${espnEventsCount}`);
+    console.log(`[fetchAllSources] OK=${espnOk}`);
     window._espnLoaded = true;
     fetchInjuriesIfNeeded();
     silentRefresh();
