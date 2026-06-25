@@ -1636,15 +1636,19 @@ function loadScores(){
   'L_2': {score:[0, 1],ht:[0, 0],goals:[{team:'克罗地亚',minute:"54'",isHome:false,type:'goal',player:"Ante Budimir"}]},
   'L_3': {score:[1, 0],ht:[0, 0],goals:[{team:'哥伦比亚',minute:"76'",isHome:true,type:'goal',player:"Daniel Muñoz"}]},
   // MD3 第一批 6月25日（北京时间）A/B组第3轮
-  'A_4': {score:[0, 2],ht:[0, 1],goals:[{team:'墨西哥',minute:"38'",isHome:true,type:'goal',player:"Santiago Giménez"},{team:'墨西哥',minute:"67'",isHome:true,type:'goal',player:"Raúl Jiménez"}]},
-  'A_5': {score:[0, 2],ht:[0, 1],goals:[{team:'韩国',minute:"41'",isHome:false,type:'goal',player:"Lee Kang-in"},{team:'韩国',minute:"58'",isHome:false,type:'goal',player:"Son Heung-min"}]},
-  'B_4': {score:[2, 1],ht:[0, 1],goals:[{team:'瑞士',minute:"44'",isHome:true,type:'goal',player:"Rubén Vargas"},{team:'瑞士',minute:"74'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'加拿大',minute:"75'",isHome:false,type:'goal',player:"Promise David"}]},
-  'B_5': {score:[3, 1],ht:[1, 0],goals:[{team:'波黑',minute:"28'",isHome:true,type:'goal',player:"Kerim Alajbegovic"},{team:'波黑',minute:"33'",isHome:true,type:'own_goal',player:"Mahmoud Abunada"},{team:'卡塔尔',minute:"42'",isHome:false,type:'goal',player:"Hassan Al-Haydos"},{team:'波黑',minute:"80'",isHome:true,type:'goal',player:"Ermin Mahmic"}]},
+  // A_4: 捷克(主) vs 墨西哥(客) 0-3
+  'A_4': {score:[0, 3],ht:[0, 1],goals:[{team:'墨西哥',minute:"22'",isHome:false,type:'goal',player:"Santiago Giménez"},{team:'墨西哥',minute:"54'",isHome:false,type:'goal',player:"Álvarez"},{team:'墨西哥',minute:"81'",isHome:false,type:'goal',player:"Hirving Lozano"}]},
+  // A_5: 南非(主) vs 韩国(客) 1-0
+  'A_5': {score:[1, 0],ht:[0, 0],goals:[{team:'南非',minute:"63'",isHome:true,type:'goal',player:"Mvupa"}]},
+  // B_4: 瑞士(主) vs 加拿大(客) 2-1
+  'B_4': {score:[2, 1],ht:[1, 0],goals:[{team:'瑞士',minute:"46'",isHome:true,type:'goal',player:"Rubén Vargas"},{team:'瑞士',minute:"57'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'加拿大',minute:"76'",isHome:false,type:'goal',player:"Promise David"}]},
+  // B_5: 波黑(主) vs 卡塔尔(客) 3-1
+  'B_5': {score:[3, 1],ht:[1, 0],goals:[{team:'波黑',minute:"18'",isHome:true,type:'goal',player:"Kerim Alajbegovic"},{team:'卡塔尔',minute:"32'",isHome:false,type:'own_goal',player:"Sultan Buarak"},{team:'卡塔尔',minute:"41'",isHome:false,type:'goal',player:"Hassan Al-Haydos"},{team:'波黑',minute:"68'",isHome:true,type:'goal',player:"Edin Džeko"}]},
   // MD3 第二批 6月25日（北京时间）C/D组第3轮
   // C_4: 苏格兰(主) vs 巴西(客) 0-3
-  'C_4': {score:[0, 3],ht:[0, 1],goals:[{team:'巴西',minute:"7'",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"45'+2",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"62'",isHome:false,type:'goal',player:"Matheus Cunha"}]},
+  'C_4': {score:[0, 3],ht:[0, 2],goals:[{team:'巴西',minute:"7'",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"45+3",isHome:false,type:'goal',player:"Vinícius Júnior (Header)"},{team:'巴西',minute:"60'",isHome:false,type:'goal',player:"Matheus Cunha"}]},
   // C_5: 摩洛哥(主) vs 海地(客) 4-2
-  'C_5': {score:[4, 2],ht:[1, 2],goals:[{team:'海地',minute:"10'",isHome:false,type:'own_goal',player:"Yassine Bounou"},{team:'摩洛哥',minute:"39'",isHome:true,type:'goal',player:"Achraf Hakimi"},{team:'海地',minute:"43'",isHome:false,type:'goal',player:"Wilson Isidor"},{team:'摩洛哥',minute:"45'+1",isHome:true,type:'goal',player:"Ismael Saibari"},{team:'摩洛哥',minute:"78'",isHome:true,type:'goal',player:"Soufiane Rahimi"},{team:'摩洛哥',minute:"89'",isHome:true,type:'goal',player:"Gessime Yassine"}]},
+  'C_5': {score:[4, 2],ht:[2, 2],goals:[{team:'海地',minute:"10'",isHome:false,type:'own_goal',player:"约瑟夫射门造成布努乌龙"},{team:'摩洛哥',minute:"26'",isHome:true,type:'goal',player:"Achraf Hakimi"},{team:'海地',minute:"43'",isHome:false,type:'goal',player:"Wilson Isidor"},{team:'摩洛哥',minute:"45+1",isHome:true,type:'goal',player:"Ismael Saibari"},{team:'摩洛哥',minute:"78'",isHome:true,type:'goal',player:"Soufiane Rahimi"},{team:'摩洛哥',minute:"89'",isHome:true,type:'goal',player:"Gessime Yassine"}]},
   };
   // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
   const calcHalftimeFromGoals = (goals) => {
