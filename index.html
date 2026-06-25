@@ -423,7 +423,7 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 let goalEvents = {};
 let upsetMatches = []; // 从 GitHub Pages 加载
 let _upsetPending = null; // 待标记的 match id
-const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com/upsets';
+const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记（GitHub Pages JSON）
 async function loadUpsets() {
@@ -1013,7 +1013,7 @@ function espnName(en) { return ESPN_NAME[en] || NAME_MAP[en] || en; }
 
 function connectAll() { updateStatus('connecting'); fetchAllSources(); }
 
-const SCF_PROXY = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com';
+const SCF_PROXY = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com';
 async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
@@ -2214,7 +2214,7 @@ function generateDailyPrediction(m) {
 }
 
 // ========== 预测数据加载（Elo+MonteCarlo 远程JSON） ==========
-const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com/predict';
+const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/predict';
 const PREDICTIONS_JSON_URL = null; // 已切SCF
 let predJsonCache = null;
 let predJsonTime = 0;
