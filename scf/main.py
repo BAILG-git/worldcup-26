@@ -620,10 +620,33 @@ def handle_completed_post(body):
     except Exception as e:
         return {'error': str(e)}
 
+# ========== ESPN 代理（/espn-proxy?dates=YYYYMMDD,YYYYMMDD,...） ==========
+ESPN_API = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldcup26/scoreboard'
+
+def handle_espn_proxy(dates_str):
+    """拉取 ESPN 数据，支持多日期合并返回"""
+    dates = [d.strip() for d in dates_str.split(',') if d.strip()]
+    all_events = []
+    for d in dates:
+        try:
+            url = f'{ESPN_API}?dates={d}'
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Accept-Encoding': 'identity',
+            })
+            resp = urllib.request.urlopen(req, timeout=15)
+            data = json.loads(resp.read().decode('utf-8'))
+            if data.get('events'):
+                all_events.extend(data['events'])
+        except Exception as e:
+            print(f'ESPN fetch error for {d}: {e}')
+    return {'events': all_events, 'generatedAt': ''}
+
 # ========== SCF 主入口 ==========
 def main_handler(event, context):
-    qs = (event.get('queryStringParameters') or
-          event.get('queryString') or
+    qs = (event.get('queryStringParameters') or 
+          event.get('queryString') or 
           event.get('query') or {})
 
     if isinstance(qs, str):
@@ -632,6 +655,26 @@ def main_handler(event, context):
         qs = {k: v[0] for k, v in qs.items()}
 
     path = (event.get('path') or '').strip()
+
+    # 路由：/espn-proxy?dates=...（ESPN 实时数据代理）
+    if path == '/espn-proxy' or path.endswith('/espn-proxy'):
+        dates_str = qs.get('dates', '')
+        if not dates_str:
+            return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': 'missing dates parameter'})}
+        try:
+            data = handle_espn_proxy(dates_str)
+            return {'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*',
+                        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                        'Cache-Control': 'no-cache',
+                    },
+                    'body': json.dumps(data, ensure_ascii=False)}
+        except Exception as e:
+            return {'statusCode': 502, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+                    'body': json.dumps({'error': str(e)})}
 
     # 路由：/upsets（兼容带 API 网关 stage 前缀如 /release/upsets）
     if path == '/upsets' or path.endswith('/upsets'):
