@@ -1337,7 +1337,8 @@ function processESPN(data) {
     let mid = null;
     for (const ms of Object.values(GROUP_MATCHES)) {
       for (const mm of ms) {
-        if (mm.home === h && mm.away === a) { mid = mm.id; break; }
+        // 正向 + 反向匹配
+        if ((mm.home === h && mm.away === a) || (mm.home === a && mm.away === h)) { mid = mm.id; break; }
       }
       if (mid) break;
     }
@@ -1483,26 +1484,30 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   let updated = false;
   for (const ms of Object.values(GROUP_MATCHES))
     for (const mm of ms) {
-      if (mm.home === h && mm.away === a) {
-        // 已完赛的比赛不再被 ESPN 轮询覆盖（保护 COMPLETED_RESULTS 硬编码数据）
-        if (matchStatus[mm.id] === 'FINISHED') continue;
-        const prev = scores[mm.id];
-        if (ns && (!prev || prev[0] !== ns[0] || prev[1] !== ns[1])) updated = true;
-        if (matchStatus[mm.id] !== st) updated = true;
-        // 检测进球：比对前后比分
-        if (ns && prev && (ns[0] > prev[0] || ns[1] > prev[1])) {
-          const key = mm.home + '_' + mm.away;
-          const events = goalEvents[key] || [];
-          const prevGoalCount = (prev[0] + prev[1]);
-          const ev = events[prevGoalCount]; // 新进球的索引
-          if (ev) {
-            showGoalToast(ev.team, ev.minute, ns[0], ns[1], mm.home, mm.away, ev.player || '', ev.type || 'goal');
-          } else {
-            const scoringTeam = ns[0] > prev[0] ? mm.home : mm.away;
-            showGoalToast(scoringTeam, clockStr || '', ns[0], ns[1], mm.home, mm.away);
-          }
+      // 正向匹配 + 反向匹配（ESPN 的 homeAway 和 GROUP_MATCHES 定义可能相反）
+      const isMatch = (mm.home === h && mm.away === a) || (mm.home === a && mm.away === h);
+      if (!isMatch) continue;
+      // 反向时比分也要翻转
+      const finalNs = (mm.home === h && mm.away === a) ? ns : (ns ? [ns[1], ns[0]] : null);
+      // 已完赛的比赛不再被 ESPN 轮询覆盖（保护 COMPLETED_RESULTS 硬编码数据）
+      if (matchStatus[mm.id] === 'FINISHED') continue;
+      const prev = scores[mm.id];
+      if (finalNs && (!prev || prev[0] !== finalNs[0] || prev[1] !== finalNs[1])) updated = true;
+      if (matchStatus[mm.id] !== st) updated = true;
+      // 检测进球：比对前后比分
+      if (finalNs && prev && (finalNs[0] > prev[0] || finalNs[1] > prev[1])) {
+        const key = mm.home + '_' + mm.away;
+        const events = goalEvents[key] || [];
+        const prevGoalCount = (prev[0] + prev[1]);
+        const ev = events[prevGoalCount]; // 新进球的索引
+        if (ev) {
+          showGoalToast(ev.team, ev.minute, finalNs[0], finalNs[1], mm.home, mm.away, ev.player || '', ev.type || 'goal');
+        } else {
+          const scoringTeam = finalNs[0] > prev[0] ? mm.home : mm.away;
+          showGoalToast(scoringTeam, clockStr || '', finalNs[0], finalNs[1], mm.home, mm.away);
         }
-        if (ns) scores[mm.id] = ns;
+      }
+      if (finalNs) scores[mm.id] = finalNs;
         // 检测刚进入中场：上一轮状态不是中场相关，这一轮 clockStr 是中场休息
         // 此时当前比分就是半场比分，立即记录
         if (st === 'LIVE' && clockStr === '中场休息' && !halftimeScores[mm.id]) {
