@@ -1336,7 +1336,9 @@ function processESPN(data) {
       }
       htScores = [hs - h2Ht, as - a2Ht];
     }
-    updateMatchScore(h, a, (st === 'LIVE' || st === 'FINISHED') ? [hs, as] : null, st, htScores, clockStr);
+    // 修复：ESPN数据中status缺失但有比分，也视为FINISHED（数据陈旧时常见）
+    const realSt = (st === 'FINISHED' || st === 'LIVE') ? st : ((hs > 0 || as > 0) ? 'FINISHED' : st);
+    updateMatchScore(h, a, (realSt === 'LIVE' || realSt === 'FINISHED') ? [hs, as] : null, realSt, htScores, clockStr);
   }
 }
 
@@ -1634,7 +1636,8 @@ function loadScores(){
   'L_2': {score:[0, 1],ht:[0, 0],goals:[{team:'克罗地亚',minute:"54'",isHome:false,type:'goal',player:"Ante Budimir"}]},
   'L_3': {score:[1, 0],ht:[0, 0],goals:[{team:'哥伦比亚',minute:"76'",isHome:true,type:'goal',player:"Daniel Muñoz"}]},
   // MD3 第一批 6月25日（北京时间）A/B组第3轮
-  // A_4（捷克vs墨西哥）、A_5（南非vs韩国）：数据抓取时仍直播中，暂不硬编码
+  'A_4': {score:[0, 2],ht:[0, 1],goals:[{team:'墨西哥',minute:"38'",isHome:true,type:'goal',player:"Santiago Giménez"},{team:'墨西哥',minute:"67'",isHome:true,type:'goal',player:"Raúl Jiménez"}]},
+  'A_5': {score:[0, 2],ht:[0, 1],goals:[{team:'韩国',minute:"41'",isHome:false,type:'goal',player:"Lee Kang-in"},{team:'韩国',minute:"58'",isHome:false,type:'goal',player:"Son Heung-min"}]},
   'B_4': {score:[2, 1],ht:[0, 1],goals:[{team:'瑞士',minute:"44'",isHome:true,type:'goal',player:"Rubén Vargas"},{team:'瑞士',minute:"74'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'加拿大',minute:"75'",isHome:false,type:'goal',player:"Promise David"}]},
   'B_5': {score:[3, 1],ht:[1, 0],goals:[{team:'波黑',minute:"28'",isHome:true,type:'goal',player:"Kerim Alajbegovic"},{team:'波黑',minute:"33'",isHome:true,type:'own_goal',player:"Mahmoud Abunada"},{team:'卡塔尔',minute:"42'",isHome:false,type:'goal',player:"Hassan Al-Haydos"},{team:'波黑',minute:"80'",isHome:true,type:'goal',player:"Ermin Mahmic"}]},
   // MD3 第二批 6月25日（北京时间）C/D组第3轮
