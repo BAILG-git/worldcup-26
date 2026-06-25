@@ -9,7 +9,7 @@ import os
 import sys
 
 # ESPN Scoreboard API
-ESPN_URL = "https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard"
+ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.worldcup26/scoreboard"
 
 # 日期范围：世界杯期间
 WC_START = "20260611"
