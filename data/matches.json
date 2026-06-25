@@ -1,0 +1,735 @@
+{
+  "generatedAt": "2026-06-25T01:49:25.238982Z",
+  "events": [
+    {
+      "id": "760415",
+      "home": "墨西哥",
+      "away": "南非",
+      "score_h": 2,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760414",
+      "home": "韩国",
+      "away": "Czechia",
+      "score_h": 2,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760416",
+      "home": "加拿大",
+      "away": "波黑",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760417",
+      "home": "美国",
+      "away": "巴拉圭",
+      "score_h": 4,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760420",
+      "home": "卡塔尔",
+      "away": "瑞士",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760419",
+      "home": "巴西",
+      "away": "摩洛哥",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760418",
+      "home": "海地",
+      "away": "苏格兰",
+      "score_h": 0,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760421",
+      "home": "澳大利亚",
+      "away": "Türkiye",
+      "score_h": 2,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760422",
+      "home": "德国",
+      "away": "Curaçao",
+      "score_h": 7,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760425",
+      "home": "荷兰",
+      "away": "日本",
+      "score_h": 2,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760423",
+      "home": "科特迪瓦",
+      "away": "厄瓜多尔",
+      "score_h": 1,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760424",
+      "home": "瑞典",
+      "away": "突尼斯",
+      "score_h": 5,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760428",
+      "home": "西班牙",
+      "away": "佛得角",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760426",
+      "home": "比利时",
+      "away": "埃及",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760429",
+      "home": "沙特阿拉伯",
+      "away": "乌拉圭",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760427",
+      "home": "伊朗",
+      "away": "新西兰",
+      "score_h": 2,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760432",
+      "home": "法国",
+      "away": "塞内加尔",
+      "score_h": 3,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760430",
+      "home": "伊拉克",
+      "away": "挪威",
+      "score_h": 1,
+      "score_a": 4,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760433",
+      "home": "阿根廷",
+      "away": "阿尔及利亚",
+      "score_h": 3,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760431",
+      "home": "奥地利",
+      "away": "约旦",
+      "score_h": 3,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760435",
+      "home": "葡萄牙",
+      "away": "Congo DR",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760437",
+      "home": "英格兰",
+      "away": "克罗地亚",
+      "score_h": 4,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760434",
+      "home": "加纳",
+      "away": "巴拿马",
+      "score_h": 1,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760436",
+      "home": "乌兹别克斯坦",
+      "away": "哥伦比亚",
+      "score_h": 1,
+      "score_a": 3,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760438",
+      "home": "Czechia",
+      "away": "南非",
+      "score_h": 1,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760439",
+      "home": "瑞士",
+      "away": "波黑",
+      "score_h": 4,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760440",
+      "home": "加拿大",
+      "away": "卡塔尔",
+      "score_h": 6,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760441",
+      "home": "墨西哥",
+      "away": "韩国",
+      "score_h": 1,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760442",
+      "home": "美国",
+      "away": "澳大利亚",
+      "score_h": 2,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": true,
+      "is_neutral": true
+    },
+    {
+      "id": "760445",
+      "home": "苏格兰",
+      "away": "摩洛哥",
+      "score_h": 0,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760444",
+      "home": "巴西",
+      "away": "海地",
+      "score_h": 3,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760443",
+      "home": "Türkiye",
+      "away": "巴拉圭",
+      "score_h": 0,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760447",
+      "home": "荷兰",
+      "away": "瑞典",
+      "score_h": 5,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760448",
+      "home": "德国",
+      "away": "科特迪瓦",
+      "score_h": 2,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760446",
+      "home": "厄瓜多尔",
+      "away": "Curaçao",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760449",
+      "home": "突尼斯",
+      "away": "日本",
+      "score_h": 0,
+      "score_a": 4,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760453",
+      "home": "西班牙",
+      "away": "沙特阿拉伯",
+      "score_h": 4,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760451",
+      "home": "比利时",
+      "away": "伊朗",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760450",
+      "home": "乌拉圭",
+      "away": "佛得角",
+      "score_h": 2,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760452",
+      "home": "新西兰",
+      "away": "埃及",
+      "score_h": 1,
+      "score_a": 3,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760456",
+      "home": "阿根廷",
+      "away": "奥地利",
+      "score_h": 2,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760457",
+      "home": "法国",
+      "away": "伊拉克",
+      "score_h": 3,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760454",
+      "home": "挪威",
+      "away": "塞内加尔",
+      "score_h": 3,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760455",
+      "home": "约旦",
+      "away": "阿尔及利亚",
+      "score_h": 1,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760461",
+      "home": "葡萄牙",
+      "away": "乌兹别克斯坦",
+      "score_h": 5,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760458",
+      "home": "英格兰",
+      "away": "加纳",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760460",
+      "home": "巴拿马",
+      "away": "克罗地亚",
+      "score_h": 0,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760459",
+      "home": "哥伦比亚",
+      "away": "Congo DR",
+      "score_h": 1,
+      "score_a": 0,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760462",
+      "home": "波黑",
+      "away": "卡塔尔",
+      "score_h": 3,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760463",
+      "home": "瑞士",
+      "away": "加拿大",
+      "score_h": 2,
+      "score_a": 1,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760464",
+      "home": "摩洛哥",
+      "away": "海地",
+      "score_h": 4,
+      "score_a": 2,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760465",
+      "home": "苏格兰",
+      "away": "巴西",
+      "score_h": 0,
+      "score_a": 3,
+      "status": "STATUS_FULL_TIME",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760467",
+      "home": "Czechia",
+      "away": "墨西哥",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FIRST_HALF",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760466",
+      "home": "南非",
+      "away": "韩国",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_FIRST_HALF",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760473",
+      "home": "Curaçao",
+      "away": "科特迪瓦",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760468",
+      "home": "厄瓜多尔",
+      "away": "德国",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760471",
+      "home": "日本",
+      "away": "瑞典",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760472",
+      "home": "突尼斯",
+      "away": "荷兰",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760469",
+      "home": "巴拉圭",
+      "away": "澳大利亚",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760470",
+      "home": "Türkiye",
+      "away": "美国",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760475",
+      "home": "挪威",
+      "away": "法国",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760474",
+      "home": "塞内加尔",
+      "away": "伊拉克",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760478",
+      "home": "佛得角",
+      "away": "沙特阿拉伯",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760479",
+      "home": "乌拉圭",
+      "away": "西班牙",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760476",
+      "home": "埃及",
+      "away": "伊朗",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760477",
+      "home": "新西兰",
+      "away": "比利时",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760480",
+      "home": "克罗地亚",
+      "away": "加纳",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760485",
+      "home": "巴拿马",
+      "away": "英格兰",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760481",
+      "home": "哥伦比亚",
+      "away": "葡萄牙",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760482",
+      "home": "Congo DR",
+      "away": "乌兹别克斯坦",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760484",
+      "home": "阿尔及利亚",
+      "away": "奥地利",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760483",
+      "home": "约旦",
+      "away": "阿根廷",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    },
+    {
+      "id": "760486",
+      "home": "Group A 2nd Place",
+      "away": "加拿大",
+      "score_h": 0,
+      "score_a": 0,
+      "status": "STATUS_SCHEDULED",
+      "is_host": false,
+      "is_neutral": true
+    }
+  ]
+}

@@ -201,6 +201,7 @@ def match_to_group_id(home, away):
 
 def save_matches_json(events, data_dir):
     """保存ESPN数据到matches.json，供前端读取"""
+    from datetime import datetime
     output = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
         "events": events
