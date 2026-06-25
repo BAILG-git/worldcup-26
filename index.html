@@ -423,30 +423,38 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 let goalEvents = {};
 let upsetMatches = []; // 从 GitHub Pages 加载
 let _upsetPending = null; // 待标记的 match id
-const UPSETS_JSON_URL = 'https://BAILG-git.github.io/worldcup-26/data/upsets.json';
+const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com/upsets';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记（GitHub Pages JSON）
 async function loadUpsets() {
   try {
-    const resp = await fetch(UPSETS_JSON_URL + '?t=' + Date.now());
+    const resp = await fetch(SCF_UPSETS_URL, { cache: 'no-cache' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const data = await resp.json();
-    upsetMatches = Object.keys(data).filter(k => data[k] === true);
-    console.log('[爆冷] 已加载:', upsetMatches);
+    // SCF 返回对象 {matchId: true, ...}
+    upsetMatches = Array.isArray(data) ? data : Object.keys(data).filter(k => data[k] === true);
+    console.log('[爆冷] SCF加载成功:', upsetMatches);
   } catch(e) {
-    console.warn('[爆冷] 加载失败，使用空列表', e);
+    console.warn('[爆冷] SCF加载失败，兜底GitHub', e.message);
+    try {
+      const resp2 = await fetch('https://BAILG-git.github.io/worldcup-26/data/upsets.json?t=' + Date.now());
+      if (resp2.ok) { const d = await resp2.json(); upsetMatches = Object.keys(d).filter(k => d[k] === true); }
+    } catch(e2) {}
   }
 }
 // 保存爆冷标记到本地 + localStorage（后续可通过 GitHub API 同步）
 async function saveUpsets() {
-  // 暂时只存 localStorage 和内存，写操作需要手动编辑 data/upsets.json 后 push
   try {
-    localStorage.setItem('wc_upsets', JSON.stringify(upsetMatches));
-    console.log('[爆冷] 已保存到本地:', upsetMatches);
-    alert('爆冷标记已保存到本地浏览器。如需同步到服务器，请联系管理员更新 data/upsets.json');
-  } catch(e) {
-    console.warn('[爆冷] 保存异常:', e);
-  }
+    const body = {};
+    upsetMatches.forEach(mid => { body[mid] = true; });
+    const resp = await fetch(SCF_UPSETS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (resp.ok) console.log('[爆冷] SCF同步成功');
+    else console.warn('[爆冷] SCF同步失败 HTTP', resp.status);
+  } catch(e) { console.warn('[爆冷] SCF同步失败', e.message); }
 }
 // ========== 事件委托：点击最终比分标记爆冷 + 点击卡片看详情 ==========
 function setupMatchCardEvents() {
@@ -2206,31 +2214,51 @@ function generateDailyPrediction(m) {
 }
 
 // ========== 预测数据加载（Elo+MonteCarlo 远程JSON） ==========
-const PREDICTIONS_JSON_URL = 'https://BAILG-git.github.io/worldcup-26/data/predictions.json';
+const SCF_PREDICT_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com/predict';
+const PREDICTIONS_JSON_URL = null; // 已切SCF
 let predJsonCache = null;
 let predJsonTime = 0;
 const PRED_JSON_TTL = 300000; // 5分钟缓存
 
 async function loadPredictionsFromJSON() {
+  // 已切SCF，不再从这里加载
+  return null;
+}
+// SCF /predict 批量预测（按 GROUP_MATCHES 需要预测的比赛）
+let _scfPredCache = null;
+let _scfPredTime = 0;
+const SCF_PRED_TTL = 300000;
+async function loadPredictionsFromSCF() {
   const now = Date.now();
-  if (predJsonCache && now - predJsonTime < PRED_JSON_TTL) return predJsonCache;
-  try {
-    const resp = await fetch(PREDICTIONS_JSON_URL + '?t=' + Math.floor(now / PRED_JSON_TTL));
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    predJsonCache = data;
-    predJsonTime = now;
-    console.log('[预测] 远程JSON加载成功，引擎:', data.engine, '模拟次数:', data.simulations);
-    return data;
-  } catch(e) {
-    console.warn('[预测] 远程JSON加载失败，回退本地Poisson:', e.message);
-    return null;
+  if (_scfPredCache && now - _scfPredTime < SCF_PRED_TTL) return _scfPredCache;
+  const toPredict = [];
+  for (const ms of Object.values(GROUP_MATCHES)) {
+    for (const m of ms) {
+      if (predictions[m.id]?.locked) continue;
+      toPredict.push(m);
+    }
   }
+  // 逐个请求 SCF /predict（SCF 暂不支持批量，先逐个）
+  const results = {};
+  for (const m of toPredict) {
+    try {
+      const url = SCF_PREDICT_URL + '?home=' + encodeURIComponent(m.home) + '&away=' + encodeURIComponent(m.away) + '&id=' + encodeURIComponent(m.id);
+      const resp = await fetch(url, { cache: 'no-cache' });
+      if (resp.ok) {
+        const d = await resp.json();
+        if (d && d.score) results[m.id] = d;
+      }
+    } catch(e) { console.warn('[SCF预测] 单场失败:', m.id, e.message); }
+  }
+  _scfPredCache = { predictions: results, engine: 'SCF-Poisson', simulations: 1 };
+  _scfPredTime = now;
+  console.log('[预测] SCF加载成功:', Object.keys(results).length, '场');
+  return _scfPredCache;
 }
 
 function checkAndPredict() {
   // 异步加载远程预测
-  loadPredictionsFromJSON().then(data => {
+  loadPredictionsFromSCF().then(data => {
     if (!data || !data.predictions) {
       console.warn('[预测] 无远程数据，使用本地Poisson兜底');
       _localPredict();
