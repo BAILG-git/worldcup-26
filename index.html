@@ -1014,10 +1014,23 @@ function espnName(en) { return ESPN_NAME[en] || NAME_MAP[en] || en; }
 function connectAll() { updateStatus('connecting'); fetchAllSources(); }
 
 const SCF_PROXY = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com';
+// 失败保护：连续失败超过阈值后停止自动轮询，避免无限刷请求
+window._scfFailCount = 0;
+const SCF_FAIL_MAX = 5;       // 连续失败5次后停止
+const SCF_FAIL_COOLDOWN = 120000; // 停止2分钟后允许重试
+
 async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
+    // 失败保护检查
+    if (window._scfFailCount >= SCF_FAIL_MAX && (Date.now() - window._scfFailFirstTime || 0) < SCF_FAIL_COOLDOWN) {
+      console.warn(`[fetchAllSources] SCF已连续失败${SCF_FAIL_MAX}次，暂停轮询 ${SCF_FAIL_COOLDOWN/1000}s`);
+      stopPolling();
+      updateStatus('error');
+      return;
+    }
+
     // ===== 主数据源：SCF 代理 ESPN API（实时） =====
     const now = new Date();
     const dates = [];
@@ -1032,16 +1045,26 @@ async function fetchAllSources() {
       const resp = await fetch(url, { cache: 'no-cache' });
       if (resp.ok) {
         const data = await resp.json();
-        if (data.events) {
+        if (data.events && data.events.length > 0) {
           processESPN(data);
           espnOk = true;
+          window._scfFailCount = 0;  // 成功则重置计数器
           console.log('[fetchAllSources] SCF加载成功:', data.events.length, 'events');
+        } else if (!data.events) {
+          // SCF 返回了但不是 ESPN 数据（可能是调试信息）
+          console.warn('[fetchAllSources] SCF返回非预期数据（可能路由未部署）:', data.msg ? data.msg.substring(0,80) : 'unknown');
+          window._scfFailCount++;
+          if (!window._scfFailFirstTime) window._scfFailFirstTime = Date.now();
         }
       } else {
         console.warn('[fetchAllSources] SCF HTTP', resp.status);
+        window._scfFailCount++;
+        if (!window._scfFailFirstTime) window._scfFailFirstTime = Date.now();
       }
     } catch(e) {
       console.warn('[fetchAllSources] SCF失败', e);
+      window._scfFailCount++;
+      if (!window._scfFailFirstTime) window._scfFailFirstTime = Date.now();
     }
 
     // SCF 失败时才用 GitHub Pages JSON 兜底
