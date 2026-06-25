@@ -1508,16 +1508,15 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
         }
       }
       if (finalNs) scores[mm.id] = finalNs;
-        // 检测刚进入中场：上一轮状态不是中场相关，这一轮 clockStr 是中场休息
-        // 此时当前比分就是半场比分，立即记录
-        if (st === 'LIVE' && clockStr === '中场休息' && !halftimeScores[mm.id]) {
-          halftimeScores[mm.id] = ns ? [ns[0], ns[1]] : [0, 0];
-        }
-        matchStatus[mm.id] = st;
-        if (st === 'FINISHED') autoPersistCompleted(mm.id);
-        if (htScores) halftimeScores[mm.id] = htScores;
-        if (clockStr !== undefined) matchClock[mm.id] = clockStr;
+      // 检测刚进入中场：上一轮状态不是中场相关，这一轮 clockStr 是中场休息
+      // 此时当前比分就是半场比分，立即记录
+      if (st === 'LIVE' && clockStr === '中场休息' && !halftimeScores[mm.id]) {
+        halftimeScores[mm.id] = ns ? [ns[0], ns[1]] : [0, 0];
       }
+      matchStatus[mm.id] = st;
+      if (st === 'FINISHED') autoPersistCompleted(mm.id);
+      if (htScores) halftimeScores[mm.id] = htScores;
+      if (clockStr !== undefined) matchClock[mm.id] = clockStr;
     }
   if (ns) saveScores();
   // ========== 旧预测数据回滚（v10：已完赛比赛锁定旧值） ==========
