@@ -356,10 +356,10 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 <h1>FIFA World Cup <span id="yearBadge">2026</span> United States, Canada, Mexico</h1>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('groups')">📊 Group Table</button>
-  <button class="tab-btn" onclick="switchTab('matches')">📅 Group Fixtures</button>
-  <button class="tab-btn" onclick="switchTab('bracket')">🏟 Knockout Bracket</button>
-  <button class="tab-btn" onclick="switchTab('best3rd')">📈 Best 3rd</button>
+  <button class="tab-btn active" data-tab="groups" onclick="switchTab('groups')">📊 Group Table</button>
+  <button class="tab-btn" data-tab="matches" onclick="switchTab('matches')">📅 Group Fixtures</button>
+  <button class="tab-btn" data-tab="bracket" onclick="switchTab('bracket')">🏟 Knockout Bracket</button>
+  <button class="tab-btn" data-tab="best3rd" onclick="switchTab('best3rd')">📈 Best 3rd</button>
 </div>
 
 <div id="tab-groups" class="tab-content"></div>
@@ -3277,7 +3277,10 @@ function switchTab(tab){
   document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).style.display=tab==='bracket'?'flex':'block';
-  event.target.classList.add('active');
+  // 用 data-tab 属性定位按钮，不依赖 event.target
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    if(b.getAttribute('data-tab')===tab) b.classList.add('active');
+  });
   // 切到 tab 时全量刷新保证数据最新
   if(tab==='standings') renderStandings();
   if(tab==='matches') renderMatches();
