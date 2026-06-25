@@ -1,8 +1,11 @@
-name: Daily Predictions
+name: Fetch ESPN Data & Generate Predictions
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # 北京时间0时 = UTC 16:00
+    # 每小时执行一次（UTC 0-23点 = 北京时间8-次日7点）
+    - cron: '0 * * * *'
+    # 比赛日加密执行：每5分钟检查一次（UTC 12-23 = 北京时间20-次日7点）
+    - cron: '*/5 12-23 * * *'
   workflow_dispatch:  # 允许手动触发
 
 jobs:
