@@ -657,7 +657,8 @@ def main_handler(event, context):
     path = (event.get('path') or '').strip()
 
     # 路由：/espn-proxy?dates=...（ESPN 实时数据代理）
-    if path == '/espn-proxy' or path.endswith('/espn-proxy'):
+    # 支持 /espn-proxy、/release/espn-proxy 等前缀
+    if '/espn-proxy' in path:
         dates_str = qs.get('dates', '')
         if not dates_str:
             return {'statusCode': 400, 'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
@@ -677,7 +678,7 @@ def main_handler(event, context):
                     'body': json.dumps({'error': str(e)})}
 
     # 路由：/upsets（兼容带 API 网关 stage 前缀如 /release/upsets）
-    if path == '/upsets' or path.endswith('/upsets'):
+    if '/upsets' in path:
         method = (event.get('httpMethod') or 'GET').upper()
         cors_headers = {
             'Content-Type': 'application/json',
@@ -700,8 +701,9 @@ def main_handler(event, context):
         # GET
         return {'statusCode': 200, 'headers': cors_headers, 'body': handle_upsets_get()}
 
-    # 路由：/completed（自动持久化完赛赛果）\n    if path == '/completed' or path.endswith('/completed'):\n        method = (event.get('httpMethod') or 'GET').upper()\n        cors_headers = {\n            'Content-Type': 'application/json',\n            'Access-Control-Allow-Origin': '*',\n            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n            'Access-Control-Allow-Headers': 'Content-Type',\n        }\n        if method == 'OPTIONS':\n            return {'statusCode': 204, 'headers': cors_headers, 'body': ''}\n        if method == 'POST':\n            try:\n                raw_body = event.get('body', '{}') or '{}'\n                payload = json.loads(raw_body) if isinstance(raw_body, str) else raw_body\n                result = handle_completed_post(payload)\n            except Exception as e:\n                result = {'error': str(e)}\n            return {'statusCode': 200 if result.get('ok') else 500, 'headers': cors_headers,\n                    'body': json.dumps(result, ensure_ascii=False)}\n        # GET\n        return {'statusCode': 200, 'headers': cors_headers, 'body': handle_completed_get()}\n\n    # 路由：/predict
-    if path == '/predict' or qs.get('action','') == 'predict':
+    # 路由：/completed（自动持久化完赛赛果）
+    if '/completed' in path:\n        method = (event.get('httpMethod') or 'GET').upper()\n        cors_headers = {\n            'Content-Type': 'application/json',\n            'Access-Control-Allow-Origin': '*',\n            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n            'Access-Control-Allow-Headers': 'Content-Type',\n        }\n        if method == 'OPTIONS':\n            return {'statusCode': 204, 'headers': cors_headers, 'body': ''}\n        if method == 'POST':\n            try:\n                raw_body = event.get('body', '{}') or '{}'\n                payload = json.loads(raw_body) if isinstance(raw_body, str) else raw_body\n                result = handle_completed_post(payload)\n            except Exception as e:\n                result = {'error': str(e)}\n            return {'statusCode': 200 if result.get('ok') else 500, 'headers': cors_headers,\n                    'body': json.dumps(result, ensure_ascii=False)}\n        # GET\n        return {'statusCode': 200, 'headers': cors_headers, 'body': handle_completed_get()}\n\n    # 路由：/predict
+    if '/predict' in path or qs.get('action','') == 'predict':
         result = handle_predict(qs)
         return {
             'statusCode': 200,
