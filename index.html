@@ -1641,8 +1641,10 @@ function loadScores(){
   'B_4': {score:[2, 1],ht:[0, 1],goals:[{team:'瑞士',minute:"44'",isHome:true,type:'goal',player:"Rubén Vargas"},{team:'瑞士',minute:"74'",isHome:true,type:'goal',player:"Johan Manzambi"},{team:'加拿大',minute:"75'",isHome:false,type:'goal',player:"Promise David"}]},
   'B_5': {score:[3, 1],ht:[1, 0],goals:[{team:'波黑',minute:"28'",isHome:true,type:'goal',player:"Kerim Alajbegovic"},{team:'波黑',minute:"33'",isHome:true,type:'own_goal',player:"Mahmoud Abunada"},{team:'卡塔尔',minute:"42'",isHome:false,type:'goal',player:"Hassan Al-Haydos"},{team:'波黑',minute:"80'",isHome:true,type:'goal',player:"Ermin Mahmic"}]},
   // MD3 第二批 6月25日（北京时间）C/D组第3轮
-  'C_4': {score:[4, 2],ht:[1, 2],goals:[{team:'海地',minute:"10'",isHome:false,type:'own_goal',player:"Yassine Bounou"},{team:'摩洛哥',minute:"39'",isHome:true,type:'goal',player:"Achraf Hakimi"},{team:'海地',minute:"43'",isHome:false,type:'goal',player:"Wilson Isidor"},{team:'摩洛哥',minute:"45'",isHome:true,type:'goal',player:"Ismael Saibari"},{team:'摩洛哥',minute:"78'",isHome:true,type:'goal',player:"Soufiane Rahimi"},{team:'摩洛哥',minute:"89'",isHome:true,type:'goal',player:"Gessime Yassine"}]},
-  'C_5': {score:[0, 3],ht:[0, 1],goals:[{team:'巴西',minute:"7'",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"45'",isHome:false,type:'goal',player:"Vinícius Júnior (Header)"},{team:'巴西',minute:"61'",isHome:false,type:'goal',player:"Matheus Cunha"}]},
+  // C_4: 苏格兰(主) vs 巴西(客) 0-3
+  'C_4': {score:[0, 3],ht:[0, 1],goals:[{team:'巴西',minute:"7'",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"45'+2",isHome:false,type:'goal',player:"Vinícius Júnior"},{team:'巴西',minute:"62'",isHome:false,type:'goal',player:"Matheus Cunha"}]},
+  // C_5: 摩洛哥(主) vs 海地(客) 4-2
+  'C_5': {score:[4, 2],ht:[1, 2],goals:[{team:'海地',minute:"10'",isHome:false,type:'own_goal',player:"Yassine Bounou"},{team:'摩洛哥',minute:"39'",isHome:true,type:'goal',player:"Achraf Hakimi"},{team:'海地',minute:"43'",isHome:false,type:'goal',player:"Wilson Isidor"},{team:'摩洛哥',minute:"45'+1",isHome:true,type:'goal',player:"Ismael Saibari"},{team:'摩洛哥',minute:"78'",isHome:true,type:'goal',player:"Soufiane Rahimi"},{team:'摩洛哥',minute:"89'",isHome:true,type:'goal',player:"Gessime Yassine"}]},
   };
   // 从进球事件精确计算半场比分（仅根据进球分钟数，不依赖外部数据）
   const calcHalftimeFromGoals = (goals) => {
