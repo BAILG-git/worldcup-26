@@ -116,8 +116,8 @@ def fetch_espn_scores():
     return finished
 
 
-def fetch_espn_all():
-    """从 ESPN 拉取所有比赛数据（包括未开始、进行中、已完赛）"""
+def fetch_espn_all_raw():
+    """从 ESPN 拉取所有比赛原始数据（保留 ESPN 原始格式，供前端 processESPN 解析）"""
     all_events = []
     dates_to_check = []
 
@@ -140,46 +140,18 @@ def fetch_espn_all():
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
 
+            # 直接存储 ESPN 原始 event 数据（前端 processESPN 能解析这种格式）
             for event in data.get("events", []):
-                event_id = event.get("id", "")
-                status = event.get("status", {}).get("type", {}).get("name", "")
-
+                # 只保留有用字段，减少文件大小
                 competitions = event.get("competitions", [])
                 if len(competitions) < 1:
                     continue
-
+                # 简单验证有 home/away
                 comp = competitions[0]
                 competitors = comp.get("competitors", [])
                 if len(competitors) < 2:
                     continue
-
-                home_team = None
-                away_team = None
-                home_score = None
-                away_score = None
-
-                for c in competitors:
-                    name_en = c.get("team", {}).get("displayName", "")
-                    name_cn = ESPN_NAME_MAP.get(name_en, name_en)
-                    score = c.get("score")
-                    if c.get("homeAway") == "home":
-                        home_team = name_cn
-                        home_score = int(score) if score else None
-                    else:
-                        away_team = name_cn
-                        away_score = int(score) if score else None
-
-                if home_team and away_team:
-                    all_events.append({
-                        "id": event_id,
-                        "home": home_team,
-                        "away": away_team,
-                        "score_h": home_score,
-                        "score_a": away_score,
-                        "status": status,
-                        "is_host": home_team in ["墨西哥", "美国", "加拿大"],
-                        "is_neutral": True,
-                    })
+                all_events.append(event)
 
         except Exception as e:
             print(f"[WARN] ESPN fetch failed for {date_str}: {e}", file=sys.stderr)
@@ -212,27 +184,69 @@ def save_matches_json(events, data_dir):
     print(f"       Saved matches.json ({len(events)} events)")
 
 
+def is_finished_event(event):
+    """判断 ESPN 原始 event 是否已完赛"""
+    # ESPN 实际返回: STATUS_FULL_TIME, STATUS_IN_PROGRESS, STATUS_SCHEDULED, STATUS_HALFTIME
+    return event.get("status", {}).get("type", {}).get("name", "") == "STATUS_FULL_TIME"
+
+
+def event_to_finished(event):
+    """将 ESPN 原始 event 转为 elo_montecarlo 需要的格式"""
+    competitions = event.get("competitions", [])
+    if not competitions:
+        return None
+    comp = competitions[0]
+    competitors = comp.get("competitors", [])
+    home_team = None
+    away_team = None
+    home_score = None
+    away_score = None
+    for c in competitors:
+        name_en = c.get("team", {}).get("displayName", "")
+        name_cn = ESPN_NAME_MAP.get(name_en, name_en)
+        score = c.get("score")
+        if c.get("homeAway") == "home":
+            home_team = name_cn
+            home_score = int(score) if score is not None else None
+        else:
+            away_team = name_cn
+            away_score = int(score) if score is not None else None
+    if not (home_team and away_team and home_score is not None and away_score is not None):
+        return None
+    return {
+        "home": home_team,
+        "away": away_team,
+        "score_h": home_score,
+        "score_a": away_score,
+        "is_host": home_team in ["墨西哥", "美国", "加拿大"],
+        "is_neutral": True,
+    }
+
+
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(script_dir)  # worldcup-26/
     data_dir = os.path.join(project_dir, "data")
 
-    # 0. 拉取 ESPN 所有比赛数据（包括未开始、进行中、已完赛）
-    print("[0/4] Fetching ESPN all matches...")
-    all_events = fetch_espn_all()
+    # 0. 拉取 ESPN 所有比赛原始数据（包括未开始、进行中、已完赛）
+    print("[0/4] Fetching ESPN all matches (raw)...")
+    all_events = fetch_espn_all_raw()
     print(f"       Found {len(all_events)} total events")
 
-    # 保存 matches.json 供前端读取
+    # 保存 matches.json 供前端读取（ESPN 原始格式）
     save_matches_json(all_events, data_dir)
 
     # 1. 筛选已完赛数据
     print("[1/4] Filtering finished matches...")
-    finished_raw = [e for e in all_events if e.get("status") == "STATUS_FINAL"]
-    print(f"       Found {len(finished_raw)} finished matches")
+    finished_events = [e for e in all_events if is_finished_event(e)]
+    print(f"       Found {len(finished_events)} finished events")
 
-    # 映射到 group match ID
+    # 转换为 elo_montecarlo 需要的格式，并映射到 group match ID
     finished_matches = []
-    for fm in finished_raw:
+    for evt in finished_events:
+        fm = event_to_finished(evt)
+        if not fm:
+            continue
         mid = match_to_group_id(fm["home"], fm["away"])
         if mid:
             fm["id"] = mid
@@ -279,7 +293,7 @@ def main():
 
     # 4. 再次保存 matches.json（确保最新）
     print("[4/4] Updating matches.json...")
-    all_events = fetch_espn_all()
+    all_events = fetch_espn_all_raw()
     save_matches_json(all_events, data_dir)
 
 
