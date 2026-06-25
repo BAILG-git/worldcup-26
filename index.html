@@ -1005,55 +1005,52 @@ function espnName(en) { return ESPN_NAME[en] || NAME_MAP[en] || en; }
 
 function connectAll() { updateStatus('connecting'); fetchAllSources(); }
 
+const SCF_PROXY = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentcf.com';
 async function fetchAllSources() {
   let espnOk = false;
   updateStatus('connecting');
   try {
-    // ===== 主数据源：GitHub Pages JSON（精简版，90KB） =====
-    // 只从 GitHub 加载一次，避免重复 processESPN 导致 OOM
-    const _now = Date.now();
-    let ghData = null;
+    // ===== 主数据源：SCF 代理 ESPN API（实时） =====
+    const now = new Date();
+    const dates = [];
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(now); d.setUTCDate(d.getUTCDate() + offset);
+      dates.push(d.toISOString().slice(0,10).replace(/-/g,''));
+    }
 
-    if (!window._ghMatchesCache || _now - (window._ghMatchesCache._ts || 0) > 60000) {
+    // SCF 支持多日期批量查询
+    const url = `${SCF_PROXY}/espn-proxy?dates=${dates.join(',')}`;
+    try {
+      const resp = await fetch(url, { cache: 'no-cache' });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.events) {
+          processESPN(data);
+          espnOk = true;
+          console.log('[fetchAllSources] SCF加载成功:', data.events.length, 'events');
+        }
+      } else {
+        console.warn('[fetchAllSources] SCF HTTP', resp.status);
+      }
+    } catch(e) {
+      console.warn('[fetchAllSources] SCF失败', e);
+    }
+
+    // SCF 失败时才用 GitHub Pages JSON 兜底
+    if (!espnOk) {
+      const _now = Date.now();
       try {
         const resp = await fetch('https://BAILG-git.github.io/worldcup-26/data/matches.json?t=' + _now);
         if (resp.ok) {
-          ghData = await resp.json();
-          window._ghMatchesCache = { data: ghData, _ts: _now };
-          console.log('[fetchAllSources] GitHub Pages JSON加载成功:', (ghData.events||[]).length, 'events');
+          const data = await resp.json();
+          if (data.events) {
+            processESPN(data);
+            espnOk = true;
+            console.log('[fetchAllSources] GitHub Pages JSON兜底成功');
+          }
         }
       } catch(e) {
-        console.warn('[fetchAllSources] GitHub Pages JSON加载失败', e);
-      }
-    } else {
-      ghData = window._ghMatchesCache.data;
-      console.log('[fetchAllSources] 使用JSON缓存（', Math.round((_now - window._ghMatchesCache._ts)/1000), 's前）');
-    }
-
-    // 只处理一次（核心修复：防止多次 processESP N 导致 OOM）
-    if (ghData && ghData.events) {
-      processESPN(ghData);
-      espnOk = true;
-    }
-
-    // GitHub 失败时才尝试 ESPN API 兜底
-    if (!espnOk) {
-      const urls = [''];
-      // ESPN API 兜底：尝试最近1天
-      const now = new Date();
-      const todayStr = now.toISOString().slice(0,10).replace(/-/g,'');
-      urls[0] = `${ESPN_API}?dates=${todayStr}`;
-      const freshResults = await Promise.allSettled(
-        urls.map(u => fetch(u, { headers: { 'Accept': 'application/json' } }).then(r => {
-          if (!r.ok) { console.warn('ESPN HTTP', r.status, u); return null; }
-          return r.json();
-        }).catch(e => { console.warn('ESPN fetch error', u, e); return null; }))
-      );
-      for (const res of freshResults) {
-        if (res.status === 'fulfilled' && res.value) {
-          processESPN(res.value);
-          espnOk = true;
-        }
+        console.warn('[fetchAllSources] GitHub Pages JSON也失败', e);
       }
     }
 
