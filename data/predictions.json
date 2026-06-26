@@ -4154,5 +4154,14 @@
     "wdlLabel": "��ʤ",
     "goals": "1,2",
     "reason": "����"
+  },
+  "D_4": {
+    "score": "1-1-2-2",
+    "scoreC": "",
+    "wdl": "主胜",
+    "wdlLabel": "主胜",
+    "goals": "3,4",
+    "reason": "手动输入",
+    "confidence": ""
   }
 }
