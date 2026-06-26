@@ -37,6 +37,12 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media(max-width:1200px){.match-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){.match-grid{grid-template-columns:1fr;gap:8px}#tab-matches{padding:8px;height:calc(100vh - 140px)}}
+#tab-matches{padding:12px;overflow-y:auto;height:calc(100vh - 160px)}
+.match-date-block{margin-bottom:16px}
+.match-date-header{font-weight:bold;font-size:14px;color:var(--gold);margin-bottom:8px;padding-left:4px}
+.match-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:1200px){.match-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.match-grid{grid-template-columns:1fr;gap:8px}#tab-matches{padding:8px;height:calc(100vh - 140px)}}
 .match-card{border:1px solid rgba(240,192,64,.35);border-radius:8px;background:var(--card);overflow:hidden;transition:.15s;position:relative;cursor:pointer}
 .match-card:hover{border-color:rgba(240,192,64,.6)}
 .match-card.card-today{background:rgba(46,160,67,.1);border-color:rgba(46,160,67,.45)}
@@ -44,7 +50,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .mc-body{padding:8px;display:flex;align-items:center;gap:6px;justify-content:center}
 .mc-vs{display:flex;align-items:center;gap:4px;font-size:14px}
 .mc-vs .score{font-size:18px;font-weight:bold;color:var(--gold);min-width:60px;text-align:center}
-.mc-vs .ht{font-size:10px;color:var(--gold);text-align:center;cursor:pointer;background:rgba(240,192,64,.08);border-radius:4px;padding:1px 6px;margin-top:2px;min-width:48px}
+.mc-vs .ht{font-size:11px;color:var(--muted);text-align:center;cursor:pointer}
 .mc-status{font-size:10px;padding:2px 6px;border-radius:4px}
 .mc-status.finished{background:rgba(63,185,80,.15);color:var(--green)}
 .mc-status.live{background:rgba(255,68,68,.15);color:#ff4444;animation:pulse 1.5s infinite}
@@ -530,7 +536,7 @@ function renderMatches() {
       const stCls = st === 'FINISHED' ? 'finished' : st === 'LIVE' ? 'live' : 'upcoming';
       const stLabel = st === 'FINISHED' ? '完场' : st === 'LIVE' ? '直播中' : '未开始';
       const scoreStr = sc && sc[0] !== null ? `${sc[0]}-${sc[1]}` : '- -';
-      const htStr = ht ? `HT ${ht[0]}-${ht[1]}` : '半场';
+      const htStr = ht ? `${ht[0]}-${ht[1]}` : '';
       html += `<div class="match-card card-today" onclick="showMatchDetail('${m.id}')">
         <div class="mc-head"><span>${g}组</span><span>${m.id}</span></div>
         <div class="mc-body">
@@ -538,7 +544,7 @@ function renderMatches() {
             <span>${m.home}</span>
             <div>
               <div class="score">${scoreStr}</div>
-              <div class="ht" onclick="event.stopPropagation();showUpsetConfirm('${m.id}')">${htStr}</div>
+              <div class="ht" onclick="event.stopPropagation();showUpsetConfirm('${m.id}')">${htStr ? 'HT:'+htStr : '半场'}</div>
             </div>
             <span>${m.away}</span>
           </div>
