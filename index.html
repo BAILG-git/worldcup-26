@@ -101,8 +101,9 @@ h1 .sub{text-align:center;color:var(--gold);font-size:14px;margin-bottom:12px}
 .match-card.upset{border-color:#e5534b;background:rgba(229,83,75,.08);box-shadow:0 0 8px rgba(229,83,75,.25)}
 .match-card.upset .mc-head{background:rgba(229,83,75,.18)}
 .upset-badge{position:absolute;bottom:6px;right:8px;font-size:9px;background:rgba(229,83,75,.9);color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;z-index:2}
-.score-clickable{cursor:pointer;transition:.15s;border-radius:4px}
-.score-clickable:hover{background:rgba(240,192,64,.12)}
+.ht-clickable,.result-clickable{cursor:pointer;transition:.15s;border-radius:4px}
+.ht-clickable:hover{background:rgba(229,83,75,.12)}
+.result-clickable:hover{background:rgba(240,192,64,.12)}
 .mc-head{display:flex;align-items:center;justify-content:space-between;padding:7px 10px 7px 40px;font-size:11px;color:var(--muted);background:rgba(13,17,23,.5);border-bottom:1px solid var(--border)}
 .mc-time{color:#f0c040;font-weight:bold;font-size:13px}
 .mc-venue{font-size:10px;opacity:.8}
@@ -510,6 +511,8 @@ let injuriesCache = {};
 let upsetMatches = []; // 从 GitHub Pages 加载
 let _upsetPending = null; // 待标记的 match id
 const SCF_UPSETS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/upsets';
+const SCF_RESULTS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/results';
+const SCF_PREDS_URL = 'https://1443588797-jduje0b8vt.ap-guangzhou.tencentscf.com/predictions';
 const ADMIN_PWD = 'blg-admin';
 // 加载远程爆冷标记（GitHub Pages JSON）
 async function loadUpsets() {
@@ -542,17 +545,17 @@ async function saveUpsets() {
     else console.warn('[爆冷] SCF同步失败 HTTP', resp.status);
   } catch(e) { console.warn('[爆冷] SCF同步失败', e.message); }
 }
-// ========== 事件委托：点击最终比分标记爆冷 + 点击卡片看详情 ==========
+// ========== 事件委托：半场比分→爆冷，最终比分→输入赛果，卡片→详情 ==========
 function setupMatchCardEvents() {
   const cont = document.getElementById('tab-matches');
   if (!cont || cont._evtBound) return;
   cont._evtBound = true;
-  // 点击最终比分 → 标记/取消爆冷（仅完赛）
   cont.addEventListener('click', e => {
-    const scoreEl = e.target.closest('.score-clickable');
-    if (scoreEl) {
-      e.stopPropagation(); // 防止触发卡片详情
-      const card = scoreEl.closest('.match-card');
+    // 点击半场比分 → 标记/取消爆冷（仅完赛）
+    const htEl = e.target.closest('.ht-clickable');
+    if (htEl) {
+      e.stopPropagation();
+      const card = htEl.closest('.match-card');
       if (!card) return;
       const mid = card.dataset.mid;
       const m = _matchMap[mid];
@@ -565,6 +568,16 @@ function setupMatchCardEvents() {
         : `确认将 ${m.home} vs ${m.away} 标记为爆冷？`;
       document.getElementById('upsetConfirmBtn').textContent = '确认';
       document.getElementById('upsetModal').style.display = 'flex';
+      return;
+    }
+    // 点击最终比分 → 输入/修改赛果（仅完赛）
+    const ftEl = e.target.closest('.result-clickable');
+    if (ftEl) {
+      e.stopPropagation();
+      const card = ftEl.closest('.match-card');
+      if (!card) return;
+      const mid = card.dataset.mid;
+      if (mid) { closeModal(); openResultModal(mid); }
       return;
     }
     // 点击卡片其他区域 → 打开详情
@@ -1157,6 +1170,54 @@ function saveScores() {
   try {
     localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
   } catch(e) {}
+  // 异步同步到 SCF（结果 + 预测）
+  syncResultsToSCF();
+  syncPredsToSCF();
+}
+
+async function syncResultsToSCF() {
+  try {
+    const body = {};
+    for (const [mid, sc] of Object.entries(scores)) {
+      if (sc && sc[0] !== null) {
+        const ht = halftimeScores[mid];
+        body[mid] = { score: sc, ht: ht || [0,0] };
+      }
+    }
+    if (Object.keys(body).length === 0) return;
+    const resp = await fetch(SCF_RESULTS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) console.warn('[SCF] results 同步失败 HTTP', resp.status);
+  } catch(e) { console.warn('[SCF] results 同步异常:', e.message); }
+}
+
+async function syncPredsToSCF() {
+  try {
+    const body = {};
+    for (const [mid, p] of Object.entries(predictions)) {
+      if (p && p.score) {
+        body[mid] = {
+          score: p.score,
+          scoreC: p.scoreC || '',
+          wdl: p.wdl || '',
+          wdlLabel: p.wdlLabel || '',
+          goals: p.goals || '',
+          reason: p.reason || '手动输入',
+          confidence: p.confidence || ''
+        };
+      }
+    }
+    if (Object.keys(body).length === 0) return;
+    const resp = await fetch(SCF_PREDS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) console.warn('[SCF] predictions 同步失败 HTTP', resp.status);
+  } catch(e) { console.warn('[SCF] predictions 同步异常:', e.message); }
 }
 // 已弃用 SCF，完赛赛果直接使用硬编码 COMPLETED_RESULTS 兜底
 // 此函数保留接口但不执行任何操作
@@ -1661,8 +1722,8 @@ function buildMatchCard(m){
       <div class="mc-body">
         <div class="mc-vs">${flagImg(m.home,18)}<span>${tname(m.home)}</span> <b>vs</b> ${flagImg(m.away,18)}<span>${tname(m.away)}</span></div>
         <div class="mc-detail">
-          <div class="ditem">半场<br><span class="dval">${htStr}</span></div>
-          <div class="ditem">${dtLabel}<br><span class="dval${st==='FINISHED'?' score-clickable':''}">${dtStr}</span></div>
+          <div class="ditem">半场<br><span class="dval${st==='FINISHED'?' ht-clickable':''}">${htStr}</span></div>
+          <div class="ditem">${dtLabel}<br><span class="dval${st==='FINISHED'?' result-clickable':''}">${dtStr}</span></div>
         </div>
         ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
       </div>
@@ -1829,7 +1890,7 @@ async function showMatchDetail(m){
   </div>
 
   ${pred ? `
-  <div class="modal-section">
+  <div class="modal-section" style="cursor:pointer" onclick="event.stopPropagation();openPredModal('${m.id}')">
     <h4>📊 AI 比赛预测 ${!matchFinished?`<span style="font-size:10px;color:var(--gold);background:rgba(240,192,64,.12);padding:1px 6px;border-radius:3px;margin-left:6px">已锁定</span>`:`<span style="font-size:10px;color:var(--green);background:rgba(46,160,67,.12);padding:1px 6px;border-radius:3px;margin-left:6px">赛后验证</span>`}</h4>
     <div class="prediction-box">
       <div class="pred-row">
@@ -1871,10 +1932,10 @@ async function showMatchDetail(m){
       </div>`:''}
     </div>
   </div>  ` : `
-  <div class="modal-section">
+  <div class="modal-section" style="cursor:pointer" onclick="event.stopPropagation();openPredModal('${m.id}')">
     <h4>📊 AI 比赛预测</h4>
     <div class="prediction-box" style="text-align:center;color:var(--muted);font-size:13px;padding:16px">
-      暂无预测数据
+      暂无预测数据 <span style="color:var(--gold)">点击添加</span>
     </div>
   </div>`}
   <div class="modal-section" style="text-align:center;padding-bottom:20px">
@@ -2512,8 +2573,8 @@ function silentPatchMatches(forceRebuild) {
       if (dvals[0]) dvals[0].textContent = ht ? `${ht[0]}-${ht[1]}` : '- -';
       if (dvals[1]) {
         dvals[1].textContent = `${s[0]}-${s[1]}`;
-        if (st === 'FINISHED') dvals[1].classList.add('score-clickable');
-        else dvals[1].classList.remove('score-clickable');
+        if (st === 'FINISHED') { dvals[0].classList.add('ht-clickable'); dvals[1].classList.add('result-clickable'); }
+        else { dvals[0].classList.remove('ht-clickable'); dvals[1].classList.remove('result-clickable'); }
       }
       // 更新 "最终"/"实时" 标签
       const ditemLabels = card.querySelectorAll('.mc-detail .ditem');
