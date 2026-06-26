@@ -1125,6 +1125,7 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
 // ========== STORAGE ==========
 // ========== STORAGE ==========
 async function loadScores(){
+  console.log('[loadScores] 开始加载...');
   try {
     localStorage.removeItem('wc2026_scores_v4');
     const raw = localStorage.getItem('wc2026_scores');
@@ -1139,12 +1140,18 @@ async function loadScores(){
         if (v && v.score) v.score = cleanScore(v.score);
         if (v && v.scoreC) v.scoreC = cleanScore(v.scoreC);
       }
+      console.log('[loadScores] localStorage已加载:', Object.keys(scores).length, '场');
     }
-  } catch(e) { scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {}; }
+  } catch(e) {
+    console.warn('[loadScores] localStorage解析失败:', e.message);
+    scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {};
+  }
 
   // 从 GitHub Pages 加载基线赛果（不含进球事件）
   try {
+    console.log('[loadScores] 开始fetch results.json...');
     const resp = await fetch('https://bailg-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
+    console.log('[loadScores] fetch完成, ok=' + resp.ok + ', status=' + resp.status);
     if (resp.ok) {
       const results = await resp.json();
       for (const [mid, res] of Object.entries(results)) {
@@ -1156,6 +1163,7 @@ async function loadScores(){
     }
   } catch(e) { console.warn('[loadScores] results.json 加载失败:', e.message); }
   saveScores();
+  console.log('[loadScores] 加载完成, scores共', Object.keys(scores).length, '场');
 }
 function saveScores() {
   try {
@@ -2716,9 +2724,12 @@ document.addEventListener('click', function(e) {
 
 // ========== INIT ==========
 async function initPage() {
+  console.log('[initPage] 开始...');
   await loadScores();
+  console.log('[initPage] loadScores完成, scores=' + Object.keys(scores).length);
   renderStandings(); renderBest3rd();
   loadUpsets().then(() => { renderMatches(); });
+  console.log('[initPage] 完成');
 }
 try { initPage(); } catch(e) {
   console.error('INIT error:', e);
