@@ -242,51 +242,67 @@ async function scfPost(path, body) {
   } catch(e) { console.warn(`SCF POST ${path} failed:`, e); return {error: e.message}; }
 }
 
+// 立即渲染空页面（不等待数据）
+renderGroups();
+renderMatches();
+
 async function loadAllData() {
-  // 1. 先从 GitHub Pages 加载赛果作为基线（保证一定有数据）
-  let results = {};
+  // 1. 从 GitHub Pages 加载赛果（基线数据）
   try {
-    const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
-    if (r.ok) { results = await r.json(); console.log('[loadAllData] 基线赛果(GitHub):', Object.keys(results).length, '场'); }
-  } catch(e) { console.warn('[loadAllData] GitHub Pages 加载失败', e.message); }
-  // 2. 再尝试从 SCF 获取更新的赛果（覆盖基线）
-  try {
-    const scfData = await Promise.race([
-      (await fetch(`${SCF}/results`)).json(),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
-    ]);
-    if (scfData && typeof scfData === 'object' && !scfData.error) {
-      // 检查是否包含有效比赛数据
-      const hasMatchData = Object.keys(scfData).some(k => /^\w_\d$/.test(k));
-      if (hasMatchData) { Object.assign(results, scfData); console.log('[loadAllData] SCF 赛果已覆盖:', Object.keys(scfData).length, '场'); }
+    const r = await fetchWithTimeout('https://bailg-git.github.io/worldcup-26/data/results.json?t=' + Date.now(), 8000);
+    if (r && r.ok) {
+      const results = await r.json();
+      for (const [mid, d] of Object.entries(results)) {
+        if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
+        if (d && d.ht) halftimeScores[mid] = d.ht;
+      }
+      console.log('[loadAllData] 基线赛果(GitHub):', Object.keys(results).length, '场');
     }
-  } catch(e) { console.warn('[loadAllData] SCF /results 失败，使用基线数据', e.message); }
-  for (const [mid, d] of Object.entries(results)) {
-    if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
-    if (d && d.ht) halftimeScores[mid] = d.ht;
-  }
-  // 预测：先 GitHub Pages 再 SCF
-  let preds = {};
+  } catch(e) { console.warn('[loadAllData] GitHub Pages 失败:', e.message); }
+
+  // 2. SCF 赛果覆盖（带超时）
   try {
-    const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now());
-    if (r.ok) preds = await r.json();
+    const scfR = await fetchWithTimeout(`${SCF}/results`, 5000);
+    if (scfR && scfR.ok) {
+      const scfData = await scfR.json();
+      if (scfData && typeof scfData === 'object' && !scfData.error) {
+        for (const [mid, d] of Object.entries(scfData)) {
+          if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
+          if (d && d.ht) halftimeScores[mid] = d.ht;
+        }
+        console.log('[loadAllData] SCF 赛果已覆盖');
+      }
+    }
+  } catch(e) { console.warn('[loadAllData] SCF /results 失败'); }
+
+  // 3. 预测数据
+  try {
+    const pr = await fetchWithTimeout('https://bailg-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now(), 5000);
+    if (pr && pr.ok) { predictions = await pr.json() || {}; }
   } catch(e) {}
   try {
-    const scfPreds = await Promise.race([
-      (await fetch(`${SCF}/predictions`)).json(),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
-    ]);
-    if (scfPreds && typeof scfPreds === 'object' && !scfPreds.error) Object.assign(preds, scfPreds);
+    const sp = await fetchWithTimeout(`${SCF}/predictions`, 3000);
+    if (sp && sp.ok) { const sd = await sp.json(); if (sd && typeof sd === 'object') Object.assign(predictions, sd); }
   } catch(e) {}
-  predictions = preds || {};
-  // 爆冷
-  let upsets = {};
-  try { upsets = await (await fetch(`${SCF}/upsets`)).json(); } catch(e) {}
-  upsetMatches = upsets || {};
-  // 渲染
+  predictions = predictions || {};
+
+  // 4. 爆冷
+  try {
+    const ur = await fetchWithTimeout(`${SCF}/upsets`, 3000);
+    if (ur && ur.ok) { upsetMatches = await ur.json() || {}; }
+  } catch(e) {}
+
+  // 渲染更新
   renderGroups();
   renderMatches();
   console.log('[loadAllData] done, results:', Object.keys(scores).length, 'predictions:', Object.keys(predictions).length);
+}
+
+function fetchWithTimeout(url, ms) {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
 }
 
 async function saveResultToSCF(mid) {
@@ -655,5 +671,5 @@ function renderBracket() {
 }
 
 // ========== 初始化 ==========
-loadAllData();
-setInterval(loadAllData, 300000); // 每5分钟自动刷新一次数据
+// 立即渲染空页面（上面已调用 renderGroups/renderMatches）
+loadAllData();  // 异步加载数据，加载完自动重新渲染
