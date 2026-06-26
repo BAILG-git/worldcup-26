@@ -4156,11 +4156,20 @@
     "reason": "����"
   },
   "D_4": {
-    "score": "1-1-2-2",
+    "score": "3-1-3-2",
     "scoreC": "",
     "wdl": "主胜",
     "wdlLabel": "主胜",
     "goals": "3,4",
+    "reason": "手动输入",
+    "confidence": ""
+  },
+  "D_5": {
+    "score": "0-0-1-1",
+    "scoreC": "",
+    "wdl": "平局",
+    "wdlLabel": "平局",
+    "goals": "2,0",
     "reason": "手动输入",
     "confidence": ""
   }
