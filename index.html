@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FIFA World Cup 2026 赛果与预测</title>
+<title>FIFA World Cup 2026 United States, Canada, Mexico</title>
 <style>
 :root {
   --bg:#0d1117; --card:#161b22; --border:#30363d; --text:#c9d1d9;
@@ -79,20 +79,29 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 /* upset */
 .upset-badge{display:inline-block;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:4px;margin-left:6px}
 
+/* best 3rd */
+.best3rd-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.best3rd-table th{background:#1a1f2b;padding:6px 8px;text-align:center;color:var(--muted);font-weight:normal;font-size:11px;border-bottom:1px solid var(--border)}
+.best3rd-table td{padding:6px 8px;text-align:center;border-bottom:1px solid rgba(48,54,61,.5)}
+.best3rd-table .qualify td{background:rgba(63,185,80,.08)}
+.best3rd-table .miss td{opacity:.45}
+
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 </style>
 </head>
 <body>
 
-<h1>FIFA World Cup 2026 <span id="yearBadge">赛果与预测</span></h1>
+<h1>FIFA World Cup <span id="yearBadge">2026</span> United States, Canada, Mexico</h1>
 <div class="tabs">
   <button class="tab-btn active" onclick="showTab('groups',this)">积分榜</button>
   <button class="tab-btn" onclick="showTab('matches',this)">赛程</button>
+  <button class="tab-btn" onclick="showTab('best3rd',this)">最佳第三</button>
   <button class="tab-btn" onclick="showTab('bracket',this)">淘汰赛</button>
 </div>
 
 <div id="tab-groups"></div>
 <div id="tab-matches" style="display:none"></div>
+<div id="tab-best3rd" style="display:none"></div>
 <div id="tab-bracket" style="display:none"></div>
 
 <!-- Match Detail Modal -->
@@ -236,13 +245,16 @@ async function scfPost(path, body) {
 async function loadAllData() {
   // 1. 尝试从 SCF 加载赛果
   let results = {};
-  try { results = await (await fetch(`${SCF}/results`)).json(); } catch(e) {}
+  try { results = await (await fetch(`${SCF}/results`)).json(); } catch(e) { console.warn('SCF /results 失败，尝试 fallback'); }
   // 2. SCF 失败则 fallback 到 GitHub Pages JSON
   if (!results || Object.keys(results).length === 0) {
     try {
       const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
       if (r.ok) results = await r.json();
-    } catch(e) {}
+      console.log('[loadAllData] 从 GitHub Pages 加载赛果:', Object.keys(results).length, '场');
+    } catch(e) { console.warn('[loadAllData] GitHub Pages results.json 也加载失败', e.message); }
+  } else {
+    console.log('[loadAllData] 从 SCF 加载赛果:', Object.keys(results).length, '场');
   }
   for (const [mid, d] of Object.entries(results)) {
     if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
@@ -254,11 +266,12 @@ async function loadAllData() {
   if (!preds || Object.keys(preds).length === 0) {
     try { preds = await (await fetch('https://BAILG-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now())).json(); } catch(e) {}
   }
-  predictions = preds;
+  predictions = preds || {};
   // 加载爆冷
   let upsets = {};
   try { upsets = await (await fetch(`${SCF}/upsets`)).json(); } catch(e) {}
   upsetMatches = upsets || {};
+  // 始终渲染（即使没有数据也要显示空表格）
   renderGroups();
   renderMatches();
   console.log('[loadAllData] done, results:', Object.keys(results).length, 'predictions:', Object.keys(predictions).length);
@@ -290,11 +303,13 @@ async function saveUpsetToSCF() {
 function showTab(tab, btn) {
   document.getElementById('tab-groups').style.display = tab === 'groups' ? '' : 'none';
   document.getElementById('tab-matches').style.display = tab === 'matches' ? '' : 'none';
+  document.getElementById('tab-best3rd').style.display = tab === 'best3rd' ? '' : 'none';
   document.getElementById('tab-bracket').style.display = tab === 'bracket' ? '' : 'none';
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   if (tab === 'groups') renderGroups();
   if (tab === 'matches') renderMatches();
+  if (tab === 'best3rd') renderBest3rd();
   if (tab === 'bracket') renderBracket();
 }
 
@@ -329,10 +344,10 @@ function renderGroups() {
   const s = calcStandings();
   let html = '<div class="groups-grid">';
   for (const [g, rows] of Object.entries(s)) {
-    html += `<div class="group-card"><div class="group-header"><span>${g} 组</span></div><table class="standings-table"><tr><th>#</th><th>Team</th><th>MP</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>`;
-    rows.forEach((r,i) => {
-      let cls = i<2 ? 'top2' : i===2 ? 'third' : 'elim';
-      html += `<tr class="${cls}"><td>${i+1}</td><td class="team-name">${tname(r.team)}</td><td>${r.mp}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd>=0?'+':''}${r.gd}</td><td><b>${r.pts}</b></td></tr>`;
+    html += `<div class="group-card"><div class="group-header"><span>${g} 组</span></div><table class="standings-table"><tr><th>#</th><th>球队</th><th>场</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净胜</th><th>积分</th></tr>`;
+    rows.forEach((r, i) => {
+      let cls = i < 2 ? 'top2' : i === 2 ? 'third' : 'elim';
+      html += `<tr class="${cls}"><td>${i + 1}</td><td class="team-name">${tname(r.team)}</td><td>${r.mp}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}</td><td>${r.ga}</td><td>${r.gd >= 0 ? '+' : ''}${r.gd}</td><td><b>${r.pts}</b></td></tr>`;
     });
     html += '</table></div>';
   }
@@ -582,8 +597,48 @@ function closeUpsetModal() { document.getElementById('upset-modal').style.displa
 let koScores = {};
 let koSlot = {};
 
+// ========== Tiebreak 工具函数 ==========
+const fairPlay = {};
+function tieHash(a, b) {
+  let h = 0;
+  for (const s of [a, b]) { for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; }
+  return a > b ? -1 : 1;
+}
+function fairPlayCompare(a, b) { return (fairPlay[b] || 0) - (fairPlay[a] || 0); }
+
+// 跨组最佳第三排名 tiebreak: 1.积分 2.净胜球 3.进球 4.公平竞赛 5.抽签
+function calcBestThirds(s) {
+  const t = [];
+  for (const [g, r] of Object.entries(s)) t.push({ ...r[2], group: g });
+  t.sort((a, b) =>
+    b.pts - a.pts ||
+    b.gd - a.gd ||
+    b.gf - a.gf ||
+    ((fairPlay[a.team] || 0) - (fairPlay[b.team] || 0)) ||
+    tieHash(a.team, b.team)
+  );
+  return t;
+}
+
+function renderBest3rd() {
+  const s = calcStandings();
+  const thirds = calcBestThirds(s);
+  let html = '<div style="max-width:800px;margin:0 auto"><h3 style="margin-bottom:8px;color:var(--gold)">最佳第三排名（前8名晋级淘汰赛）</h3>';
+  html += '<table class="best3rd-table"><tr><th>排名</th><th>小组</th><th>球队</th><th>场</th><th>胜</th><th>平</th><th>负</th><th>进</th><th>失</th><th>净胜</th><th>积分</th><th>状态</th></tr>';
+  thirds.forEach((t, i) => {
+    const cls = i < 8 ? 'qualify' : 'miss';
+    html += `<tr class="${cls}"><td>${i + 1}</td><td>${t.group}</td>
+      <td class="team-name">${tname(t.team)}</td>
+      <td>${t.mp}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+      <td>${t.gf}</td><td>${t.ga}</td><td>${t.gd >= 0 ? '+' : ''}${t.gd}</td>
+      <td><b>${t.pts}</b></td><td>${i < 8 ? '✅ 晋级' : '❌ 淘汰'}</td></tr>`;
+  });
+  html += '</table></div>';
+  document.getElementById('tab-best3rd').innerHTML = html;
+}
+
 function renderBracket() {
-  document.getElementById('tab-bracket').innerHTML = 
+  document.getElementById('tab-bracket').innerHTML =
     '<div style="color:var(--muted);text-align:center;padding:40px">淘汰赛阶段功能开发中，请手动填写对阵</div>';
 }
 
