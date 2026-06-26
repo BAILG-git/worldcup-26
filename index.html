@@ -541,8 +541,11 @@ async function saveUpsets() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (resp.ok) console.log('[爆冷] SCF同步成功');
-    else console.warn('[爆冷] SCF同步失败 HTTP', resp.status);
+    if (resp.ok) { console.log('[爆冷] 同步成功'); }
+    else {
+      console.warn('[爆冷] SCF返回 HTTP', resp.status);
+      if (resp.status === 433) alert('爆冷数据同步超时！SCF 云函数超时仅 3 秒，需在腾讯云控制台改为 30 秒。数据已保存到本地，重新部署 SCF 后会同步。');
+    }
   } catch(e) { console.warn('[爆冷] SCF同步失败', e.message); }
 }
 // ========== 事件委托：半场比分→爆冷，最终比分→输入赛果，卡片→详情 ==========
@@ -1190,7 +1193,10 @@ async function syncResultsToSCF() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!resp.ok) console.warn('[SCF] results 同步失败 HTTP', resp.status);
+    if (!resp.ok) {
+      console.warn('[SCF] results 同步失败 HTTP', resp.status);
+      if (resp.status === 433) alert('赛果数据同步超时！SCF 云函数超时仅 3 秒，需在腾讯云控制台改为 30 秒。数据已保存到本地。');
+    }
   } catch(e) { console.warn('[SCF] results 同步异常:', e.message); }
 }
 
@@ -1216,7 +1222,10 @@ async function syncPredsToSCF() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    if (!resp.ok) console.warn('[SCF] predictions 同步失败 HTTP', resp.status);
+    if (!resp.ok) {
+      console.warn('[SCF] predictions 同步失败 HTTP', resp.status);
+      if (resp.status === 433) alert('预测数据同步超时！SCF 云函数超时仅 3 秒，需在腾讯云控制台改为 30 秒。数据已保存到本地。');
+    }
   } catch(e) { console.warn('[SCF] predictions 同步异常:', e.message); }
 }
 // 已弃用 SCF，完赛赛果直接使用硬编码 COMPLETED_RESULTS 兜底
@@ -2729,11 +2738,17 @@ function savePrediction() {
   if (!isNaN(h1) && !isNaN(a1)) sc.push(h1, a1);
   if (!isNaN(h2) && !isNaN(a2)) sc.push(h2, a2);
 
+  // 格式化为 ['h:a', 'h:a']
+  const scoreArr = [];
+  if (!isNaN(h1) && !isNaN(a1)) scoreArr.push(h1 + ':' + a1);
+  if (!isNaN(h2) && !isNaN(a2)) scoreArr.push(h2 + ':' + a2);
+  const goalsArr = _editPred.goals.length ? _editPred.goals.slice() : [];
+
   predictions[_editMid] = {
-    score: sc.length >= 2 ? sc.join('-') : '',
+    score: scoreArr,
     wdl: _editPred.wdl[0] || '',
     wdlLabel: _editPred.wdl[0] || '',
-    goals: _editPred.goals.join(',') || '',
+    goals: goalsArr.join(','),
     locked: true,
     reason: '手动输入',
     confidence: '',
