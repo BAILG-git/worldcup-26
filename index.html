@@ -44,7 +44,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 .mc-body{padding:8px;display:flex;align-items:center;gap:6px;justify-content:center}
 .mc-vs{display:flex;align-items:center;gap:4px;font-size:14px}
 .mc-vs .score{font-size:18px;font-weight:bold;color:var(--gold);min-width:60px;text-align:center}
-.mc-vs .ht{font-size:11px;color:var(--muted);text-align:center;cursor:pointer}
+.mc-vs .ht{font-size:10px;color:var(--gold);text-align:center;cursor:pointer;background:rgba(240,192,64,.08);border-radius:4px;padding:1px 6px;margin-top:2px;min-width:48px}
 .mc-status{font-size:10px;padding:2px 6px;border-radius:4px}
 .mc-status.finished{background:rgba(63,185,80,.15);color:var(--green)}
 .mc-status.live{background:rgba(255,68,68,.15);color:#ff4444;animation:pulse 1.5s infinite}
@@ -52,7 +52,7 @@ h1{text-align:center;font-size:26px;margin-bottom:4px}
 
 /* modal */
 .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000}
-.modal-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:500px;width:90vw;max-height:85vh;overflow-y:auto;position:relative}
+.modal-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:650px;width:95vw;max-height:90vh;overflow-y:auto;position:relative}
 .modal-close{position:absolute;top:8px;right:12px;font-size:20px;cursor:pointer;color:var(--muted);background:none;border:none}
 .modal-header{padding:16px 20px 8px}
 .modal-header .mh-teams{font-size:18px;font-weight:bold;display:flex;align-items:center;gap:12px;justify-content:center}
@@ -216,6 +216,103 @@ const NAME_MAP = {
   "England":"英格兰","Croatia":"克罗地亚","Ghana":"加纳","Panama":"巴拿马",
 };
 
+// ========== 球队详细信息（身价€亿、主帅、球员） ==========
+const TEAM_INFO = {
+'墨西哥':{value:8.2,coach:'哈维尔·阿吉雷',fifa:12,players:[{n:13,pos:'GK',name:'奥乔亚',val:0.3},{n:2,pos:'RB',name:'蒙蒂尔',val:0.4},{n:3,pos:'CB',name:'塞萨尔',val:0.5},{n:4,pos:'CB',name:'约翰森',val:0.6},{n:5,pos:'LB',name:'加拉尔多',val:0.35},{n:6,pos:'CDM',name:'埃德松·阿尔瓦雷斯',val:0.45},{n:8,pos:'CM',name:'查韦斯',val:0.4},{n:10,pos:'CAM',name:'皮内达',val:0.55},{n:14,pos:'RW',name:'罗莫',val:0.42},{n:11,pos:'LW',name:'安图纳',val:0.38},{n:9,pos:'ST',name:'希门尼斯',val:0.7},{n:17,pos:'ST',name:'维加',val:0.65}],inj:[]},
+'南非':{value:0.4,coach:'布鲁克·摩西',fifa:58,players:[{n:1,pos:'GK',name:'威廉斯',val:0.08},{n:2,pos:'RB',name:'拉玛蒂亚',val:0.04},{n:5,pos:'CB',name:'姆费拉',val:0.06},{n:4,pos:'CB',name:'马特霍塞尼',val:0.05},{n:3,pos:'LB',name:'姆德兰加',val:0.035},{n:6,pos:'CDM',name:'昆扎',val:0.02},{n:8,pos:'CM',name:'马库库拉',val:0.025},{n:10,pos:'CAM',name:'马凯',val:0.05},{n:11,pos:'LW',name:'帕帕伊',val:0.03},{n:7,pos:'RW',name:'马赫拉西',val:0.028},{n:9,pos:'ST',name:'恩通塔',val:0.045}],inj:[]},
+'韩国':{value:1.8,coach:'洪明甫',fifa:25,players:[{n:21,pos:'GK',name:'赵贤佑',val:0.15},{n:2,pos:'RB',name:'金纹奂',val:0.12},{n:20,pos:'CB',name:'金玟哉',val:0.22},{n:4,pos:'CB',name:'曹圭成',val:0.18},{n:3,pos:'LB',name:'李刚仁',val:0.25},{n:6,pos:'CDM',name:'黄仁范',val:0.16},{n:10,pos:'CM',name:'李在城',val:0.14},{n:18,pos:'CAM',name:'朴镇燮',val:0.08},{n:7,pos:'RW',name:'孙兴慜(C)',val:0.35},{n:11,pos:'LW',name:'黄喜灿',val:0.19},{n:9,pos:'ST',name:'黄义助',val:0.13}],inj:[]},
+'捷克':{value:2.1,coach:'雅罗斯拉夫·希尔哈维',fifa:36,players:[{n:1,pos:'GK',name:'马捷',val:0.2},{n:2,pos:'RB',name:'曹法尔',val:0.25},{n:3,pos:'CB',name:'赫拉纳奇',val:0.18},{n:5,pos:'CB',name:'克雷伊奇',val:0.22},{n:14,pos:'LB',name:'霍莱什',val:0.2},{n:15,pos:'CDM',name:'苏尔克',val:0.15},{n:6,pos:'CM',name:'绍切克(C)',val:0.2},{n:10,pos:'CAM',name:'普罗沃德',val:0.18},{n:7,pos:'RW',name:'曹梅克',val:0.16},{n:11,pos:'LW',name:'巴拉克',val:0.14},{n:9,pos:'ST',name:'希克',val:0.28}],inj:[]},
+'加拿大':{value:3.6,coach:'杰西·马什',fifa:30,players:[{n:18,pos:'GK',name:'克雷波',val:0.15},{n:2,pos:'RB',name:'拉弗勒尔',val:0.18},{n:5,pos:'CB',name:'沃克斯',val:0.22},{n:4,pos:'CB',name:'米勒',val:0.28},{n:3,pos:'LB',name:'约翰斯顿',val:0.25},{n:7,pos:'CDM',name:'奥索里奥',val:0.16},{n:11,pos:'CM',name:'布坎南',val:0.3},{n:8,pos:'CAM',name:'伊斯梅利·科内',val:0.12},{n:10,pos:'RW',name:'戴维斯(C)',val:0.48},{n:17,pos:'LW',name:'乔纳森·戴维',val:0.32},{n:9,pos:'ST',name:'卡瓦利尼',val:0.2}],inj:[]},
+'波黑':{value:1.2,coach:'米罗斯拉夫·久罗耶维奇',fifa:62,players:[{n:1,pos:'GK',name:'拉希莫维奇',val:0.08},{n:2,pos:'RB',name:'卡达西奇',val:0.06},{n:4,pos:'CB',name:'科拉希纳茨',val:0.12},{n:5,pos:'CB',name:'艾哈迈德霍季奇',val:0.1},{n:3,pos:'LB',name:'比利亚利',val:0.07},{n:6,pos:'CDM',name:'丘尔利奥',val:0.05},{n:8,pos:'CM',name:'哈兹卡杜诺维奇',val:0.08},{n:10,pos:'CAM',name:'德米罗维奇',val:0.15},{n:7,pos:'RW',name:'克里斯坦',val:0.09},{n:11,pos:'LW',name:'齐米罗特',val:0.06},{n:9,pos:'ST',name:'哲科',val:0.18}],inj:[]},
+'卡塔尔':{value:1.4,coach:'廷克尔·马丁内斯',fifa:34,players:[{n:16,pos:'GK',name:'巴尔沙姆',val:0.1},{n:2,pos:'RB',name:'佩德罗·米格尔',val:0.08},{n:4,pos:'CB',name:'埃尔萨德',val:0.12},{n:3,pos:'CB',name:'胡赫',val:0.1},{n:12,pos:'LB',name:'塔里克',val:0.07},{n:6,pos:'CDM',name:'马德博',val:0.06},{n:8,pos:'CM',name:'海多斯(C)',val:0.09},{n:10,pos:'CAM',name:'阿克拉姆·阿菲夫',val:0.25},{n:7,pos:'RW',name:'阿里',val:0.18},{n:11,pos:'LW',name:'穆罕默德',val:0.08},{n:9,pos:'ST',name:'阿拉埃丁',val:0.12}],inj:[]},
+'瑞士':{value:3.8,coach:'穆拉特·亚金',fifa:17,players:[{n:1,pos:'GK',name:'索默',val:0.35},{n:21,pos:'GK',name:'科贝尔',val:0.28},{n:2,pos:'RB',name:'沙尔',val:0.18},{n:5,pos:'CB',name:'阿坎吉',val:0.42},{n:4,pos:'CB',name:'埃尔韦迪',val:0.15},{n:3,pos:'LB',name:'罗德里格斯',val:0.22},{n:8,pos:'CDM',name:'扎卡(C)',val:0.25},{n:6,pos:'CM',name:'扎卡里亚',val:0.3},{n:10,pos:'CAM',name:'奥卡福尔',val:0.28},{n:7,pos:'RW',name:'沙奇里',val:0.16},{n:17,pos:'LW',name:'恩博洛',val:0.24},{n:9,pos:'ST',name:'杜阿',val:0.2}],inj:[]},
+'巴西':{value:12.5,coach:'卡洛·安切洛蒂',fifa:3,players:[{n:1,pos:'GK',name:'阿利森',val:0.45},{n:23,pos:'GK',name:'埃德尔森',val:0.25},{n:2,pos:'RB',name:'达尼洛',val:0.28},{n:3,pos:'CB',name:'马基尼奥斯(C)',val:0.55},{n:4,pos:'CB',name:'布雷默',val:0.48},{n:6,pos:'LB',name:'亚历克斯·桑德罗',val:0.18},{n:5,pos:'CDM',name:'卡塞米罗',val:0.38},{n:8,pos:'CM',name:'卢卡斯·帕奎塔',val:0.52},{n:10,pos:'CAM',name:'罗德里戈',val:0.85},{n:7,pos:'RW',name:'维尼修斯',val:1.2},{n:11,pos:'LW',name:'拉菲尼亚',val:0.65},{n:9,pos:'ST',name:'恩德里克',val:0.72}],inj:[]},
+'摩洛哥':{value:4.2,coach:'瓦利德·雷格拉吉',fifa:14,players:[{n:1,pos:'GK',name:'布努',val:0.28},{n:2,pos:'RB',name:'阿什拉夫',val:0.55},{n:5,pos:'CB',name:'赛义斯(C)',val:0.22},{n:4,pos:'CB',name:'欧纳希',val:0.32},{n:3,pos:'LB',name:'马兹拉维',val:0.28},{n:6,pos:'CDM',name:'阿姆拉巴特',val:0.25},{n:8,pos:'CM',name:'乌纳西',val:0.3},{n:10,pos:'CAM',name:'齐耶赫',val:0.22},{n:7,pos:'RW',name:'卜拉欣',val:0.35},{n:11,pos:'LW',name:'叶海亚',val:0.18},{n:9,pos:'ST',name:'恩-内斯里',val:0.28}],inj:[]},
+'海地':{value:0.25,coach:'萨布里·拉莫尼',fifa:52,players:[{n:1,pos:'GK',name:'奥杜里斯',val:0.02},{n:2,pos:'RB',name:'达尔梅林',val:0.015},{n:4,pos:'CB',name:'阿尔弗雷里',val:0.018},{n:5,pos:'CB',name:'朱尔斯',val:0.02},{n:3,pos:'LB',name:'拉丰',val:0.012},{n:6,pos:'CDM',name:'梅纳尔',val:0.01},{n:8,pos:'CM',name:'丹尼尔',val:0.015},{n:10,pos:'CAM',name:'热拉斯',val:0.025},{n:7,pos:'RW',name:'拜托',val:0.018},{n:11,pos:'LW',name:'格里尔',val:0.012},{n:9,pos:'ST',name:'迪莫奈',val:0.028}],inj:[]},
+'苏格兰':{value:2.4,coach:'史蒂夫·克拉克',fifa:39,players:[{n:1,pos:'GK',name:'冈恩',val:0.18},{n:2,pos:'RB',name:'拉尔斯顿',val:0.12},{n:5,pos:'CB',name:'波特西',val:0.15},{n:4,pos:'CB',name:'蒂尔尼',val:0.22},{n:3,pos:'LB',name:'罗伯特逊(C)',val:0.25},{n:6,pos:'CDM',name:'麦克格雷格',val:0.16},{n:8,pos:'CM',name:'麦Gregor',val:0.14},{n:10,pos:'CAM',name:'麦吉尔',val:0.12},{n:7,pos:'RW',name:'麦金',val:0.18},{n:11,pos:'LW',name:'克里斯蒂',val:0.13},{n:9,pos:'ST',name:'亚当斯',val:0.15}],inj:[]},
+'美国':{value:5.5,coach:'格雷格·伯哈尔特',fifa:11,players:[{n:1,pos:'GK',name:'特纳',val:0.2},{n:2,pos:'RB',name:'塞尔吉尼奥·德斯特',val:0.22},{n:5,pos:'CB',name:'齐默曼(C)',val:0.28},{n:4,pos:'CB',name:'迈尔斯·罗宾逊',val:0.25},{n:3,pos:'LB',name:'威尔斯',val:0.18},{n:6,pos:'CDM',name:'尤努斯·穆萨',val:0.2},{n:8,pos:'CM',name:'威斯·麦肯尼',val:0.24},{n:10,pos:'CAM',name:'普利希奇(C)',val:0.52},{n:7,pos:'RW',name:'蒂莫西·维阿',val:0.28},{n:11,pos:'LW',name:'巴洛贡',val:0.32},{n:9,pos:'ST',name:'赫苏斯·费雷拉',val:0.18}],inj:[]},
+'巴拉圭':{value:1.5,coach:'丹尼尔·加内罗',fifa:54,players:[{n:1,pos:'GK',name:'卡尔洛',val:0.1},{n:2,pos:'RB',name:'阿尔德雷特',val:0.08},{n:5,pos:'CB',name:'巴尔德斯',val:0.12},{n:4,pos:'CB',name:'戈麦斯',val:0.1},{n:3,pos:'LB',name:'莫雷拉',val:0.07},{n:6,pos:'CDM',name:'拉蒙·索萨',val:0.06},{n:8,pos:'CM',name:'拉蒙·塞拉亚',val:0.08},{n:10,pos:'CAM',name:'米格尔·阿尔米隆(C)',val:0.22},{n:7,pos:'RW',name:'恩西索',val:0.15},{n:11,pos:'LW',name:'拉蒙·萨拉萨尔',val:0.06},{n:9,pos:'ST',name:'拉蒙·贝尼特斯',val:0.14}],inj:[]},
+'澳大利亚':{value:2.8,coach:'格雷厄姆·阿诺德',fifa:24,players:[{n:1,pos:'GK',name:'瑞恩',val:0.18},{n:2,pos:'RB',name:'斯特兰',val:0.12},{n:5,pos:'CB',name:'罗伊斯',val:0.15},{n:4,pos:'CB',name:'苏塔尔(C)',val:0.22},{n:3,pos:'LB',name:'盖契',val:0.1},{n:6,pos:'CDM',name:'赫鲁斯蒂奇',val:0.14},{n:8,pos:'CM',name:'穆伊',val:0.16},{n:10,pos:'CAM',name:'马修·瑞安',val:0.12},{n:7,pos:'RW',name:'马比利',val:0.18},{n:11,pos:'LW',name:'古德温',val:0.13},{n:9,pos:'ST',name:'麦克拉伦',val:0.1}],inj:[]},
+'土耳其':{value:3.2,coach:'文茨科·蒙特拉',fifa:40,players:[{n:1,pos:'GK',name:'马特',val:0.15},{n:2,pos:'RB',name:'桑格尔里',val:0.12},{n:5,pos:'CB',name:'巴达克',val:0.18},{n:4,pos:'CB',name:'代米尔',val:0.14},{n:3,pos:'LB',name:'埃尔玛兹',val:0.1},{n:6,pos:'CDM',name:'萨瓦克',val:0.08},{n:8,pos:'CM',name:'阿克金',val:0.2},{n:10,pos:'CAM',name:'卡拉苏',val:0.22},{n:7,pos:'RW',name:'耶尔德勒姆',val:0.25},{n:11,pos:'LW',name:'戈克汗',val:0.16},{n:9,pos:'ST',name:'伊尔迪兹',val:0.3}],inj:[]},
+'德国':{value:9.2,coach:'尤利安·纳格尔斯曼',fifa:15,players:[{n:1,pos:'GK',name:'特尔施特根',val:0.35},{n:22,pos:'GK',name:'特拉普',val:0.12},{n:2,pos:'RB',name:'基米希(C)',val:0.45},{n:3,pos:'CB',name:'吕迪格',val:0.4},{n:4,pos:'CB',name:'施洛特贝克',val:0.35},{n:5,pos:'LB',name:'劳姆',val:0.28},{n:8,pos:'CDM',name:'格雷茨卡',val:0.32},{n:6,pos:'CM',name:'京多安',val:0.25},{n:10,pos:'CAM',name:'穆西亚拉',val:0.85},{n:7,pos:'RW',name:'萨内',val:0.5},{n:9,pos:'ST',name:'哈弗茨',val:0.65},{n:17,pos:'LW',name:'格纳布里',val:0.38}],inj:[]},
+'库拉索':{value:0.18,coach:'迪恩·戈雷',fifa:82,players:[{n:1,pos:'GK',name:'朱利安',val:0.015},{n:2,pos:'RB',name:'范·埃杰克',val:0.008},{n:3,pos:'CB',name:'杜兰',val:0.01},{n:4,pos:'CB',name:'杜阿尔特',val:0.012},{n:5,pos:'LB',name:'弗洛雷斯',val:0.008},{n:6,pos:'CDM',name:'雷纳',val:0.006},{n:8,pos:'CM',name:'埃斯皮诺萨',val:0.01},{n:10,pos:'CAM',name:'安东尼',val:0.015},{n:7,pos:'RW',name:'维尔纳',val:0.008},{n:11,pos:'LW',name:'格拉西亚诺',val:0.01},{n:9,pos:'ST',name:'卡洛斯',val:0.012}],inj:[]},
+'科特迪瓦':{value:2.8,coach:'埃默塞·福',fifa:42,players:[{n:1,pos:'GK',name:'福法纳',val:0.15},{n:2,pos:'RB',name:'奥里耶(C)',val:0.18},{n:4,pos:'CB',name:'迪奥曼德',val:0.2},{n:5,pos:'CB',name:'克苏努',val:0.15},{n:3,pos:'LB',name:'巴伊',val:0.1},{n:6,pos:'CDM',name:'凯西',val:0.28},{n:8,pos:'CM',name:'阿德波',val:0.14},{n:10,pos:'CAM',name:'弗法纳',val:0.25},{n:7,pos:'RW',name:'夸梅',val:0.18},{n:11,pos:'LW',name:'迪亚基特',val:0.12},{n:9,pos:'ST',name:'哈勒',val:0.25}],inj:[]},
+'厄瓜多尔':{value:2.2,coach:'塞巴斯蒂安·贝卡切奇',fifa:38,players:[{n:1,pos:'GK',name:'多明格斯',val:0.12},{n:2,pos:'RB',name:'普雷西亚多',val:0.1},{n:4,pos:'CB',name:'托雷斯',val:0.15},{n:5,pos:'CB',name:'阿尔博莱达',val:0.12},{n:3,pos:'LB',name:'埃斯图皮南',val:0.2},{n:6,pos:'CDM',name:'莫伊塞斯·凯塞多',val:0.38},{n:8,pos:'CM',name:'格鲁埃索',val:0.08},{n:10,pos:'CAM',name:'萨米恩托',val:0.15},{n:7,pos:'RW',name:'普拉塔',val:0.16},{n:11,pos:'LW',name:'伊巴',val:0.12},{n:9,pos:'ST',name:'瓦伦西亚(C)',val:0.18}],inj:[]},
+'荷兰':{value:8.0,coach:'罗纳德·科曼',fifa:7,players:[{n:1,pos:'GK',name:'弗莱肯',val:0.2},{n:23,pos:'GK',name:'德弗里斯',val:0.08},{n:2,pos:'RB',name:'邓弗里斯',val:0.32},{n:5,pos:'CB',name:'范戴克(C)',val:0.55},{n:4,pos:'CB',name:'德弗里',val:0.3},{n:12,pos:'LB',name:'阿克',val:0.35},{n:6,pos:'CDM',name:'德罗恩',val:0.18},{n:8,pos:'CM',name:'库普梅纳斯',val:0.28},{n:10,pos:'CAM',name:'加克波',val:0.55},{n:7,pos:'RW',name:'弗林蓬',val:0.42},{n:9,pos:'ST',name:'马伦',val:0.38},{n:11,pos:'LW',name:'西蒙斯',val:0.45}],inj:[]},
+'日本':{value:3.5,coach:'森保一',fifa:18,players:[{n:1,pos:'GK',name:'铃木彩艳',val:0.1},{n:2,pos:'RB',name:'菅原由势',val:0.08},{n:4,pos:'CB',name:'板仓滉',val:0.15},{n:5,pos:'CB',name:'谷口彰悟',val:0.08},{n:3,pos:'LB',name:'长友佑都',val:0.06},{n:6,pos:'CDM',name:'远藤航(C)',val:0.22},{n:8,pos:'CM',name:'田中碧',val:0.14},{n:10,pos:'CAM',name:'三笘薫',val:0.42},{n:7,pos:'RW',name:'久保建英',val:0.38},{n:11,pos:'LW',name:'堂安律',val:0.22},{n:9,pos:'ST',name:'町田修斗',val:0.15}],inj:[]},
+'瑞典':{value:3.0,coach:'约恩·安德森',fifa:27,players:[{n:1,pos:'GK',name:'奥尔森',val:0.12},{n:2,pos:'RB',name:'克拉夫特',val:0.1},{n:4,pos:'CB',name:'林德勒夫(C)',val:0.28},{n:5,pos:'CB',name:'赫兰德',val:0.15},{n:3,pos:'LB',name:'奥尔松',val:0.12},{n:6,pos:'CDM',name:'克里斯托弗',val:0.1},{n:8,pos:'CM',name:'厄尔林',val:0.18},{n:10,pos:'CAM',name:'杰斯佩尔',val:0.2},{n:7,pos:'RW',name:'库卢塞夫斯基',val:0.42},{n:11,pos:'LW',name:'卡尔森',val:0.16},{n:9,pos:'ST',name:'伊萨克',val:0.52}],inj:[]},
+'突尼斯':{value:1.6,coach:'贾莱尔·卡德里',fifa:29,players:[{n:1,pos:'GK',name:'达门',val:0.08},{n:2,pos:'RB',name:'凯希',val:0.06},{n:4,pos:'CB',name:'布龙(C)',val:0.1},{n:5,pos:'CB',name:'塔比',val:0.08},{n:3,pos:'LB',name:'马洛尔',val:0.06},{n:6,pos:'CDM',name:'斯科赫里',val:0.08},{n:8,pos:'CM',name:'布兰',val:0.07},{n:10,pos:'CAM',name:'斯莱蒂',val:0.12},{n:7,pos:'RW',name:'本·斯莱曼',val:0.1},{n:11,pos:'LW',name:'阿巴迪',val:0.08},{n:9,pos:'ST',name:'卡兹里',val:0.15}],inj:[]},
+'比利时':{value:6.5,coach:'多梅尼科·特德斯科',fifa:8,players:[{n:1,pos:'GK',name:'库尔图瓦',val:0.45},{n:13,pos:'GK',name:'塞尔斯',val:0.18},{n:2,pos:'RB',name:'莫尼耶',val:0.22},{n:3,pos:'CB',name:'法斯',val:0.28},{n:4,pos:'CB',name:'维尔通亨',val:0.35},{n:5,pos:'LB',name:'卡斯塔涅',val:0.2},{n:6,pos:'CDM',name:'奥纳纳',val:0.25},{n:8,pos:'CM',name:'德布劳内(C)',val:0.55},{n:10,pos:'CAM',name:'巴卡约科',val:0.3},{n:7,pos:'RW',name:'多库',val:0.42},{n:9,pos:'ST',name:'卢卡库',val:0.4},{n:11,pos:'LW',name:'特罗萨德',val:0.32}],inj:[]},
+'埃及':{value:2.5,coach:'霍萨姆·哈桑',fifa:35,players:[{n:1,pos:'GK',name:'埃尔山纳维',val:0.08},{n:2,pos:'RB',name:'阿卜杜勒蒙',val:0.1},{n:5,pos:'CB',name:'赫加齐(C)',val:0.12},{n:4,pos:'CB',name:'阿卜德拉赫',val:0.1},{n:3,pos:'LB',name:'阿姆尔',val:0.06},{n:6,pos:'CDM',name:'梅希',val:0.05},{n:8,pos:'CM',name:'埃尔西迪',val:0.08},{n:10,pos:'CAM',name:'马尔穆什',val:0.35},{n:7,pos:'RW',name:'萨拉赫',val:0.55},{n:11,pos:'LW',name:'凯巴',val:0.1},{n:9,pos:'ST',name:'莫斯塔法',val:0.15}],inj:[]},
+'伊朗':{value:1.0,coach:'阿米尔·加莱诺伊',fifa:20,players:[{n:1,pos:'GK',name:'贝兰万德',val:0.08},{n:2,pos:'RB',name:'哈密德',val:0.04},{n:5,pos:'CB',name:'切什米',val:0.06},{n:4,pos:'CB',name:'卡纳尼扎德',val:0.08},{n:3,pos:'LB',name:'莫哈拉米',val:0.05},{n:6,pos:'CDM',name:'埃扎托拉希',val:0.06},{n:8,pos:'CM',name:'贾汉巴赫什(C)',val:0.1},{n:10,pos:'CAM',name:'毛赫比',val:0.08},{n:7,pos:'RW',name:'塔雷米',val:0.25},{n:11,pos:'LW',name:'卡德姆',val:0.06},{n:9,pos:'ST',name:'阿兹蒙',val:0.18}],inj:[]},
+'新西兰':{value:0.55,coach:'乌恩特·比扬',fifa:89,players:[{n:1,pos:'GK',name:'斯卡帕',val:0.03},{n:2,pos:'RB',name:'奥斯瓦德',val:0.025},{n:4,pos:'CB',name:'威特',val:0.04},{n:5,pos:'CB',name:'塞特',val:0.035},{n:3,pos:'LB',name:'法提',val:0.025},{n:6,pos:'CDM',name:'拉欣',val:0.02},{n:8,pos:'CM',name:'格拉夫',val:0.03},{n:10,pos:'CAM',name:'伍德',val:0.06},{n:7,pos:'RW',name:'布赖特',val:0.025},{n:11,pos:'LW',name:'坦纳',val:0.015},{n:9,pos:'ST',name:'科斯塔',val:0.05}],inj:[]},
+'西班牙':{value:10.5,coach:'路易斯·德·拉·富恩特',fifa:5,players:[{n:1,pos:'GK',name:'乌奈·西蒙',val:0.28},{n:13,pos:'GK',name:'拉亚',val:0.18},{n:2,pos:'RB',name:'卡瓦哈尔',val:0.32},{n:3,pos:'CB',name:'拉波尔特',val:0.35},{n:4,pos:'CB',name:'勒诺尔芒',val:0.28},{n:6,pos:'LB',name:'巴尔德',val:0.42},{n:5,pos:'CDM',name:'罗德里(C)',val:0.85},{n:8,pos:'CM',name:'佩德里',val:0.55},{n:10,pos:'CAM',name:'奥尔莫',val:0.4},{n:7,pos:'RW',name:'拉明·亚马尔',val:0.65},{n:9,pos:'ST',name:'莫拉塔',val:0.35},{n:11,pos:'LW',name:'奥亚萨瓦尔',val:0.3}],inj:[]},
+'佛得角':{value:0.35,coach:'迪辛尼亚',fifa:48,players:[{n:1,pos:'GK',name:'马尔塞',val:0.02},{n:2,pos:'RB',name:'丰图拉',val:0.015},{n:4,pos:'CB',name:'杜阿尔特',val:0.025},{n:5,pos:'CB',name:'弗洛伦西奥',val:0.02},{n:3,pos:'LB',name:'拉莫斯',val:0.018},{n:6,pos:'CDM',name:'罗德里格斯',val:0.012},{n:8,pos:'CM',name:'桑托斯',val:0.018},{n:10,pos:'CAM',name:'卢塞纳',val:0.025},{n:7,pos:'RW',name:'布赖安',val:0.02},{n:11,pos:'LW',name:'帕托',val:0.015},{n:9,pos:'ST',name:'埃尔南德斯',val:0.028}],inj:[]},
+'沙特阿拉伯':{value:1.1,coach:'哈维·埃尔南德斯',fifa:56,players:[{n:1,pos:'GK',name:'奥威斯',val:0.05},{n:2,pos:'RB',name:'萨鲁利',val:0.04},{n:5,pos:'CB',name:'阿尔·布拉希',val:0.06},{n:4,pos:'CB',name:'阿尔·坦巴克蒂',val:0.05},{n:3,pos:'LB',name:'阿尔·沙赫拉尼',val:0.04},{n:6,pos:'CDM',name:'阿尔·萨赫拉维',val:0.03},{n:8,pos:'CM',name:'卡努',val:0.04},{n:10,pos:'CAM',name:'阿尔·达瓦萨里(C)',val:0.15},{n:7,pos:'RW',name:'阿尔·谢赫里',val:0.06},{n:11,pos:'LW',name:'阿尔·卡赫塔尼',val:0.04},{n:9,pos:'ST',name:'阿尔·法尔汉',val:0.08}],inj:[]},
+'乌拉圭':{value:4.8,coach:'马塞洛·贝尔萨',fifa:13,players:[{n:1,pos:'GK',name:'罗切特',val:0.15},{n:23,pos:'GK',name:'穆尼奥斯',val:0.1},{n:2,pos:'RB',name:'马蒂亚斯·奥利维拉',val:0.25},{n:3,pos:'CB',name:'卡塞雷斯',val:0.3},{n:4,pos:'CB',name:'阿劳霍',val:0.38},{n:6,pos:'LB',name:'马蒂亚斯·维尼亚',val:0.22},{n:5,pos:'CDM',name:'乌加特',val:0.28},{n:8,pos:'CM',name:'巴尔韦德(C)',val:0.52},{n:10,pos:'CAM',name:'德阿拉斯卡埃塔',val:0.2},{n:7,pos:'RW',name:'佩莱斯特里',val:0.18},{n:9,pos:'ST',name:'达尔文·努涅斯',val:0.55},{n:11,pos:'LW',name:'洛代罗',val:0.15}],inj:[]},
+'法国':{value:11.8,coach:'迪迪埃·德尚',fifa:1,players:[{n:1,pos:'GK',name:'迈尼昂',val:0.4},{n:16,pos:'GK',name:'桑巴',val:0.2},{n:2,pos:'RB',name:'孔德',val:0.35},{n:3,pos:'CB',name:'萨利巴',val:0.55},{n:4,pos:'CB',name:'于帕梅卡诺',val:0.42},{n:5,pos:'LB',name:'特奥·埃尔南德斯',val:0.5},{n:8,pos:'CDM',name:'琼阿梅尼',val:0.55},{n:6,pos:'CM',name:'拉比奥',val:0.3},{n:10,pos:'CAM',name:'姆巴佩(C)',val:1.2},{n:7,pos:'RW',name:'奥斯曼·登贝莱',val:0.6},{n:9,pos:'ST',name:'科洛·穆阿尼',val:0.5},{n:11,pos:'LW',name:'巴尔科拉',val:0.42}],inj:[]},
+'塞内加尔':{value:3.8,coach:'阿留·西塞',fifa:19,players:[{n:1,pos:'GK',name:'迪昂',val:0.1},{n:2,pos:'RB',name:'迪亚塔',val:0.12},{n:5,pos:'CB',name:'库利巴利(C)',val:0.28},{n:4,pos:'CB',name:'巴洛·图雷',val:0.15},{n:3,pos:'LB',name:'门迪',val:0.22},{n:6,pos:'CDM',name:'迪亚洛',val:0.2},{n:8,pos:'CM',name:'尼古拉',val:0.16},{n:10,pos:'CAM',name:'西蒙',val:0.18},{n:7,pos:'RW',name:'萨尔',val:0.28},{n:11,pos:'LW',name:'马内',val:0.35},{n:9,pos:'ST',name:'杰克森',val:0.38}],inj:[]},
+'伊拉克':{value:0.15,coach:'赫苏斯·卡萨斯',fifa:56,players:[{n:1,pos:'GK',name:'哈立德',val:0.01},{n:2,pos:'RB',name:'穆斯塔法',val:0.008},{n:4,pos:'CB',name:'阿里·卡西姆',val:0.01},{n:5,pos:'CB',name:'艾哈迈德',val:0.012},{n:3,pos:'LB',name:'侯赛因',val:0.008},{n:6,pos:'CDM',name:'法提赫',val:0.006},{n:8,pos:'CM',name:'贾辛',val:0.01},{n:10,pos:'CAM',name:'阿卜杜拉',val:0.015},{n:7,pos:'RW',name:'萨迪',val:0.008},{n:11,pos:'LW',name:'卡里姆',val:0.006},{n:9,pos:'ST',name:'马哈茂德',val:0.012}],inj:[]},
+'挪威':{value:4.5,coach:'斯托尔·索尔巴肯',fifa:45,players:[{n:1,pos:'GK',name:'尼兰',val:0.1},{n:2,pos:'RB',name:'隆德',val:0.08},{n:4,pos:'CB',name:'厄斯蒂戈(C)',val:0.22},{n:5,pos:'CB',name:'希耶斯特',val:0.18},{n:3,pos:'LB',name:'皮勒',val:0.1},{n:6,pos:'CDM',name:'伯格',val:0.12},{n:8,pos:'CM',name:'埃林森',val:0.15},{n:10,pos:'CAM',name:'博布',val:0.18},{n:7,pos:'RW',name:'努萨',val:0.22},{n:9,pos:'ST',name:'哈兰德',val:1.5},{n:11,pos:'LW',name:'达尔',val:0.12}],inj:[]},
+'阿根廷':{value:10.2,coach:'利昂内尔·斯卡洛尼',fifa:4,players:[{n:1,pos:'GK',name:'埃米利亚诺·马丁内斯',val:0.28},{n:23,pos:'GK',name:'鲁利',val:0.12},{n:2,pos:'RB',name:'莫利纳',val:0.18},{n:4,pos:'CB',name:'奥塔门迪',val:0.22},{n:5,pos:'CB',name:'利桑德罗·马丁内斯',val:0.45},{n:3,pos:'LB',name:'塔利亚菲科',val:0.15},{n:8,pos:'CDM',name:'恩佐·费尔南德斯',val:0.48},{n:6,pos:'CM',name:'麦卡利斯特',val:0.38},{n:10,pos:'CAM',name:'梅西(C)',val:0.55},{n:7,pos:'RW',name:'阿尔瓦雷斯',val:0.58},{n:9,pos:'ST',name:'劳塔罗·马丁内斯',val:0.62},{n:11,pos:'LW',name:'迪马利亚',val:0.2}],inj:[]},
+'阿尔及利亚':{value:2.0,coach:'弗拉基米尔·佩特科维奇',fifa:41,players:[{n:1,pos:'GK',name:'杰瓦德',val:0.1},{n:2,pos:'RB',name:'阿塔拉',val:0.08},{n:5,pos:'CB',name:'比拉勒(C)',val:0.12},{n:4,pos:'CB',name:'奥马尔',val:0.1},{n:3,pos:'LB',name:'哈立德',val:0.06},{n:6,pos:'CDM',name:'泽鲁基',val:0.07},{n:8,pos:'CM',name:'布苏瓦',val:0.1},{n:10,pos:'CAM',name:'马赫雷斯',val:0.25},{n:7,pos:'RW',name:'贝拉亚',val:0.08},{n:11,pos:'LW',name:'卡尔法',val:0.06},{n:9,pos:'ST',name:'阿莫尔',val:0.15}],inj:[]},
+'奥地利':{value:3.0,coach:'拉尔夫·朗尼克',fifa:21,players:[{n:1,pos:'GK',name:'施拉格尔',val:0.12},{n:2,pos:'RB',name:'莱默',val:0.2},{n:5,pos:'CB',name:'阿拉巴(C)',val:0.35},{n:4,pos:'CB',name:'巴利奇',val:0.15},{n:3,pos:'LB',name:'阿尔贝尔',val:0.1},{n:6,pos:'CDM',name:'格里格',val:0.08},{n:8,pos:'CM',name:'施拉格',val:0.12},{n:10,pos:'CAM',name:'鲍姆加特纳',val:0.2},{n:7,pos:'RW',name:'霍夫曼',val:0.18},{n:11,pos:'LW',name:'西默尔',val:0.12},{n:9,pos:'ST',name:'萨比策',val:0.22}],inj:[]},
+'约旦':{value:0.1,coach:'穆罕默德·哈马德',fifa:76,players:[{n:1,pos:'GK',name:'阿卜杜拉',val:0.008},{n:2,pos:'RB',name:'萨勒曼',val:0.005},{n:4,pos:'CB',name:'穆尔西',val:0.008},{n:5,pos:'CB',name:'哈立德',val:0.006},{n:3,pos:'LB',name:'法里斯',val:0.005},{n:6,pos:'CDM',name:'阿瓦德',val:0.004},{n:8,pos:'CM',name:'阿卜杜拉赫',val:0.005},{n:10,pos:'CAM',name:'贾迈勒',val:0.006},{n:7,pos:'RW',name:'尤瑟夫',val:0.005},{n:11,pos:'LW',name:'马哈茂德',val:0.004},{n:9,pos:'ST',name:'哈桑',val:0.006}],inj:[]},
+'葡萄牙':{value:9.5,coach:'罗伯托·马丁内斯',fifa:6,players:[{n:1,pos:'GK',name:'迪奥戈·科斯塔',val:0.25},{n:12,pos:'GK',name:'帕特里西奥',val:0.1},{n:2,pos:'RB',name:'若昂·坎塞洛',val:0.45},{n:3,pos:'CB',name:'鲁本·迪亚斯',val:0.55},{n:4,pos:'CB',name:'伊纳西奥',val:0.32},{n:5,pos:'LB',name:'努诺·门德斯',val:0.38},{n:6,pos:'CDM',name:'帕利尼亚',val:0.25},{n:8,pos:'CM',name:'布鲁诺·费尔南德斯(C)',val:0.52},{n:10,pos:'CAM',name:'贝尔纳多·席尔瓦',val:0.55},{n:7,pos:'RW',name:'莱奥',val:0.5},{n:9,pos:'ST',name:'C罗',val:0.3},{n:11,pos:'LW',name:'若昂·费利克斯',val:0.4}],inj:[]},
+'民主刚果':{value:0.9,coach:'德斯普雷·弗洛朗',fifa:61,players:[{n:1,pos:'GK',name:'基松巴',val:0.05},{n:2,pos:'RB',name:'邦古',val:0.04},{n:4,pos:'CB',name:'卢巴布拉',val:0.06},{n:5,pos:'CB',name:'卡扬巴',val:0.05},{n:3,pos:'LB',name:'姆潘祖',val:0.04},{n:6,pos:'CDM',name:'巴卡',val:0.03},{n:8,pos:'CM',name:'卡鲁库',val:0.04},{n:10,pos:'CAM',name:'巴卡约科',val:0.08},{n:7,pos:'RW',name:'坦博',val:0.05},{n:11,pos:'LW',name:'姆博坎尼',val:0.04},{n:9,pos:'ST',name:'巴卢',val:0.06}],inj:[]},
+'乌兹别克斯坦':{value:1.3,coach:'蒂穆尔·卡普泽',fifa:60,players:[{n:1,pos:'GK',name:'尤苏波夫',val:0.06},{n:2,pos:'RB',name:'法胡林',val:0.05},{n:4,pos:'CB',name:'拉希莫夫',val:0.08},{n:5,pos:'CB',name:'阿尔马佐夫',val:0.07},{n:3,pos:'LB',name:'哈姆拉利耶夫',val:0.05},{n:6,pos:'CDM',name:'沙里波夫',val:0.04},{n:8,pos:'CM',name:'穆拉特',val:0.05},{n:10,pos:'CAM',name:'马哈马迪耶夫(C)',val:0.1},{n:7,pos:'RW',name:'巴布尔',val:0.06},{n:11,pos:'LW',name:'乌卢格贝克',val:0.04},{n:9,pos:'ST',name:'肖基洛夫',val:0.08}],inj:[]},
+'哥伦比亚':{value:3.5,coach:'内斯托尔·洛伦佐',fifa:10,players:[{n:1,pos:'GK',name:'奥斯皮纳(C)',val:0.18},{n:12,pos:'GK',name:'巴尔加斯',val:0.1},{n:2,pos:'RB',name:'圣地亚哥·阿里亚斯',val:0.15},{n:5,pos:'CB',name:'桑切斯',val:0.22},{n:4,pos:'CB',name:'米纳',val:0.2},{n:3,pos:'LB',name:'法布拉',val:0.12},{n:8,pos:'CDM',name:'乌里韦',val:0.18},{n:6,pos:'CM',name:'莱尔马',val:0.12},{n:10,pos:'CAM',name:'哈梅斯·罗德里格斯',val:0.25},{n:7,pos:'RW',name:'夸德拉多',val:0.15},{n:9,pos:'ST',name:'路易斯·迪亚斯',val:0.55},{n:11,pos:'LW',name:'希尼斯特拉',val:0.22}],inj:[]},
+'英格兰':{value:12.0,coach:'托马斯·图赫尔',fifa:2,players:[{n:1,pos:'GK',name:'皮克福德',val:0.3},{n:13,pos:'GK',name:'拉姆斯代尔',val:0.2},{n:2,pos:'RB',name:'沃克',val:0.32},{n:3,pos:'CB',name:'斯通斯',val:0.38},{n:4,pos:'CB',name:'马奎尔',val:0.22},{n:5,pos:'LB',name:'科尔威尔',val:0.28},{n:6,pos:'CDM',name:'赖斯',val:0.55},{n:8,pos:'CM',name:'贝林厄姆',val:0.85},{n:10,pos:'CAM',name:'凯恩(C)',val:0.65},{n:7,pos:'RW',name:'萨卡',val:0.68},{n:9,pos:'ST',name:'福登',val:0.72},{n:11,pos:'LW',name:'帕尔默',val:0.48}],inj:[]},
+'克罗地亚':{value:4.0,coach:'兹拉特科·达利奇',fifa:9,players:[{n:1,pos:'GK',name:'利瓦科维奇',val:0.2},{n:12,pos:'GK',name:'加比奇',val:0.05},{n:2,pos:'RB',name:'尤拉诺维奇',val:0.15},{n:5,pos:'CB',name:'格瓦迪奥尔(C)',val:0.42},{n:4,pos:'CB',name:'埃尔里奇',val:0.18},{n:3,pos:'LB',name:'索萨',val:0.12},{n:6,pos:'CDM',name:'布罗佐维奇',val:0.28},{n:8,pos:'CM',name:'科瓦契奇',val:0.32},{n:10,pos:'CAM',name:'莫德里奇',val:0.25},{n:7,pos:'RW',name:'佩里西奇',val:0.15},{n:9,pos:'ST',name:'克拉马里奇',val:0.22},{n:11,pos:'LW',name:'马耶尔',val:0.1}],inj:[]},
+'加纳':{value:2.2,coach:'奥托·阿多',fifa:66,players:[{n:1,pos:'GK',name:'阿提齐吉',val:0.08},{n:2,pos:'RB',name:'苏尔',val:0.1},{n:4,pos:'CB',name:'阿马泰',val:0.12},{n:5,pos:'CB',name:'迪克',val:0.15},{n:3,pos:'LB',name:'阿卜杜勒',val:0.08},{n:6,pos:'CDM',name:'巴巴',val:0.06},{n:8,pos:'CM',name:'托马斯',val:0.18},{n:10,pos:'CAM',name:'库杜斯(C)',val:0.3},{n:7,pos:'RW',name:'阿尤',val:0.1},{n:11,pos:'LW',name:'塞梅诺',val:0.12},{n:9,pos:'ST',name:'伊尼亚基',val:0.25}],inj:[]},
+'巴拿马':{value:0.6,coach:'托马斯·克里斯蒂安森',fifa:37,players:[{n:1,pos:'GK',name:'梅希亚',val:0.04},{n:2,pos:'RB',name:'卡明斯',val:0.03},{n:4,pos:'CB',name:'托雷斯',val:0.05},{n:5,pos:'CB',name:'马里斯卡',val:0.04},{n:3,pos:'LB',name:'戴维斯',val:0.035},{n:6,pos:'CDM',name:'埃斯科巴',val:0.025},{n:8,pos:'CM',name:'卡拉斯基利亚',val:0.03},{n:10,pos:'CAM',name:'戈多伊(C)',val:0.05},{n:7,pos:'RW',name:'布莱克曼',val:0.03},{n:11,pos:'LW',name:'法哈多',val:0.025},{n:9,pos:'ST',name:'迪亚斯',val:0.06}],inj:[]},
+};
+
+// 比赛日期
+const MATCH_DATE = {};
+const dateMap = [
+  ['A','6月11日'],['B','6月11日'],['C','6月12日'],['D','6月12日'],
+  ['E','6月13日'],['F','6月13日'],['G','6月14日'],['H','6月14日'],
+  ['I','6月15日'],['J','6月15日'],['K','6月16日'],['L','6月16日']
+];
+for (const [g, d] of dateMap) {
+  for (const m of GROUP_MATCHES[g]) { m.date = d; }
+}
+
+// 比赛场地信息
+const VENUE_MAP = {
+  '墨西哥':'阿兹台克体育场, 墨西哥城',
+  '美国':'梅赛德斯-奔驰体育场, 亚特兰大',
+  '加拿大':'卑诗广场, 温哥华',
+  '巴西':'马拉卡纳体育场, 里约热内卢',
+  '阿根廷':'纪念碑体育场, 布宜诺斯艾利斯',
+  '英格兰':'温布利大球场, 伦敦',
+  '法国':'法兰西体育场, 圣但尼',
+  '德国':'安联球场, 慕尼黑',
+  '西班牙':'圣地亚哥·伯纳乌, 马德里',
+  '葡萄牙':'光明球场, 里斯本',
+  '荷兰':'约翰·克鲁伊夫球场, 阿姆斯特丹',
+  '比利时':'博杜安国王球场, 布鲁塞尔',
+  '日本':'国际体育场, 横滨',
+  '韩国':'首尔世界杯体育场',
+  '卡塔尔':'卢赛尔体育场',
+  '沙特阿拉伯':'阿卜杜拉国王体育城, 吉达',
+  '瑞典':'友谊体育场, 索尔纳',
+  '瑞士':'圣雅各布公园, 巴塞尔',
+  '土耳其':'阿塔图尔克奥林匹克, 伊斯坦布尔',
+  '奥地利':'恩斯特·哈佩尔, 维也纳',
+  '克罗地亚':'马克西米尔体育场, 萨格勒布',
+  '厄瓜多尔':'基多奥林匹克体育场',
+  '哥斯达黎加':'国家体育场, 圣何塞',
+  '哥伦比亚':'大都会体育场, 巴兰基亚',
+};
+
+const VENUES_BY_GROUP = {
+  'A':'洛杉矶','B':'旧金山/湾区','C':'达拉斯','D':'迈阿密',
+  'E':'费城','F':'纽约/新泽西','G':'波士顿','H':'休斯顿',
+  'I':'西雅图','J':'亚特兰大','K':'堪萨斯城','L':'芝加哥',
+};
+
 // ========== 状态 ==========
 let scores = {};        // { mid: [h, a] } 全场比分
 let halftimeScores = {}; // { mid: [h, a] } 半场比分
@@ -227,19 +324,40 @@ let currentDetailMid = '';
 // ========== SCF 读写 ==========
 async function scfGet(path) {
   try {
-    const r = await fetch(`${SCF}/${path}`);
+    const r = await fetchWithTimeout(`${SCF}/${path}`, 5000);
     return await r.json();
   } catch(e) { console.warn(`SCF GET ${path} failed:`, e); return {}; }
 }
 async function scfPost(path, body) {
   try {
-    const r = await fetch(`${SCF}/${path}`, {
+    const r = await fetchWithTimeout(`${SCF}/${path}`, 5000, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    return await r.json();
+    const data = await r.json();
+    if (data && data.ok) {
+      console.log(`[SCF] ${path} saved`);
+      return data;
+    }
+    console.warn(`[SCF] ${path} failed:`, data);
+    return data;
   } catch(e) { console.warn(`SCF POST ${path} failed:`, e); return {error: e.message}; }
+}
+
+// localStorage 持久化（当 SCF 不可用时的兜底）
+function lsGet(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch(e) { return {}; }
+}
+function lsSet(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); return true; } catch(e) { return false; }
+}
+
+function fetchWithTimeout(url, ms, opts) {
+  const controller = new AbortController();
+  const signal = controller.signal;
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...opts, signal }).finally(() => clearTimeout(timer));
 }
 
 // 立即渲染空页面（不等待数据）
@@ -260,6 +378,14 @@ async function loadAllData() {
     }
   } catch(e) { console.warn('[loadAllData] GitHub Pages 失败:', e.message); }
 
+  // 1b. 从 localStorage 恢复手动输入的赛果（覆盖基线）
+  const localResults = lsGet('wc_results') || {};
+  for (const [mid, d] of Object.entries(localResults)) {
+    if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
+    if (d && d.ht) halftimeScores[mid] = d.ht;
+  }
+  if (Object.keys(localResults).length) console.log('[loadAllData] localStorage 赛果:', Object.keys(localResults).length, '场');
+
   // 2. SCF 赛果覆盖（带超时）
   try {
     const scfR = await fetchWithTimeout(`${SCF}/results`, 5000);
@@ -275,21 +401,25 @@ async function loadAllData() {
     }
   } catch(e) { console.warn('[loadAllData] SCF /results 失败'); }
 
-  // 3. 预测数据
+  // 3. 预测数据：localStorage + GitHub + SCF
+  const localPreds = lsGet('wc_predictions') || {};
+  predictions = {...localPreds};
   try {
     const pr = await fetchWithTimeout('https://bailg-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now(), 5000);
-    if (pr && pr.ok) { predictions = await pr.json() || {}; }
+    if (pr && pr.ok) { const pd = await pr.json() || {}; Object.assign(predictions, pd); }
   } catch(e) {}
   try {
     const sp = await fetchWithTimeout(`${SCF}/predictions`, 3000);
-    if (sp && sp.ok) { const sd = await sp.json(); if (sd && typeof sd === 'object') Object.assign(predictions, sd); }
+    if (sp && sp.ok) { const sd = await sp.json(); if (sd && typeof sd === 'object' && !sd.error) Object.assign(predictions, sd); }
   } catch(e) {}
   predictions = predictions || {};
 
-  // 4. 爆冷
+  // 4. 爆冷：localStorage + SCF
+  const localUpsets = lsGet('wc_upsets') || {};
+  upsetMatches = {...localUpsets};
   try {
     const ur = await fetchWithTimeout(`${SCF}/upsets`, 3000);
-    if (ur && ur.ok) { upsetMatches = await ur.json() || {}; }
+    if (ur && ur.ok) { const ud = await ur.json() || {}; Object.assign(upsetMatches, ud); }
   } catch(e) {}
 
   // 渲染更新
@@ -298,33 +428,35 @@ async function loadAllData() {
   console.log('[loadAllData] done, results:', Object.keys(scores).length, 'predictions:', Object.keys(predictions).length);
 }
 
-function fetchWithTimeout(url, ms) {
-  return Promise.race([
-    fetch(url),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
-  ]);
-}
-
 async function saveResultToSCF(mid) {
   const d = {};
   d[mid] = { score: scores[mid] || [0,0], ht: halftimeScores[mid] || [0,0] };
+  // 同时存 localStorage
+  const local = lsGet('wc_results') || {};
+  local[mid] = d[mid];
+  lsSet('wc_results', local);
+  // 尝试存 SCF
   const r = await scfPost('results', d);
-  if (r.ok) console.log(`[saveResult] ${mid} saved`);
-  else console.warn('[saveResult] failed', r.error);
+  if (r && r.ok) console.log(`[saveResult] ${mid} saved to SCF & localStorage`);
+  else console.warn('[saveResult] SCF failed, saved to localStorage only');
 }
 
 async function savePredictionToSCF(mid) {
   const d = {};
   d[mid] = predictions[mid] || {};
+  const local = lsGet('wc_predictions') || {};
+  local[mid] = d[mid];
+  lsSet('wc_predictions', local);
   const r = await scfPost('predictions', d);
-  if (r.ok) console.log(`[savePrediction] ${mid} saved`);
-  else console.warn('[savePrediction] failed', r.error);
+  if (r && r.ok) console.log(`[savePrediction] ${mid} saved to SCF & localStorage`);
+  else console.warn('[savePrediction] SCF failed, saved to localStorage only');
 }
 
 async function saveUpsetToSCF() {
+  lsSet('wc_upsets', upsetMatches);
   const r = await scfPost('upsets', upsetMatches);
-  if (r.ok) console.log('[saveUpset] saved');
-  else console.warn('[saveUpset] failed', r.error);
+  if (r && r.ok) console.log('[saveUpset] saved to SCF & localStorage');
+  else console.warn('[saveUpset] SCF failed, saved to localStorage only');
 }
 
 // ========== Tab 切换 ==========
@@ -398,7 +530,7 @@ function renderMatches() {
       const stCls = st === 'FINISHED' ? 'finished' : st === 'LIVE' ? 'live' : 'upcoming';
       const stLabel = st === 'FINISHED' ? '完场' : st === 'LIVE' ? '直播中' : '未开始';
       const scoreStr = sc && sc[0] !== null ? `${sc[0]}-${sc[1]}` : '- -';
-      const htStr = ht ? `${ht[0]}-${ht[1]}` : '';
+      const htStr = ht ? `HT ${ht[0]}-${ht[1]}` : '半场';
       html += `<div class="match-card card-today" onclick="showMatchDetail('${m.id}')">
         <div class="mc-head"><span>${g}组</span><span>${m.id}</span></div>
         <div class="mc-body">
@@ -406,7 +538,7 @@ function renderMatches() {
             <span>${m.home}</span>
             <div>
               <div class="score">${scoreStr}</div>
-              <div class="ht" onclick="event.stopPropagation();showUpsetConfirm('${m.id}')">${htStr ? 'HT:'+htStr : '半场'}</div>
+              <div class="ht" onclick="event.stopPropagation();showUpsetConfirm('${m.id}')">${htStr}</div>
             </div>
             <span>${m.away}</span>
           </div>
@@ -428,6 +560,11 @@ function showMatchDetail(mid) {
   const ht = halftimeScores[mid] || [null, null];
   const pred = predictions[mid] || {};
   const isUpset = upsetMatches[mid];
+  const hi = TEAM_INFO[m.home] || {};
+  const ai = TEAM_INFO[m.away] || {};
+  const group = mid.charAt(0);
+  const venue = VENUE_MAP[m.home] || (VENUES_BY_GROUP[group] || '待定');
+
   let html = `
     <button class="modal-close" onclick="closeModal()">&times;</button>
     <div class="modal-header">
@@ -436,38 +573,87 @@ function showMatchDetail(mid) {
         <span style="color:var(--muted)">vs</span>
         <span>${m.away}</span>
       </div>
-      <div style="font-size:12px;color:var(--muted);text-align:center">${mid} ${isUpset ? '<span class="upset-badge">爆冷</span>' : ''}</div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;margin-top:4px">
+        ${m.date || ''} | ${group}组 | ${mid}
+        ${isUpset ? '<span class="upset-badge">爆冷</span>' : ''}
+      </div>
     </div>
+
+    <!-- 赛果区域 -->
     <div class="modal-section">
-      <h4>赛果</h4>
-      <div style="display:flex;gap:16px;justify-content:center;align-items:center">
+      <h4>&#x26BD; 赛果</h4>
+      <div style="display:flex;gap:20px;justify-content:center;align-items:center">
         <div style="text-align:center">
-          <div style="font-size:12px;color:var(--muted)">半场</div>
-          <div style="font-size:20px;color:var(--gold);cursor:pointer" onclick="showUpsetConfirm('${mid}')">${ht[0]!==null?ht.join('-'):'--'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">半场</div>
+          <div style="font-size:22px;color:var(--gold);cursor:pointer" onclick="showUpsetConfirm('${mid}')" title="点击标记爆冷">${ht[0]!==null?ht[0]+' - '+ht[1]:'--'}</div>
         </div>
         <div style="text-align:center">
-          <div style="font-size:12px;color:var(--muted)">全场</div>
-          <div style="font-size:28px;font-weight:bold;color:var(--gold)">${sc[0]!==null?sc.join('-'):'-- --'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:4px">全场</div>
+          <div style="font-size:32px;font-weight:bold;color:var(--gold)">${sc[0]!==null?sc[0]+' - '+sc[1]:'--'}</div>
         </div>
       </div>
       <div style="text-align:center;margin-top:10px">
         <button class="btn btn-primary" onclick="openResultModal('${mid}')">输入/修改赛果</button>
       </div>
     </div>
+
+    <!-- 比赛信息 -->
     <div class="modal-section">
-      <h4>我的预测</h4>
+      <h4>&#x1F3DF; 比赛信息</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;line-height:1.8">
+        <div><span style="color:var(--muted)">场地:</span> ${venue}</div>
+        <div><span style="color:var(--muted)">日期:</span> ${m.date || '待定'}</div>
+        <div><span style="color:var(--muted)">组别:</span> ${group}组 第${parseInt(mid.charAt(2))+1}轮</div>
+        <div><span style="color:var(--muted)">状态:</span> ${matchStatus[mid]==='FINISHED'?'已完赛':matchStatus[mid]==='LIVE'?'直播中':'未开始'}</div>
+      </div>
+    </div>
+
+    <!-- 球队信息：主场 -->
+    ${renderTeamCard(m.home, hi)}
+    <!-- 球队信息：客场 -->
+    ${renderTeamCard(m.away, ai)}
+
+    <!-- 我的预测 -->
+    <div class="modal-section">
+      <h4>&#x1F3AF; 我的预测</h4>
       <div id="pred-display" style="font-size:13px;line-height:1.8">
         ${pred.score ? '<div>比分: ' + pred.score.join(' / ') + '</div>' : '<div style="color:var(--muted)">暂无预测</div>'}
         ${pred.wdl ? '<div>胜平负: ' + pred.wdl.join(' / ') + '</div>' : ''}
         ${pred.goals ? '<div>进球数: ' + pred.goals.join(' / ') + '</div>' : ''}
       </div>
-      <div style="text-align:center;margin-top:10px">
+      <div style="text-align:center;margin-top:8px">
         <button class="btn" onclick="openPredModal('${mid}')">${pred.score ? '修改预测' : '添加预测'}</button>
       </div>
     </div>
   `;
   document.getElementById('modal-panel').innerHTML = html;
   document.getElementById('modal-overlay').style.display = '';
+}
+
+function renderTeamCard(team, info) {
+  if (!info || !info.players) return '';
+  const totalVal = info.value || 0;
+  const pList = (info.players||[]).sort((a,b) => b.val - a.val).slice(0,11);
+  let phtml = pList.map(p => {
+    const posColor = {GK:'#ff9800',RB:'#4caf50',CB:'#4caf50',LB:'#4caf50',CDM:'#2196f3',CM:'#2196f3',CAM:'#9c27b0',RW:'#e91e63',LW:'#e91e63',ST:'#f44336'};
+    return `<tr><td style="text-align:center;color:var(--muted);width:24px">${p.n}</td><td style="text-align:center;width:36px"><span style="font-size:10px;background:${posColor[p.pos]||'#666'};color:#fff;padding:1px 4px;border-radius:3px">${p.pos}</span></td><td>${p.name}${p.name.includes('(C)')?' <span style="color:var(--gold);font-size:10px">C</span>':''}</td><td style="text-align:right;color:var(--muted);font-size:11px">€${p.val}亿</td></tr>`;
+  }).join('');
+  return `
+  <div class="modal-section team-detail-card" style="background:rgba(22,27,34,.6);border-radius:8px;margin:8px 12px;padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h4 style="margin:0;font-size:15px">${team}</h4>
+      <div style="display:flex;gap:16px;font-size:11px;color:var(--muted)">
+        <span>FIFA #${info.fifa||'--'}</span><span>身价 €${totalVal}亿</span>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+      主帅: ${info.coach||'未知'} | 伤病: ${(info.inj||[]).length ? info.inj.join(', ') : '无'}
+    </div>
+    <table style="width:100%;font-size:11px;border-collapse:collapse">
+      <tr style="color:var(--muted);border-bottom:1px solid var(--border)"><th style="text-align:left;padding:3px 4px">#</th><th style="text-align:left;padding:3px 4px;width:36px"></th><th style="text-align:left;padding:3px 4px">球员</th><th style="text-align:right;padding:3px 4px">身价</th></tr>
+      ${phtml}
+    </table>
+  </div>`;
 }
 
 function findMatch(mid) {
