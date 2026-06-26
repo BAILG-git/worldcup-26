@@ -1524,21 +1524,11 @@ function updateMatchScore(h, a, ns, st, htScores, clockStr) {
   if (updated) { saveScores(); silentRefresh(); }
 }
 
-// 有直播时10秒，无直播时30秒
-function getPollingInterval() {
-  return Object.values(matchStatus).some(s => s === 'LIVE') ? 10000 : 30000;
-}
+// 全部小组赛已完赛，停掉轮询
+function getPollingInterval() { return 999999999; }
 function startPolling() {
   stopPolling();
-  function pollOnce() {
-    fetchAllSources().then(() => {
-      // 动态调整下一轮间隔（有直播10s，无直播30s）
-      pollingTimer = setTimeout(pollOnce, getPollingInterval());
-    }).catch(() => {
-      pollingTimer = setTimeout(pollOnce, getPollingInterval());
-    });
-  }
-  pollOnce();
+  console.log('[startPolling] 小组赛已全部完赛，不启动轮询');
 }
 function stopPolling() { if (pollingTimer) { clearInterval(pollingTimer); clearTimeout(pollingTimer); pollingTimer = null; } }
 function updateStatus(state, msg) {
@@ -2333,7 +2323,7 @@ function startPredCheck() {
   checkAndPredict();
   predCheckTimer = setInterval(checkAndPredict, 300000);
 }
-startPredCheck();
+// startPredCheck(); // 小组赛已全部完赛，停掉预测定时刷新
 
 let _matchMap={};
 function buildMatchCard(m){
