@@ -2783,15 +2783,12 @@ function predictMatch(m, oddsData){
 
   const s1=probs[0];
   const s1W=s1.hg>s1.ag?'H':s1.hg<s1.ag?'A':'D';
-  // scoreC：概率第二高的不同比分（总进球≤4，避免3-3/4-3）
+  // scoreC：概率第二高的不同比分（不限总进球）
   let scoreCObj=null;
   for(let i=1;i<probs.length;i++){
     const p=probs[i];
-    if(p.hg!==s1.hg||p.ag!==s1.ag){
-      if(p.hg+p.ag<=4){scoreCObj=p;break;}
-    }
+    if(p.hg!==s1.hg||p.ag!==s1.ag){scoreCObj=p;break;}
   }
-  if(!scoreCObj){for(let i=1;i<probs.length;i++){const p=probs[i];if((p.hg!==s1.hg||p.ag!==s1.ag)&&p.hg+p.ag<=5){scoreCObj=p;break;}}}
   if(!scoreCObj)scoreCObj=probs[1]||s1;
   let scoreA=`${s1.hg}-${s1.ag}`,scoreCStr=`${scoreCObj.hg}-${scoreCObj.ag}`;
 
