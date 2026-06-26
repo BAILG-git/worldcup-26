@@ -95,7 +95,7 @@ def handle_upsets_post(body):
 def main_handler(event, context):
     qs = (event.get('queryStringParameters') or
           event.get('queryString') or
-          event.get('query') or {}))
+          event.get('query') or {})
     if isinstance(qs, str):
         qs = dict(urllib.parse.parse_qsl(qs))
 
