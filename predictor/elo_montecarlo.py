@@ -275,13 +275,13 @@ class MonteCarloSimulator:
 
     def _elo_to_lambda(self, elo_diff, is_stronger_side=True):
         """Elo 差 -> 期望进球数（非线性映射）"""
-        # 基础值：世界杯场均 1.35-1.65 球
-        base = 1.35
-        # Elo 差每 100 分 -> 进球 +0.15（强队方）/ -0.10（弱队方）
+        # 基础值：世界杯场均 ~1.3 球/队
+        base = 1.30
+        # Elo 差每 100 分 -> 进球 +0.10（强队方）/ -0.08（弱队方）→ 更保守
         if is_stronger_side:
-            return max(0.4, min(base + abs(elo_diff) * 0.0018, 3.2))
+            return max(0.35, min(base + abs(elo_diff) * 0.0010, 2.60))
         else:
-            return max(0.3, min(base - abs(elo_diff) * 0.0012, 2.8))
+            return max(0.25, min(base - abs(elo_diff) * 0.0008, 2.20))
 
     def _style_adjustment(self, team_a, team_b):
         """风格克制修正"""
@@ -354,8 +354,8 @@ class MonteCarloSimulator:
         if away == DEFENDING_CHAMP and round_num == 1:
             lambda_a *= 0.95
 
-        lambda_h = max(0.3, min(lambda_h, 3.5))
-        lambda_a = max(0.25, min(lambda_a, 3.0))
+        lambda_h = max(0.3, min(lambda_h, 2.80))
+        lambda_a = max(0.25, min(lambda_a, 2.20))
 
         # ========== 蒙特卡洛 ==========
         score_counts = {}  # "h-a" -> count
@@ -542,8 +542,10 @@ def run_predictions(finished_matches=None, output_dir="data", predict_until=None
     # 初始化 Elo 引擎
     engine = EloEngine()
 
-    # 先用已完赛结果更新 Elo
+    # 先用已完赛结果更新 Elo（跳过空队名条目）
     for fm in finished_matches:
+        if not fm.get("home") or not fm.get("away"):
+            continue
         engine.update(fm["home"], fm["away"], fm["score_h"], fm["score_a"],
                       is_host=fm.get("is_host", False),
                       is_neutral=fm.get("is_neutral", True))
