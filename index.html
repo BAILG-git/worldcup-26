@@ -243,38 +243,50 @@ async function scfPost(path, body) {
 }
 
 async function loadAllData() {
-  // 1. 尝试从 SCF 加载赛果
+  // 1. 先从 GitHub Pages 加载赛果作为基线（保证一定有数据）
   let results = {};
-  try { results = await (await fetch(`${SCF}/results`)).json(); } catch(e) { console.warn('SCF /results 失败，尝试 fallback'); }
-  // 2. SCF 失败则 fallback 到 GitHub Pages JSON
-  if (!results || Object.keys(results).length === 0) {
-    try {
-      const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
-      if (r.ok) results = await r.json();
-      console.log('[loadAllData] 从 GitHub Pages 加载赛果:', Object.keys(results).length, '场');
-    } catch(e) { console.warn('[loadAllData] GitHub Pages results.json 也加载失败', e.message); }
-  } else {
-    console.log('[loadAllData] 从 SCF 加载赛果:', Object.keys(results).length, '场');
-  }
+  try {
+    const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
+    if (r.ok) { results = await r.json(); console.log('[loadAllData] 基线赛果(GitHub):', Object.keys(results).length, '场'); }
+  } catch(e) { console.warn('[loadAllData] GitHub Pages 加载失败', e.message); }
+  // 2. 再尝试从 SCF 获取更新的赛果（覆盖基线）
+  try {
+    const scfData = await Promise.race([
+      (await fetch(`${SCF}/results`)).json(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+    ]);
+    if (scfData && typeof scfData === 'object' && !scfData.error) {
+      // 检查是否包含有效比赛数据
+      const hasMatchData = Object.keys(scfData).some(k => /^\w_\d$/.test(k));
+      if (hasMatchData) { Object.assign(results, scfData); console.log('[loadAllData] SCF 赛果已覆盖:', Object.keys(scfData).length, '场'); }
+    }
+  } catch(e) { console.warn('[loadAllData] SCF /results 失败，使用基线数据', e.message); }
   for (const [mid, d] of Object.entries(results)) {
     if (d && d.score) { scores[mid] = d.score; matchStatus[mid] = 'FINISHED'; }
     if (d && d.ht) halftimeScores[mid] = d.ht;
   }
-  // 加载预测（SCF -> GitHub Pages 兜底）
+  // 预测：先 GitHub Pages 再 SCF
   let preds = {};
-  try { preds = await (await fetch(`${SCF}/predictions`)).json(); } catch(e) {}
-  if (!preds || Object.keys(preds).length === 0) {
-    try { preds = await (await fetch('https://BAILG-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now())).json(); } catch(e) {}
-  }
+  try {
+    const r = await fetch('https://BAILG-git.github.io/worldcup-26/data/predictions.json?t=' + Date.now());
+    if (r.ok) preds = await r.json();
+  } catch(e) {}
+  try {
+    const scfPreds = await Promise.race([
+      (await fetch(`${SCF}/predictions`)).json(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+    ]);
+    if (scfPreds && typeof scfPreds === 'object' && !scfPreds.error) Object.assign(preds, scfPreds);
+  } catch(e) {}
   predictions = preds || {};
-  // 加载爆冷
+  // 爆冷
   let upsets = {};
   try { upsets = await (await fetch(`${SCF}/upsets`)).json(); } catch(e) {}
   upsetMatches = upsets || {};
-  // 始终渲染（即使没有数据也要显示空表格）
+  // 渲染
   renderGroups();
   renderMatches();
-  console.log('[loadAllData] done, results:', Object.keys(results).length, 'predictions:', Object.keys(predictions).length);
+  console.log('[loadAllData] done, results:', Object.keys(scores).length, 'predictions:', Object.keys(predictions).length);
 }
 
 async function saveResultToSCF(mid) {
