@@ -67,7 +67,7 @@ def handle_results_post(body):
     # body: { matchId: { score:[h,a], ht:[h,a] } }
     existing = read_json('data/results.json').get('data', {})
     existing.update(body)
-    return write_json('data/results.json', existing, f'update results via SCF')
+    return write_json('data/results.json', existing, f'update results via SCF [skip ci]')
 
 # ========== /predictions ==========
 def handle_predictions_get():
@@ -78,7 +78,7 @@ def handle_predictions_post(body):
     # body: { matchId: { score:['1:0','2:0'], wdl:['主胜'], goals:['2','3'] } }
     existing = read_json('data/predictions.json').get('data', {})
     existing.update(body)
-    return write_json('data/predictions.json', existing, f'update predictions via SCF')
+    return write_json('data/predictions.json', existing, f'update predictions via SCF [skip ci]')
 
 # ========== /upsets (保留原有逻辑) ==========
 UPSETS_PATH = 'data/upsets.json'
@@ -89,7 +89,7 @@ def handle_upsets_get():
 def handle_upsets_post(body):
     existing = read_json(UPSETS_PATH).get('data', {})
     existing.update(body)
-    return write_json(UPSETS_PATH, existing, f'update upsets via SCF')
+    return write_json(UPSETS_PATH, existing, f'update upsets via SCF [skip ci]')
 
 # ========== SCF 主入口 ==========
 def main_handler(event, context):
