@@ -4199,5 +4199,17 @@
     "goals": "4,5",
     "reason": "手动输入",
     "confidence": ""
+  },
+  "H_4": {
+    "score": [
+      "0:2",
+      "1:2"
+    ],
+    "scoreC": "",
+    "wdl": "客胜",
+    "wdlLabel": "客胜",
+    "goals": "2,3",
+    "reason": "手动输入",
+    "confidence": ""
   }
 }
