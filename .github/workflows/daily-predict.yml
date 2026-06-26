@@ -5,8 +5,6 @@ on:
     # 每5分钟检查一次（UTC 0-23 = 北京时间8-次日7点）
     - cron: '*/5 * * * *'
   workflow_dispatch:  # 允许手动触发
-  push:
-    branches: [main]
 
 jobs:
   predict:
