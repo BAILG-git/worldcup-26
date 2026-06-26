@@ -4146,5 +4146,13 @@
       ],
       "locked": false
     }
+  },
+  "test_match": {
+    "score": "1:0",
+    "scoreC": "2:0",
+    "wdl": "��ʤ",
+    "wdlLabel": "��ʤ",
+    "goals": "1,2",
+    "reason": "����"
   }
 }
