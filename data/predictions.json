@@ -4187,5 +4187,17 @@
     "goals": "4,5",
     "reason": "手动输入",
     "confidence": ""
+  },
+  "I_5": {
+    "score": [
+      "4:0",
+      "5:0"
+    ],
+    "scoreC": "",
+    "wdl": "主胜",
+    "wdlLabel": "主胜",
+    "goals": "4,5",
+    "reason": "手动输入",
+    "confidence": ""
   }
 }
