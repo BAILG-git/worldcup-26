@@ -2323,7 +2323,7 @@ function startPredCheck() {
   checkAndPredict();
   predCheckTimer = setInterval(checkAndPredict, 300000);
 }
-// startPredCheck(); // 小组赛已全部完赛，停掉预测定时刷新
+checkAndPredict(); // 小组赛已全部完赛，只加载一次预测数据，不定时刷新
 
 let _matchMap={};
 function buildMatchCard(m){
