@@ -4211,5 +4211,17 @@
     "goals": "2,3",
     "reason": "手动输入",
     "confidence": ""
+  },
+  "H_5": {
+    "score": [
+      "1:1",
+      "0:1"
+    ],
+    "scoreC": "",
+    "wdl": "平局",
+    "wdlLabel": "平局",
+    "goals": "2,1",
+    "reason": "手动输入",
+    "confidence": ""
   }
 }
