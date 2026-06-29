@@ -988,6 +988,41 @@ function fmtPredScore(sc, scC) {
   return { main, backup };
 }
 
+// 统一预测验证函数：兼容旧格式(字符串"2-0")和新格式(数组["2:0"])
+function verifyPred(p, s) {
+  // 比分验证
+  const actualStr = s[0] + '-' + s[1]; // "2-0"
+  // 新格式：p.score = ["2:0", "3:0"]，取第一个主预测
+  const normScore = sc => {
+    if (!sc) return '';
+    if (Array.isArray(sc)) return sc[0] ? sc[0].replace(':', '-') : '';
+    return String(sc).replace(':', '-');
+  };
+  const scoreOk = normScore(p.score) === actualStr || normScore(p.scoreC) === actualStr;
+
+  // 胜平负验证
+  const actualWdl = s[0] > s[1] ? '主胜' : s[0] < s[1] ? '客胜' : '平局';
+  const wdlOk = p.wdl === actualWdl;
+
+  // 进球数验证：兼容新格式"3,2"(取两数之间)和旧格式goalsNum
+  const actualGoals = s[0] + s[1];
+  let goalsOk = false;
+  if (typeof p.goalsNum === 'number') {
+    goalsOk = p.goalsNum === actualGoals;
+  } else if (p.goals) {
+    // 格式如 "3,2" 或 "3, 2"：取最小值和最大值，实际进球数在区间内即命中
+    const nums = String(p.goals).match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const lo = Math.min(...nums.map(Number));
+      const hi = Math.max(...nums.map(Number));
+      goalsOk = actualGoals >= lo && actualGoals <= hi;
+    } else if (nums && nums.length === 1) {
+      goalsOk = actualGoals === Number(nums[0]);
+    }
+  }
+  return { scoreOk, wdlOk, goalsOk };
+}
+
 function normalizeGoals(g) {
   if (!g) return '-';
   // 已经是新格式：纯数字+逗号+空格+数字
@@ -1709,11 +1744,7 @@ function buildMatchCard(m){
   // 完赛预测验证
   let verifyHtml='';
   if(st==='FINISHED' && played && predictions[m.id]){
-    const p=predictions[m.id];
-    const scoreOk=p.score===dtStr||p.scoreC===dtStr;
-    const actualWdl=s[0]>s[1]?'主胜':s[0]<s[1]?'客胜':'平局';
-    const wdlOk=p.wdl===actualWdl;
-    const goalsOk=p.goalsNum===s[0]+s[1];
+    const {scoreOk, wdlOk, goalsOk} = verifyPred(predictions[m.id], s);
     verifyHtml=`<div class="mc-verify"><span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span></div>`;
   }
   const isUpset = upsetMatches.includes(m.id);
@@ -2613,10 +2644,7 @@ function silentPatchMatches(forceRebuild) {
         if (body) body.appendChild(verifyEl);
       }
       const p = predictions[mid];
-      const scoreOk = p.score === `${s[0]}-${s[1]}` || p.scoreC === `${s[0]}-${s[1]}`;
-      const actualWdl = s[0] > s[1] ? '主胜' : s[0] < s[1] ? '客胜' : '平局';
-      const wdlOk = p.wdl === actualWdl;
-      const goalsOk = p.goalsNum === s[0] + s[1];
+      const {scoreOk, wdlOk, goalsOk} = verifyPred(p, s);
       verifyEl.innerHTML = `<span>比赛结果</span><span>比分 <b class="${scoreOk?'v-ok':'v-no'}">${scoreOk?'✔':'❌'}</b></span><span>胜平负 <b class="${wdlOk?'v-ok':'v-no'}">${wdlOk?'✔':'❌'}</b></span><span>进球数 <b class="${goalsOk?'v-ok':'v-no'}">${goalsOk?'✔':'❌'}</b></span>`;
     }
   });
