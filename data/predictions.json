@@ -4235,5 +4235,17 @@
     "goals": "3,4",
     "reason": "手动输入",
     "confidence": ""
+  },
+  "J_5": {
+    "score": [
+      "1:1",
+      "2:2"
+    ],
+    "scoreC": "",
+    "wdl": "平局",
+    "wdlLabel": "平局",
+    "goals": "2,4",
+    "reason": "手动输入",
+    "confidence": ""
   }
 }
