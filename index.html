@@ -606,17 +606,29 @@ function closeAdminModal() {
   document.getElementById('adminModal').style.display = 'none';
   _upsetPending = null;
 }
-function verifyAdmin() {
+async function verifyAdmin() {
   const pwd = document.getElementById('adminPwd').value;
   const mid = _upsetPending; // 提前保存，避免被 closeAdminModal 清空
   if (pwd === ADMIN_PWD) {
     closeAdminModal();
     if (mid) {
+      const wasUpset = upsetMatches.includes(mid); // 记录切换前的状态
       const idx = upsetMatches.indexOf(mid);
       if (idx >= 0) { upsetMatches.splice(idx, 1); }
       else { upsetMatches.push(mid); }
       renderMatches();
-      saveUpsets();
+      // 构建全量 body，显式传 true/false
+      const body = {};
+      upsetMatches.forEach(m => { body[m] = true; });
+      if (wasUpset) { body[mid] = false; } // 取消时显式传 false
+      try {
+        const resp = await fetch(SCF_UPSETS_URL, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(body)
+        });
+        if (resp.ok) { console.log('[爆冷] 同步成功 wasUpset='+wasUpset+'→body['+mid+']='+body[mid]); }
+        else { console.warn('[爆冷] SCF返回 HTTP', resp.status); }
+      } catch(e) { console.warn('[爆冷] SCF同步失败', e.message); }
     }
   } else {
     document.getElementById('adminErr').style.display = 'block';
