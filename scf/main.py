@@ -99,9 +99,8 @@ def handle_upsets_get():
     return result.get('data', {})
 
 def handle_upsets_post(body):
-    existing = read_json(UPSETS_PATH).get('data', {})
-    existing.update(body)
-    return write_json(UPSETS_PATH, existing, f'update upsets via SCF [skip ci]')
+    # 全量替换（前端传当前全部爆冷列表），支持取消
+    return write_json(UPSETS_PATH, body, f'update upsets via SCF [skip ci]')
 
 # ========== SCF 主入口 ==========
 def main_handler(event, context):
