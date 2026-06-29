@@ -979,6 +979,15 @@ function genGroupMatches() {
 
 let GROUP_MATCHES = genGroupMatches();
 // 兼容旧格式 goals：将 "3球/1球（小球）" → "1, 3"，新格式 "1, 3" 直接返回
+// 格式化预测比分展示（兼容字符串 "1-0" 和数组 ["1:0","2:0"]）
+function fmtPredScore(sc, scC) {
+  const fmt = s => Array.isArray(s) ? s[0] : (s || '-');
+  const fmtB = s => Array.isArray(s) ? s[1] : '';
+  const main = fmt(sc);
+  const backup = fmtB(sc) || (scC ? (Array.isArray(scC) ? scC[0] : scC) : '');
+  return { main, backup };
+}
+
 function normalizeGoals(g) {
   if (!g) return '-';
   // 已经是新格式：纯数字+逗号+空格+数字
@@ -1727,7 +1736,7 @@ function buildMatchCard(m){
           <div class="ditem">半场<br><span class="dval${st==='FINISHED'?' ht-clickable':''}">${htStr}</span></div>
           <div class="ditem">${dtLabel}<br><span class="dval${st==='FINISHED'?' result-clickable':''}">${dtStr}</span></div>
         </div>
-        ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>`<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${p.score}</b>（备${p.scoreC||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`)(predictions[m.id]):(verifyHtml||'')}
+        ${(predictions[m.id] && (st==='FINISHED' || isPredVisible(m.date)))?(p=>{const fs=fmtPredScore(p.score,p.scoreC);return `<div class="mc-pred"><span>比赛预测</span><span>比分 <b style="color:var(--blue)">${fs.main}</b>（备${fs.backup||'-'}）</span><span>胜平负 <b style="color:var(--blue)">${p.wdl||p.wdlLabel||'-'}</b></span><span>进球数 <b style="color:var(--blue)">${normalizeGoals(p.goals)}</b></span></div>${verifyHtml}`;})(predictions[m.id]):(verifyHtml||'')}
       </div>
     </div>`;
 }
@@ -1896,9 +1905,9 @@ async function showMatchDetail(m){
     <h4>📊 AI 比赛预测 ${!matchFinished?`<span style="font-size:10px;color:var(--gold);background:rgba(240,192,64,.12);padding:1px 6px;border-radius:3px;margin-left:6px">已锁定</span>`:`<span style="font-size:10px;color:var(--green);background:rgba(46,160,67,.12);padding:1px 6px;border-radius:3px;margin-left:6px">赛后验证</span>`}</h4>
     <div class="prediction-box">
       <div class="pred-row">
-        <div class="pred-item"><div class="pred-label">比分预测</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${pred.score}</div></div>
-        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${pred.scoreC||'-'}</div></div>
-        <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel}</div></div>
+        <div class="pred-item"><div class="pred-label">比分预测</div><div class="pred-val" style="font-size:28px;color:var(--gold)">${fmtPredScore(pred.score,pred.scoreC).main}</div></div>
+        <div class="pred-item"><div class="pred-label">备选比分</div><div class="pred-val" style="font-size:24px;color:var(--blue)">${fmtPredScore(pred.score,pred.scoreC).backup||'-'}</div></div>
+        <div class="pred-item"><div class="pred-label">赛果预测</div><div class="pred-val" style="color:${pred.wdl==='平局'?'var(--blue)':pred.wdl==='主胜'?'var(--green)':'var(--red)'}">${pred.wdlLabel||pred.wdl||'-'}</div></div>
         <div class="pred-item"><div class="pred-label">进球数</div><div class="pred-val">${normalizeGoals(pred.goals)}</div></div>
       </div>
       <div class="pred-reason">${pred.reason}</div>

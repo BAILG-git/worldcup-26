@@ -72,13 +72,25 @@ def handle_results_post(body):
 # ========== /predictions ==========
 def handle_predictions_get():
     result = read_json('data/predictions.json')
-    return result.get('data', {})
+    data = result.get('data', {})
+    # 兼容两种格式:
+    # 1. 旧格式: {"generatedAt":..., "predictions": {"A_0": {...}}}
+    # 2. 新格式: {"A_0": {...}, ...}
+    if isinstance(data, dict) and 'predictions' in data:
+        return data.get('predictions', {})
+    return data
 
 def handle_predictions_post(body):
-    # body: { matchId: { score:['1:0','2:0'], wdl:['主胜'], goals:['2','3'] } }
-    existing = read_json('data/predictions.json').get('data', {})
-    existing.update(body)
-    return write_json('data/predictions.json', existing, f'update predictions via SCF [skip ci]')
+    # body: { matchId: { score:['1:0','2:0'], wdl:'主胜', goals:'2,4' } }
+    file_data = read_json('data/predictions.json')
+    raw = file_data.get('data', {})
+    # 如果是旧格式 {generatedAt, predictions: {...}}，只更新 predictions 子字段
+    if isinstance(raw, dict) and 'predictions' in raw:
+        raw['predictions'].update(body)
+        return write_json('data/predictions.json', raw, f'update predictions via SCF [skip ci]')
+    else:
+        raw.update(body)
+        return write_json('data/predictions.json', raw, f'update predictions via SCF [skip ci]')
 
 # ========== /upsets (保留原有逻辑) ==========
 UPSETS_PATH = 'data/upsets.json'
