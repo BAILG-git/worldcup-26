@@ -1155,79 +1155,72 @@ async function loadScores(){
     }
   } catch(e) { scores = {}; halftimeScores = {}; goalEvents = {}; predictions = {}; }
 
-  // 从 GitHub Pages 加载基线赛果（不含进球事件）
+  // 从 GitHub Pages 加载基线赛果（只补充 localStorage 里没有的场次，不覆盖手动输入的数据）
   try {
     const resp = await fetch('https://bailg-git.github.io/worldcup-26/data/results.json?t=' + Date.now());
     if (resp.ok) {
       const results = await resp.json();
       for (const [mid, res] of Object.entries(results)) {
-        scores[mid] = res.score;
-        matchStatus[mid] = 'FINISHED';
-        if (res.ht) halftimeScores[mid] = res.ht;
+        // 只填充 localStorage 里没有的场次，保护手动输入的数据
+        if (!scores[mid]) {
+          scores[mid] = res.score;
+          matchStatus[mid] = 'FINISHED';
+          if (res.ht) halftimeScores[mid] = res.ht;
+        }
       }
     }
   } catch(e) { /* 网络失败静默处理，localStorage兜底 */ }
-  saveScores();
+  // 注意：不在这里调用 saveScores()，避免每次刷新都触发 SCF 写入
 }
 function saveScores() {
   try {
     localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
   } catch(e) {}
-  // 异步同步到 SCF（结果 + 预测）
-  syncResultsToSCF();
-  syncPredsToSCF();
 }
 
-async function syncResultsToSCF() {
+// 只同步单场赛果到 SCF（避免全量提交）
+async function syncSingleResultToSCF(mid) {
   try {
-    const body = {};
-    for (const [mid, sc] of Object.entries(scores)) {
-      if (sc && sc[0] !== null) {
-        const ht = halftimeScores[mid];
-        body[mid] = { score: sc, ht: ht || [0,0] };
-      }
-    }
-    if (Object.keys(body).length === 0) return;
+    const sc = scores[mid];
+    if (!sc) return;
+    const body = { [mid]: { score: sc, ht: halftimeScores[mid] || [0,0] } };
     const resp = await fetch(SCF_RESULTS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     if (!resp.ok) {
-      console.warn('[SCF] results 同步失败 HTTP', resp.status);
-      if (resp.status === 433) alert('赛果数据同步超时！SCF 云函数超时仅 3 秒，需在腾讯云控制台改为 30 秒。数据已保存到本地。');
-    }
-  } catch(e) { console.warn('[SCF] results 同步异常:', e.message); }
+      console.warn('[SCF] result 同步失败 HTTP', resp.status);
+      if (resp.status === 433) alert('赛果同步超时！请在腾讯云 SCF 控制台将函数超时从 3 秒改为 30 秒。数据已保存到本地。');
+    } else { console.log('[SCF] result 同步成功:', mid); }
+  } catch(e) { console.warn('[SCF] result 同步异常:', e.message); }
 }
 
-async function syncPredsToSCF() {
+// 只同步单场预测到 SCF（避免全量提交）
+async function syncSinglePredToSCF(mid) {
   try {
-    const body = {};
-    for (const [mid, p] of Object.entries(predictions)) {
-      if (p && p.score) {
-        body[mid] = {
-          score: p.score,
-          scoreC: p.scoreC || '',
-          wdl: p.wdl || '',
-          wdlLabel: p.wdlLabel || '',
-          goals: p.goals || '',
-          reason: p.reason || '手动输入',
-          confidence: p.confidence || ''
-        };
-      }
-    }
-    if (Object.keys(body).length === 0) return;
+    const p = predictions[mid];
+    if (!p || !p.score) return;
+    const body = { [mid]: {
+      score: p.score, scoreC: p.scoreC || '',
+      wdl: p.wdl || '', wdlLabel: p.wdlLabel || '',
+      goals: p.goals || '', reason: p.reason || '手动输入', confidence: p.confidence || ''
+    }};
     const resp = await fetch(SCF_PREDS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     if (!resp.ok) {
-      console.warn('[SCF] predictions 同步失败 HTTP', resp.status);
-      if (resp.status === 433) alert('预测数据同步超时！SCF 云函数超时仅 3 秒，需在腾讯云控制台改为 30 秒。数据已保存到本地。');
-    }
-  } catch(e) { console.warn('[SCF] predictions 同步异常:', e.message); }
+      console.warn('[SCF] prediction 同步失败 HTTP', resp.status);
+      if (resp.status === 433) alert('预测同步超时！请在腾讯云 SCF 控制台将函数超时从 3 秒改为 30 秒。数据已保存到本地。');
+    } else { console.log('[SCF] prediction 同步成功:', mid); }
+  } catch(e) { console.warn('[SCF] prediction 同步异常:', e.message); }
 }
+
+// 兼容旧调用（爆冷仍用全量）
+async function syncResultsToSCF() { /* 已改为 syncSingleResultToSCF，此函数保留兼容 */ }
+async function syncPredsToSCF() { /* 已改为 syncSinglePredToSCF，此函数保留兼容 */ }
 // 已弃用 SCF，完赛赛果直接使用硬编码 COMPLETED_RESULTS 兜底
 // 此函数保留接口但不执行任何操作
 async function loadCompletedFromServer() {
@@ -2681,7 +2674,10 @@ function saveResult() {
   halftimeScores[_editMid] = [htH, htA];
   scores[_editMid] = [ftH, ftA];
   matchStatus[_editMid] = 'FINISHED';
-  saveScores();
+  // 只同步本场赛果到 SCF（不全量提交）
+  const mid = _editMid;
+  localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
+  syncSingleResultToSCF(mid);
   closeResultModal();
   renderMatches();
   renderStandings();
@@ -2754,7 +2750,9 @@ function savePrediction() {
     confidence: '',
   };
 
-  saveScores();
+  const mid = _editMid;
+  localStorage.setItem('wc2026_scores', JSON.stringify({scores, status: matchStatus, ht: halftimeScores, ge: goalEvents, pred: predictions, _predVer: 18}));
+  syncSinglePredToSCF(mid);
   // Re-render modal with updated data
   const m = findMatch(_editMid);
   if (m) showMatchDetail(m);
